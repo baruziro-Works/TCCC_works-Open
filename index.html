@@ -130,10 +130,15 @@
                         <span id="btnText">プレビューを作成する</span>
                     </button>
                     
+                    <button type="button" id="directPrintBtn" disabled class="flex-1 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+                        プリンターで印刷
+                    </button>
+
                     <button type="button" id="printBtn" disabled class="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors">
                         <svg id="downloadIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         <svg id="pdfLoadingIcon" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        <span id="printBtnText">PDFをダウンロード</span>
+                        <span id="printBtnText">PDFを保存</span>
                     </button>
                 </div>
             </form>
@@ -171,6 +176,7 @@
             const form = document.getElementById('mainForm');
             const generateBtn = document.getElementById('generateBtn');
             const printBtn = document.getElementById('printBtn');
+            const directPrintBtn = document.getElementById('directPrintBtn');
             const btnText = document.getElementById('btnText');
             const printBtnText = document.getElementById('printBtnText');
             const downloadIcon = document.getElementById('downloadIcon');
@@ -193,6 +199,11 @@
                 inputEl.addEventListener('input', (e) => {
                     localStorage.setItem(`saved_url_${sec.id}`, e.target.value);
                 });
+            });
+
+            // プリンターで直接印刷ボタンのイベント
+            directPrintBtn.addEventListener('click', () => {
+                window.print();
             });
 
             // PDFダウンロードボタンのイベント
@@ -259,6 +270,7 @@
                 btnText.textContent = '生成中...';
                 loadingIcon.classList.remove('hidden');
                 printBtn.disabled = true;
+                directPrintBtn.disabled = true;
                 previewArea.classList.add('hidden');
                 printablePage.innerHTML = ''; // クリア
 
@@ -323,6 +335,7 @@
                     // 印刷時に表示されるように、no-printクラスを外す
                     previewArea.classList.remove('no-print');
                     printBtn.disabled = false;
+                    directPrintBtn.disabled = false;
 
                 } catch (error) {
                     alert('処理中にエラーが発生しました。インターネット接続を確認してください。');
