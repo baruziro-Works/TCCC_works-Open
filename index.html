@@ -34,7 +34,9 @@
         }
         .a4-page {
             width: 210mm;
-            height: 297mm;
+            /* PDF生成時の微細な計算誤差による白紙の2ページ目発生を防ぐため、297mmより少し小さく(295mm)設定 */
+            height: 295mm; 
+            max-height: 295mm;
             background-color: white;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             padding: 20mm; /* A4用紙の余白設定（上下左右20mm） */
@@ -42,7 +44,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            overflow: hidden; /* 2ページ目のはみ出しを確実に防止 */
+            overflow: hidden; /* はみ出しを確実に防止 */
         }
 
         /* --- 印刷用のスタイル（ここが重要） --- */
@@ -187,7 +189,7 @@
                     inputEl.value = savedUrl;
                 }
 
-                // 【追加】文字が入力・変更されるたびに即座に自動保存
+                // 文字が入力・変更されるたびに即座に自動保存
                 inputEl.addEventListener('input', (e) => {
                     localStorage.setItem(`saved_url_${sec.id}`, e.target.value);
                 });
@@ -268,6 +270,9 @@
                         const sec = sectionsData[i];
                         const inputEl = document.getElementById(`url_${sec.id}`);
                         const longUrl = inputEl.value;
+
+                        // 入力値をローカルストレージに保存
+                        localStorage.setItem(`saved_url_${sec.id}`, longUrl);
 
                         // URL短縮APIを呼び出し
                         const shortUrl = await getShortUrl(longUrl);
