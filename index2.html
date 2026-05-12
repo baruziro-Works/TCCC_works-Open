@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>議事録 自動ふりがなツール</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- kuromoji.js の読み込み -->
+    <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js"></script>
+    <!-- mammoth.js の読み込み (Wordファイルからテキスト抽出用) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+    <style>
+        body { font-family: "Noto Sans JP", sans-serif; }
+        ruby { ruby-align: center; }
+        rt { font-size: 0.6em; color: #4B5563; }
+        /* 編集エリア内の見栄え */
+        #result-area {
+            line-height: 2.2;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800 p-4 md:p-8">
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="bg-blue-600 p-6 text-white">
+            <h1 class="text-2xl font-bold flex items-center">
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                議事録 自動ふりがなツール
+            </h1>
+            <p class="text-blue-100 text-sm mt-2">入力したテキストの漢字に自動でふりがな（ルビ）を振ります。</p>
+        </div>
+
+        <div class="p-6">
+            <div id="loading" class="flex items-center justify-center p-8 bg-blue-50 text-blue-700 rounded-lg mb-6 border border-blue-200">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>日本語辞書を読み込み中...（初回は数秒かかります）</span>
+            </div>
+
+            <div id="app-content" class="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 入力エリア -->
+                    <div class="flex flex-col">
+                        <label for="input-text" class="block text-sm font-medium text-gray-700 mb-2">原文（入力またはファイル読み込み）</label>
+                        
+                        <!-- カスタム辞書アップロード追加 -->
+                        <div class="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">カスタム辞書（ファイル読込 または 直接入力）</label>
+                            <p class="text-xs text-gray-500 mb-2">「単語,ふりがな」または「単語 ふりがな」の形式で1行ずつ入力してください。</p>
+                            <div class="flex items-center gap-2 mb-2">
+                                <input type="file" id="dict-file-input" accept=".docx, .txt, .csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 transition-colors">
+                            </div>
+                            <textarea id="dict-input-text" rows="3" class="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-shadow" placeholder="例：&#10;東風,こち&#10;山田,やまだ"></textarea>
+                        </div>
+
+                        <!-- ファイルアップロード追加 -->
+                        <div class="mb-3">
+                            <label class="block text-xs text-gray-500 mb-1">Wordファイル(.docx) または テキストファイル(.txt) を読み込む</label>
+                            <input type="file" id="file-input" accept=".docx, .txt" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors">
+                        </div>
+
+                        <textarea id="input-text" rows="12" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow" placeholder="ここに議事録のテキストを貼り付けるか、上のボタンからファイルを読み込んでください。"></textarea>
+                        
+                        <div class="mt-4 flex justify-end">
+                            <button id="convert-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-colors flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                ふりがなを付ける
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 出力エリア -->
+                    <div class="flex flex-col">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ふりがな付きテキスト</label>
+                        <div id="result-area" class="w-full h-full min-h-[300px] p-4 border border-gray-300 rounded-lg bg-gray-50 overflow-y-auto" contenteditable="true">
+                            ここに結果が表示されます。直接編集して修正することも可能です。
+                        </div>
+
+                        <div class="mt-4 flex gap-2 justify-end">
+                            <button id="copy-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors text-sm">
+                                コピーする (Word等へ)
+                            </button>
+                            <!-- Word保存ボタン追加 -->
+                            <button id="download-word-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors text-sm flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                Wordとして保存
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tokenizer = null;
+        let customDictionary = [];
+
+        // 辞書の読み込みと初期化
+        kuromoji.builder({ dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict" }).build(function (err, _tokenizer) {
+            if (err) {
+                console.error("辞書の読み込みに失敗しました:", err);
+                document.getElementById('loading').innerHTML = '<span class="text-red-600">エラー：辞書の読み込みに失敗しました。ネットワーク接続を確認してください。</span>';
+                return;
+            }
+            tokenizer = _tokenizer;
+            // ローディング表示を消してアプリ画面を表示
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('app-content').classList.remove('hidden');
+        });
+
+        // カタカナをひらがなに変換する関数
+        function katakanaToHiragana(src) {
+            if (!src) return "";
+            return src.replace(/[\u30a1-\u30f6]/g, function(match) {
+                var chr = match.charCodeAt(0) - 0x60;
+                return String.fromCharCode(chr);
+            });
+        }
+
+        // 漢字が含まれているかチェック
+        function hasKanji(str) {
+            return /[\u4E00-\u9FFF]/.test(str);
+        }
+
+        // ルビ付きのHTMLタグを生成する関数（送り仮名対応の簡易版）
+        function createRubyHtml(surface, readingKatakana) {
+            const readingHira = katakanaToHiragana(readingKatakana);
+
+            // 漢字が含まれていない、または読みが取得できない場合はそのまま返す
+            if (!hasKanji(surface) || !readingHira) {
+                return surface;
+            }
+
+            // 全てが漢字の場合は全体にルビを振る
+            if (/^[\u4E00-\u9FFF]+$/.test(surface)) {
+                return `<ruby>${surface}<rt>${readingHira}</rt></ruby>`;
+            }
+
+            // 送り仮名がある場合（例：「食べる」-> 「たべる」）
+            // 後ろから一致するひらがなを探す
+            let sLen = surface.length;
+            let rLen = readingHira.length;
+            let matchCount = 0;
+
+            while (matchCount < sLen && matchCount < rLen) {
+                if (surface[sLen - 1 - matchCount] === readingHira[rLen - 1 - matchCount]) {
+                    matchCount++;
+                } else {
+                    break;
+                }
+            }
+
+            if (matchCount > 0) {
+                let sBase = surface.slice(0, sLen - matchCount); // 「食」
+                let rBase = readingHira.slice(0, rLen - matchCount); // 「た」
+                let okurigana = surface.slice(sLen - matchCount); // 「べる」
+
+                // 漢字部分だけにルビを振る
+                if (hasKanji(sBase)) {
+                    return `<ruby>${sBase}<rt>${rBase}</rt></ruby>${okurigana}`;
+                }
+            }
+
+            // 複雑なパターンの場合は全体にルビを振る
+            return `<ruby>${surface}<rt>${readingHira}</rt></ruby>`;
+        }
+
+        // カスタム辞書テキストをパースして配列にする関数
+        function parseDictText(text) {
+            const lines = text.split('\n');
+            const newDict = [];
+            lines.forEach(line => {
+                const parts = line.split(/[,\t　 ]+/);
+                if (parts.length >= 2) {
+                    const surface = parts[0].trim();
+                    const reading = parts[1].trim();
+                    if (surface && reading) {
+                        newDict.push({ surface, reading });
+                    }
+                }
+            });
+            // 長い単語から優先して置換するため、文字数で降順ソート
+            newDict.sort((a, b) => b.surface.length - a.surface.length);
+            return newDict;
+        }
+
+        // 変換処理メイン
+        document.getElementById('convert-btn').addEventListener('click', () => {
+            if (!tokenizer) return;
+
+            // 毎回カスタム辞書をテキストエリアから構築する
+            const dictText = document.getElementById('dict-input-text').value;
+            customDictionary = parseDictText(dictText);
+
+            const text = document.getElementById('input-text').value;
+            if (!text.trim()) {
+                document.getElementById('result-area').innerHTML = '<span class="text-gray-400">テキストが入力されていません。</span>';
+                return;
+            }
+
+            let textToProcess = text;
+            let placeholders = [];
+
+            // カスタム辞書による優先置換（プレースホルダーに一時変換）
+            if (customDictionary.length > 0) {
+                customDictionary.forEach((entry) => {
+                    // 正規表現でエスケープ処理し、テキスト内のすべての該当箇所を検索
+                    const escapedSurface = entry.surface.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const regex = new RegExp(escapedSurface, 'g');
+                    
+                    textToProcess = textToProcess.replace(regex, (match) => {
+                        const placeholder = `___CUSTOMRUBY${placeholders.length}___`;
+                        const rubyHtml = `<ruby>${entry.surface}<rt>${entry.reading}</rt></ruby>`;
+                        placeholders.push({ placeholder, html: rubyHtml });
+                        return placeholder;
+                    });
+                });
+            }
+
+            // 改行ごとに処理を分割（段落を維持するため）
+            const lines = textToProcess.split('\n');
+            let resultHtml = '';
+
+            lines.forEach(line => {
+                if (line.trim() === '') {
+                    resultHtml += '<br>';
+                    return;
+                }
+
+                const tokens = tokenizer.tokenize(line);
+                let lineHtml = '';
+
+                tokens.forEach(token => {
+                    const surface = token.surface_form;
+                    const reading = token.reading; // 読みは基本カタカナで返る
+
+                    // 記号や空白などはそのまま
+                    if (token.pos === '記号' || surface.trim() === '') {
+                        lineHtml += surface;
+                    } else {
+                        lineHtml += createRubyHtml(surface, reading);
+                    }
+                });
+
+                resultHtml += `<div>${lineHtml}</div>`;
+            });
+
+            // プレースホルダーをカスタムルビのHTMLに置換し直す
+            if (placeholders.length > 0) {
+                placeholders.forEach(item => {
+                    resultHtml = resultHtml.split(item.placeholder).join(item.html);
+                });
+            }
+
+            document.getElementById('result-area').innerHTML = resultHtml;
+        });
+
+        // カスタム辞書ファイルの読み込み処理
+        document.getElementById('dict-file-input').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            
+            const processDictFile = (text) => {
+                const dictInput = document.getElementById('dict-input-text');
+                // 既存の入力があれば改行して追記する
+                if (dictInput.value.trim() !== '') {
+                    dictInput.value += '\n' + text;
+                } else {
+                    dictInput.value = text;
+                }
+            };
+
+            if (file.name.endsWith('.docx')) {
+                reader.onload = function(loadEvent) {
+                    mammoth.extractRawText({arrayBuffer: loadEvent.target.result})
+                        .then(function(result) {
+                            processDictFile(result.value);
+                        })
+                        .catch(function(err) {
+                            console.error(err);
+                            alert('辞書ファイルの読み込みに失敗しました。');
+                        });
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                reader.onload = function(loadEvent) {
+                    processDictFile(loadEvent.target.result);
+                };
+                reader.readAsText(file);
+            }
+            // 同じファイルを再度選べるようにリセット
+            event.target.value = '';
+        });
+
+        // ファイル読み込み処理の追加
+        document.getElementById('file-input').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            
+            if (file.name.endsWith('.docx')) {
+                // Wordファイルの場合 (mammoth.jsを使用してテキストを抽出)
+                reader.onload = function(loadEvent) {
+                    const arrayBuffer = loadEvent.target.result;
+                    mammoth.extractRawText({arrayBuffer: arrayBuffer})
+                        .then(function(result) {
+                            document.getElementById('input-text').value = result.value;
+                        })
+                        .catch(function(err) {
+                            console.error(err);
+                            alert('Wordファイルの読み込みに失敗しました。パスワード保護などがかかっていないか確認してください。');
+                        });
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                // テキストファイルの場合
+                reader.onload = function(loadEvent) {
+                    document.getElementById('input-text').value = loadEvent.target.result;
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Wordとしてダウンロードする機能の追加
+        document.getElementById('download-word-btn').addEventListener('click', () => {
+            const resultHtml = document.getElementById('result-area').innerHTML;
+            if (!resultHtml || resultHtml.includes('ここに結果が表示されます')) {
+                alert('先に「ふりがなを付ける」ボタンを押して、結果を作成してください。');
+                return;
+            }
+
+            // Wordが解釈できるシンプルなHTML文書を構築
+            const htmlContent = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head>
+                <meta charset='utf-8'>
+                <title>ルビ付き議事録</title>
+                <style>
+                    body { font-family: "MS Mincho", "Yu Mincho", serif; font-size: 11pt; line-height: 1.5; }
+                    ruby { ruby-align: center; }
+                    rt { font-size: 0.6em; }
+                </style>
+            </head>
+            <body>
+                ${resultHtml}
+            </body>
+            </html>
+            `;
+
+            // Blobを作成してダウンロード (.doc形式として保存するとWordで開ける)
+            const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ルビ付き議事録.doc';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // コピー機能
+        document.getElementById('copy-btn').addEventListener('click', () => {
+            const resultArea = document.getElementById('result-area');
+            
+            // クリップボードAPIを使用してリッチテキスト(HTML)としてコピーを試みる
+            try {
+                // 選択範囲を作成してコピー
+                const selection = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(resultArea);
+                selection.removeAllRanges();
+                selection.addRange(range);
+                
+                document.execCommand('copy');
+                selection.removeAllRanges();
+
+                const btn = document.getElementById('copy-btn');
+                const originalText = btn.innerText;
+                btn.innerText = 'コピーしました！';
+                btn.classList.replace('bg-gray-200', 'bg-green-200');
+                
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.replace('bg-green-200', 'bg-gray-200');
+                }, 2000);
+
+            } catch (err) {
+                alert('コピーに失敗しました。テキストを選択して手動でコピーしてください。');
+            }
+        });
+    </script>
+</body>
+</html>
