@@ -173,9 +173,17 @@
                     loadingText.appendChild(hint);
                 }, 8000); // 8秒経過で表示
 
-                // 辞書の読み込み先を jsDelivr に戻す
-                kuromoji.builder({ dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict" }).build(function (err, _tokenizer) {
+                // 20秒経過しても完了しない場合の強制タイムアウト処理
+                const timeoutTimer = setTimeout(() => {
+                    showError("読み込みがタイムアウトしました", "辞書データのダウンロードが完了しませんでした。<br>ネットワークが不安定か、通信が遮断されている可能性があります。ページを再読み込みしてお試しください。");
+                }, 20000);
+
+                // 辞書の読み込み先 (★ 末尾の / が重要)
+                const dicUrl = "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/";
+
+                kuromoji.builder({ dicPath: dicUrl }).build(function (err, _tokenizer) {
                     clearTimeout(slowLoadTimer); // 読み込みが完了したらタイマーを解除
+                    clearTimeout(timeoutTimer);  // タイムアウトも解除
 
                     if (err) {
                         console.error("Kuromoji初期化エラー:", err);
