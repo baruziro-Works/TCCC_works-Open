@@ -6,8 +6,8 @@
     <title>自動ふりがな付与ツール</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Kuromoji.js -->
-    <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js"></script>
+    <!-- Kuromoji.js 本体 (unpkgに変更) -->
+    <script src="https://unpkg.com/kuromoji@0.1.2/build/kuromoji.js"></script>
     <!-- Mammoth.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
     <style>
@@ -43,7 +43,10 @@
     <!-- ローディングオーバーレイ -->
     <div id="loadingOverlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="spinner mb-4"></div>
-        <p class="text-slate-600 font-medium">辞書データを読み込んでいます...<br><span class="text-sm font-normal text-slate-400">初回は数秒かかる場合があります</span></p>
+        <div id="loadingText" class="text-center">
+            <p class="text-slate-600 font-medium">辞書データを読み込んでいます...</p>
+            <p class="text-sm font-normal text-slate-400 mt-1">初回は数秒〜十数秒かかる場合があります</p>
+        </div>
     </div>
 
     <!-- トースト通知 -->
@@ -144,23 +147,29 @@
         // --- Kuromoji.js 初期化 ---
         let tokenizer = null;
 
-        window.onload = function() {
-            // jsdelivr の辞書パスを指定
-            kuromoji.builder({ dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict" }).build(function (err, _tokenizer) {
+        // DOMの読み込みが完了したらすぐに辞書のロードを開始する (window.onload から変更)
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // 辞書の読み込み先を unpkg に変更
+            kuromoji.builder({ dicPath: "https://unpkg.com/kuromoji@0.1.2/dict" }).build(function (err, _tokenizer) {
+                const overlay = document.getElementById('loadingOverlay');
+                const loadingText = document.getElementById('loadingText');
+
                 if (err) {
                     console.error("Kuromoji初期化エラー:", err);
                     showToast("辞書の読み込みに失敗しました。ページを再読み込みしてください。");
-                    document.getElementById('loadingOverlay').innerHTML = '<p class="text-red-500 font-bold">辞書ロード失敗</p>';
+                    // ローディングのくるくるを消してエラーメッセージを表示
+                    document.querySelector('.spinner').style.display = 'none';
+                    loadingText.innerHTML = '<p class="text-red-500 font-bold mb-2">辞書データの読み込みに失敗しました</p><p class="text-sm text-slate-600">お使いのネットワーク設定によりブロックされている可能性があります。<br>ページを再読み込み（リロード）してみてください。</p>';
                 } else {
                     tokenizer = _tokenizer;
                     // ローディング非表示、ボタン有効化
-                    const overlay = document.getElementById('loadingOverlay');
                     overlay.classList.add('opacity-0');
                     setTimeout(() => overlay.style.display = 'none', 300);
                     document.getElementById('processBtn').disabled = false;
                 }
             });
-        };
+        });
 
         // --- トースト通知 ---
         function showToast(message) {
