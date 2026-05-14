@@ -92,7 +92,7 @@
             </h1>
             <p class="text-slate-600 text-sm mb-6">
                 各項目のURLを入力して「プレビューを作成」を押してください。<br>
-                ※入力内容はブラウザに自動保存され、次回開いた時に復元されます。
+                ※入力内容は自動的にスプレッドシートに保存され、次回開いた時に復元されます。
             </p>
 
             <form id="mainForm" class="space-y-6">
@@ -185,17 +185,40 @@
             const previewArea = document.getElementById('previewArea');
             const printablePage = document.getElementById('printablePage');
 
-            // 1. ローカルストレージから前回の入力を復元し、入力時の自動保存を設定
+            // 👇👇👇👇👇 ここです！ 👇👇👇👇👇
+            // -------------------------------------------------------------
+            // 【重要】ここにスプレッドシートの「ウェブアプリのURL」を貼り付けてください！
+            // 例: const GAS_URL = 'https://script.google.com/macros/s/XXXXX/exec';
+            // -------------------------------------------------------------
+            const GAS_URL = 'https://script.google.com/macros/s/AKfycbzIJ6c2sFRYJOGPA-fXQr2FhGNsvRGP59VGfTerHa_4dmLnkaBN1p7KXdzIVPgEUQQ/exec'; 
+            // 👆👆👆👆👆 ここです！ 👆👆👆👆👆
+
+
+            // 1. データの復元処理
+            if (GAS_URL !== '') {
+                // スプレッドシートから読み込む
+                fetch(GAS_URL)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.movie) document.getElementById('url_movie').value = data.movie;
+                        if (data.weekly) document.getElementById('url_weekly').value = data.weekly;
+                        if (data.monthly) document.getElementById('url_monthly').value = data.monthly;
+                    })
+                    .catch(error => console.error('スプレッドシート読み込みエラー:', error));
+            } else {
+                // スプレッドシート未設定時は、パソコンのローカルストレージから復元
+                sectionsData.forEach(sec => {
+                    const inputEl = document.getElementById(`url_${sec.id}`);
+                    const savedUrl = localStorage.getItem(`saved_url_${sec.id}`);
+                    if (savedUrl) {
+                        inputEl.value = savedUrl;
+                    }
+                });
+            }
+
+            // 文字が入力・変更されるたびに即座にローカルへ自動保存
             sectionsData.forEach(sec => {
                 const inputEl = document.getElementById(`url_${sec.id}`);
-                
-                // ページ読み込み時の復元処理
-                const savedUrl = localStorage.getItem(`saved_url_${sec.id}`);
-                if (savedUrl) {
-                    inputEl.value = savedUrl;
-                }
-
-                // 文字が入力・変更されるたびに即座に自動保存
                 inputEl.addEventListener('input', (e) => {
                     localStorage.setItem(`saved_url_${sec.id}`, e.target.value);
                 });
@@ -229,14 +252,14 @@
                 html2pdf().set(opt).from(element).save().then(() => {
                     // ダウンロード完了後にUIを元に戻す
                     printBtn.disabled = false;
-                    printBtnText.textContent = 'PDFをダウンロード';
+                    printBtnText.textContent = 'PDFを保存';
                     downloadIcon.classList.remove('hidden');
                     pdfLoadingIcon.classList.add('hidden');
                 }).catch(err => {
                     console.error('PDF作成エラー:', err);
                     alert('PDFの作成に失敗しました。');
                     printBtn.disabled = false;
-                    printBtnText.textContent = 'PDFをダウンロード';
+                    printBtnText.textContent = 'PDFを保存';
                     downloadIcon.classList.remove('hidden');
                     pdfLoadingIcon.classList.add('hidden');
                 });
@@ -265,6 +288,17 @@
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
+                // --- スプレッドシートへの保存処理 ---
+                if (GAS_URL !== '') {
+                    const movieUrl = document.getElementById('url_movie').value;
+                    const weeklyUrl = document.getElementById('url_weekly').value;
+                    const monthlyUrl = document.getElementById('url_monthly').value;
+                    
+                    // URLパラメータを使ってデータを送信する
+                    const saveUrl = `${GAS_URL}?action=save&movie=${encodeURIComponent(movieUrl)}&weekly=${encodeURIComponent(weeklyUrl)}&monthly=${encodeURIComponent(monthlyUrl)}`;
+                    fetch(saveUrl).catch(err => console.error("スプレッドシート保存エラー:", err));
+                }
+
                 // ボタンをローディング状態に
                 generateBtn.disabled = true;
                 btnText.textContent = '生成中...';
