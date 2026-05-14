@@ -6,7 +6,7 @@
     <title>自動ふりがな付与ツール</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Kuromoji.js 本体 (jsDelivrに戻す) -->
+    <!-- Kuromoji.js 本体 -->
     <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js"></script>
     <!-- Mammoth.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
@@ -81,7 +81,7 @@
                             <input type="file" id="inputFile" accept=".txt,.docx" class="hidden" onchange="handleFileSelect(event, 'inputArea', false)">
                             <button onclick="document.getElementById('inputFile').click()" class="text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md transition duration-150 flex items-center gap-1">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                                ファイル読込 (.txt, .docx)
+                                ファイル読込
                             </button>
                         </div>
                     </div>
@@ -99,12 +99,12 @@
                             <input type="file" id="dictFile" accept=".txt,.csv,.docx" class="hidden" onchange="handleFileSelect(event, 'customDictArea', true)">
                             <button onclick="document.getElementById('dictFile').click()" class="text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md transition duration-150 flex items-center gap-1">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                                追記 (.txt, .csv, .docx)
+                                追記
                             </button>
                         </div>
                     </div>
-                    <p class="text-xs text-slate-500 mb-2">「単語,ふりがな」または「単語 ふりがな」の形式で1行ずつ入力</p>
-                    <textarea id="customDictArea" class="w-full border border-slate-300 rounded-lg p-3 text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none flex-1 resize-none min-h-[120px]" placeholder="例:&#10;東京特許許可局,とうきょうとっきょきょかきょく&#10;山崎 やまざき"></textarea>
+                    <p class="text-xs text-slate-500 mb-2">「単語,ふりがな」または「単語 ふりがな」の形式で入力</p>
+                    <textarea id="customDictArea" class="w-full border border-slate-300 rounded-lg p-3 text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none flex-1 resize-none min-h-[120px]" placeholder="例:&#10;東京特許許可局,とうきょうとっきょきょかきょく"></textarea>
                 </div>
 
                 <!-- 実行ボタン -->
@@ -125,18 +125,18 @@
                     <div class="flex gap-2">
                         <button onclick="copyToClipboard()" class="bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-sm font-medium py-1.5 px-3 rounded-md transition duration-150 flex items-center gap-1 shadow-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
-                            コピーする
+                            コピー
                         </button>
                         <button onclick="saveAsWord()" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-sm font-medium py-1.5 px-3 rounded-md transition duration-150 flex items-center gap-1 shadow-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                            Wordとして保存
+                            Word保存
                         </button>
                     </div>
                 </div>
                 
                 <!-- リッチテキストエディタ -->
                 <div id="outputArea" contenteditable="true" class="flex-1 p-5 overflow-y-auto focus:outline-none focus:ring-inset focus:ring-2 focus:ring-blue-100 transition" spellcheck="false">
-                    <p class="text-slate-400 italic">ここにふりがなが付与された結果が表示されます。直接文字やルビの修正も可能です。</p>
+                    <p class="text-slate-400 italic">ここに結果が表示されます。</p>
                 </div>
             </div>
             
@@ -144,7 +144,6 @@
     </main>
 
     <script>
-        // --- Kuromoji.js 初期化 ---
         let tokenizer = null;
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -152,99 +151,75 @@
             const loadingText = document.getElementById('loadingText');
             const spinner = document.querySelector('.spinner');
 
-            // エラー表示用の共通関数
             function showError(message, detail) {
                 if(spinner) spinner.style.display = 'none';
                 loadingText.innerHTML = `<p class="text-red-500 font-bold mb-2">${message}</p><p class="text-sm text-slate-600">${detail}</p>`;
             }
 
-            try {
-                // Kuromoji本体が読み込めていない（ブロックされている）場合のエラーハンドリング
-                if (typeof kuromoji === 'undefined') {
-                    showError("システムの読み込みに失敗しました", "ブラウザの広告ブロック機能やセキュリティ設定により、解析プログラム(kuromoji.js)がブロックされている可能性があります。<br>設定をオフにしてページを再読み込みしてください。");
-                    return;
-                }
-
-                // 長時間読み込みが終わらない場合にメッセージを追加するタイマー
-                const slowLoadTimer = setTimeout(() => {
-                    const hint = document.createElement('p');
-                    hint.className = "text-orange-500 text-sm mt-3 font-medium animate-pulse";
-                    hint.textContent = "※通信に時間がかかっています。環境によっては1分程度かかる場合があります...";
-                    loadingText.appendChild(hint);
-                }, 8000); // 8秒経過で表示
-
-                // 20秒経過しても完了しない場合の強制タイムアウト処理
-                const timeoutTimer = setTimeout(() => {
-                    showError("読み込みがタイムアウトしました", "辞書データのダウンロードが完了しませんでした。<br>ネットワークが不安定か、通信が遮断されている可能性があります。ページを再読み込みしてお試しください。");
-                }, 20000);
-
-                // 辞書の読み込み先 (★ 末尾の / が重要)
-                const dicUrl = "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/";
-
-                kuromoji.builder({ dicPath: dicUrl }).build(function (err, _tokenizer) {
-                    clearTimeout(slowLoadTimer); // 読み込みが完了したらタイマーを解除
-                    clearTimeout(timeoutTimer);  // タイムアウトも解除
-
-                    if (err) {
-                        console.error("Kuromoji初期化エラー:", err);
-                        showError("辞書データの読み込みに失敗しました", "ネットワークエラーが発生しました。インターネット接続を確認するか、ページを再読み込みしてください。");
-                    } else {
-                        tokenizer = _tokenizer;
-                        // ローディング非表示、ボタン有効化
-                        overlay.classList.add('opacity-0');
-                        setTimeout(() => overlay.style.display = 'none', 300);
-                        document.getElementById('processBtn').disabled = false;
-                        showToast("辞書データの準備が完了しました");
-                    }
-                });
-
-            } catch (error) {
-                console.error("予期せぬエラー:", error);
-                showError("予期せぬエラーが発生しました", "申し訳ありません。ページを再読み込みして再度お試しください。");
+            if (typeof kuromoji === 'undefined') {
+                showError("システムの読み込みに失敗しました", "kuromoji.jsがブロックされています。");
+                return;
             }
+
+            const slowLoadTimer = setTimeout(() => {
+                const hint = document.createElement('p');
+                hint.className = "text-orange-500 text-sm mt-3 font-medium animate-pulse";
+                hint.textContent = "※通信に時間がかかっています...";
+                loadingText.appendChild(hint);
+            }, 8000);
+
+            const timeoutTimer = setTimeout(() => {
+                showError("読み込みがタイムアウトしました", "外部からの辞書取得に失敗しました。<br>解決策2（辞書フォルダの直接配置）をお試しください。");
+            }, 20000);
+
+            // 【重要】解決策1：ブラウザに勝手に解凍させないため、GitHubの生データ(Raw)から直接取得する
+            let dicUrl = "https://raw.githubusercontent.com/takuyaa/kuromoji.js/master/dict/";
+            
+            // ★【解決策2用】どうしても動かない場合は、上の let dicUrl = ... の行の先頭に // を付けて無効化し、
+            // 以下の行の先頭の // を消して有効にしてください。
+            // let dicUrl = "./dict/";
+
+            kuromoji.builder({ dicPath: dicUrl }).build(function (err, _tokenizer) {
+                clearTimeout(slowLoadTimer);
+                clearTimeout(timeoutTimer);
+
+                if (err) {
+                    console.error(err);
+                    showError("辞書データの読み込みに失敗しました", "外部サーバーとの相性問題が発生しています。");
+                } else {
+                    tokenizer = _tokenizer;
+                    overlay.classList.add('opacity-0');
+                    setTimeout(() => overlay.style.display = 'none', 300);
+                    document.getElementById('processBtn').disabled = false;
+                    showToast("準備完了");
+                }
+            });
         });
 
-        // --- トースト通知 ---
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.classList.remove('translate-y-full', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-full', 'opacity-0');
-            }, 3000);
+            setTimeout(() => toast.classList.add('translate-y-full', 'opacity-0'), 3000);
         }
 
-        // --- ファイル読み込み処理 (Mammoth, FileReader) ---
         function handleFileSelect(event, targetElementId, isAppend) {
             const file = event.target.files[0];
             if (!file) return;
-
             const extension = file.name.split('.').pop().toLowerCase();
             const reader = new FileReader();
 
             if (extension === 'docx') {
                 reader.onload = function(e) {
                     mammoth.extractRawText({arrayBuffer: e.target.result})
-                        .then(function(result) {
-                            updateTargetArea(targetElementId, result.value, isAppend);
-                            showToast(`${file.name} を読み込みました`);
-                        })
-                        .catch(function(err) {
-                            console.error(err);
-                            showToast("Wordファイルの読み込みに失敗しました");
-                        });
+                        .then(res => { updateTargetArea(targetElementId, res.value, isAppend); showToast("読込完了"); })
+                        .catch(err => { console.error(err); showToast("読込失敗"); });
                 };
                 reader.readAsArrayBuffer(file);
             } else if (extension === 'txt' || extension === 'csv') {
-                reader.onload = function(e) {
-                    updateTargetArea(targetElementId, e.target.result, isAppend);
-                    showToast(`${file.name} を読み込みました`);
-                };
+                reader.onload = function(e) { updateTargetArea(targetElementId, e.target.result, isAppend); showToast("読込完了"); };
                 reader.readAsText(file);
-            } else {
-                showToast("対応していないファイル形式です");
             }
-            // 同じファイルを再度選べるようにリセット
             event.target.value = '';
         }
 
@@ -258,96 +233,55 @@
             }
         }
 
-        // --- メイン処理（ふりがな付与） ---
         function processFurigana() {
-            if (!tokenizer) {
-                showToast("辞書データがまだ読み込まれていません");
-                return;
-            }
-
+            if (!tokenizer) return showToast("準備中...");
             const inputText = document.getElementById('inputArea').value;
-            if (!inputText.trim()) {
-                showToast("原文を入力してください");
-                return;
-            }
+            if (!inputText.trim()) return showToast("原文を入力してください");
 
-            // 1. カスタム辞書のパース
             const customDictText = document.getElementById('customDictArea').value;
             const customDict = parseCustomDict(customDictText);
-
-            // 2. 出力コンテナの準備
             const outputArea = document.getElementById('outputArea');
-            outputArea.innerHTML = ''; // クリア
+            outputArea.innerHTML = '';
 
-            // 段落（改行）ごとに処理
-            const lines = inputText.split(/\r?\n/);
-            
-            lines.forEach(line => {
+            inputText.split(/\r?\n/).forEach(line => {
                 const pNode = document.createElement('p');
-                if (line === '') {
-                    pNode.appendChild(document.createElement('br'));
-                } else {
-                    pNode.textContent = line;
-                }
+                if (line === '') pNode.appendChild(document.createElement('br'));
+                else pNode.textContent = line;
 
-                // 3. カスタム辞書の適用 (DOM操作)
-                if (customDict.length > 0) {
-                    applyCustomDict(pNode, customDict);
-                }
-
-                // 4. Kuromojiによる自動解析・ルビ付与 (DOM操作)
+                if (customDict.length > 0) applyCustomDict(pNode, customDict);
                 applyKuromoji(pNode, tokenizer);
-
                 outputArea.appendChild(pNode);
             });
-
-            showToast("ふりがなの付与が完了しました");
+            showToast("完了しました");
         }
 
-        // --- カスタム辞書パースロジック ---
         function parseCustomDict(text) {
-            const lines = text.split(/\r?\n/);
             const dict = [];
-            for (let line of lines) {
-                line = line.trim();
-                if (!line) continue;
-                // 最初に出現する カンマ、全角カンマ、半角/全角スペース、タブ で分割
-                const match = line.match(/^([^\s,、]+)[\s,、]+(.+)$/);
-                if (match) {
-                    dict.push({ word: match[1], ruby: match[2].trim() });
-                }
-            }
-            // 長い単語から優先して置換するため文字数降順ソート
-            dict.sort((a, b) => b.word.length - a.word.length);
-            return dict;
+            text.split(/\r?\n/).forEach(line => {
+                const match = line.trim().match(/^([^\s,、]+)[\s,、]+(.+)$/);
+                if (match) dict.push({ word: match[1], ruby: match[2].trim() });
+            });
+            return dict.sort((a, b) => b.word.length - a.word.length);
         }
 
-        // --- カスタム辞書適用ロジック ---
         function applyCustomDict(container, customDict) {
             for (const item of customDict) {
                 if (!item.word) continue;
-
-                // DOMツリーからテキストノードのみを抽出（ルビの中身は除外）
                 const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
                 const textNodes = [];
                 let node;
                 while (node = walker.nextNode()) {
-                    if (node.parentNode.nodeName === 'RT' || node.parentNode.nodeName === 'RUBY') continue;
-                    textNodes.push(node);
+                    if (node.parentNode.nodeName !== 'RT' && node.parentNode.nodeName !== 'RUBY') textNodes.push(node);
                 }
 
                 for (let textNode of textNodes) {
                     const text = textNode.nodeValue;
                     if (!text.includes(item.word)) continue;
-
                     const parts = text.split(item.word);
                     const frag = document.createDocumentFragment();
                     
                     for (let i = 0; i < parts.length; i++) {
-                        if (parts[i]) {
-                            frag.appendChild(document.createTextNode(parts[i]));
-                        }
-                        // 最後の要素以外は区切り文字(item.word)があった場所
+                        if (parts[i]) frag.appendChild(document.createTextNode(parts[i]));
                         if (i < parts.length - 1) {
                             const rubyEl = document.createElement('ruby');
                             rubyEl.textContent = item.word;
@@ -362,54 +296,40 @@
             }
         }
 
-        // --- Kuromoji適用ロジック ---
         function applyKuromoji(container, tokenizer) {
             const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
             const textNodes = [];
             let node;
             while (node = walker.nextNode()) {
-                // すでにルビが振られている（カスタム辞書等）ノードは無視
-                if (node.parentNode.nodeName === 'RT' || node.parentNode.nodeName === 'RUBY') continue;
-                // 漢字を含まないテキストは無視して高速化
-                if (!/[\u4e00-\u9faf]/.test(node.nodeValue)) continue;
-                textNodes.push(node);
+                if (node.parentNode.nodeName !== 'RT' && node.parentNode.nodeName !== 'RUBY' && /[\u4e00-\u9faf]/.test(node.nodeValue)) {
+                    textNodes.push(node);
+                }
             }
 
             for (let textNode of textNodes) {
-                const text = textNode.nodeValue;
-                const tokens = tokenizer.tokenize(text);
+                const tokens = tokenizer.tokenize(textNode.nodeValue);
                 const frag = document.createDocumentFragment();
 
                 for (let token of tokens) {
                     const surface = token.surface_form;
-                    const reading = token.reading; // カタカナ
+                    const reading = token.reading;
 
-                    // 漢字を含まない形態素はそのまま追加
                     if (!/[\u4e00-\u9faf]/.test(surface)) {
                         frag.appendChild(document.createTextNode(surface));
                         continue;
                     }
 
-                    // 読みが存在する場合
                     if (reading) {
-                        const hiraganaReading = katakanaToHiragana(reading);
-                        const rubyData = calculateOkurigana(surface, hiraganaReading);
-
-                        // 接頭辞（例：お見舞いの「お」）
+                        const rubyData = calculateOkurigana(surface, katakanaToHiragana(reading));
                         if (rubyData.prefix) frag.appendChild(document.createTextNode(rubyData.prefix));
-
-                        // 漢字＋ルビ
                         const rubyEl = document.createElement('ruby');
                         rubyEl.textContent = rubyData.kanji;
                         const rt = document.createElement('rt');
                         rt.textContent = rubyData.ruby;
                         rubyEl.appendChild(rt);
                         frag.appendChild(rubyEl);
-
-                        // 接尾辞（送り仮名：食べるの「べる」）
                         if (rubyData.suffix) frag.appendChild(document.createTextNode(rubyData.suffix));
                     } else {
-                        // 未知語などで読みが取得できない場合
                         frag.appendChild(document.createTextNode(surface));
                     }
                 }
@@ -417,110 +337,50 @@
             }
         }
 
-        // --- カタカナをひらがなに変換 ---
         function katakanaToHiragana(str) {
-            return str.replace(/[\u30A1-\u30F6]/g, function(match) {
-                const chr = match.charCodeAt(0) - 0x60;
-                return String.fromCharCode(chr);
-            });
+            return str.replace(/[\u30A1-\u30F6]/g, match => String.fromCharCode(match.charCodeAt(0) - 0x60));
         }
 
-        // --- 送り仮名を分離するロジック ---
         function calculateOkurigana(surface, reading) {
-            if (surface === reading) {
-                return { prefix: '', kanji: surface, ruby: reading, suffix: '' };
-            }
-            let prefix = '';
-            let suffix = '';
-            let kanji = surface;
-            let ruby = reading;
-
-            // 前方の一致部分（接頭辞）を抽出
+            if (surface === reading) return { prefix: '', kanji: surface, ruby: reading, suffix: '' };
+            let prefix = '', suffix = '', kanji = surface, ruby = reading;
+            
             let i = 0;
-            while (i < kanji.length && i < ruby.length && kanji[i] === ruby[i]) {
-                i++;
-            }
-            if (i > 0) {
-                prefix = kanji.substring(0, i);
-                kanji = kanji.substring(i);
-                ruby = ruby.substring(i);
-            }
+            while (i < kanji.length && i < ruby.length && kanji[i] === ruby[i]) i++;
+            if (i > 0) { prefix = kanji.substring(0, i); kanji = kanji.substring(i); ruby = ruby.substring(i); }
 
-            // 後方の一致部分（接尾辞・送り仮名）を抽出
             let j = 1;
-            while (j <= kanji.length && j <= ruby.length && kanji[kanji.length - j] === ruby[ruby.length - j]) {
-                j++;
-            }
-            j--; // 最後に一致した文字数
-            if (j > 0) {
-                suffix = kanji.substring(kanji.length - j);
-                kanji = kanji.substring(0, kanji.length - j);
-                ruby = ruby.substring(0, ruby.length - j);
-            }
+            while (j <= kanji.length && j <= ruby.length && kanji[kanji.length - j] === ruby[ruby.length - j]) j++;
+            j--;
+            if (j > 0) { suffix = kanji.substring(kanji.length - j); kanji = kanji.substring(0, kanji.length - j); ruby = ruby.substring(0, ruby.length - j); }
 
             return { prefix, kanji, ruby, suffix };
         }
 
-        // --- エクスポート機能 ---
         function copyToClipboard() {
             const outputArea = document.getElementById('outputArea');
-            if (!outputArea.innerHTML.trim() || outputArea.innerHTML.includes('ここにふりがなが付与された結果が')) {
-                showToast("コピーする内容がありません");
-                return;
-            }
-
-            // contenteditable の内容をリッチテキストとしてコピー
             const range = document.createRange();
             range.selectNodeContents(outputArea);
             const selection = window.getSelection();
             selection.removeAllRanges();
             selection.addRange(range);
-            
-            try {
-                document.execCommand('copy');
-                showToast("クリップボードにコピーしました");
-            } catch (err) {
-                console.error("Copy failed", err);
-                showToast("コピーに失敗しました");
-            }
+            try { document.execCommand('copy'); showToast("コピーしました"); } 
+            catch (err) { showToast("コピーに失敗しました"); }
             selection.removeAllRanges();
         }
 
         function saveAsWord() {
-            const outputArea = document.getElementById('outputArea');
-            if (!outputArea.innerHTML.trim() || outputArea.innerHTML.includes('ここにふりがなが付与された結果が')) {
-                showToast("保存する内容がありません");
-                return;
-            }
-
-            const outputHTML = outputArea.innerHTML;
-            
-            // Wordで正しくルビが表示されるためのCSS定義
-            const style = `
-                <style>
-                    body { font-family: 'Yu Mincho', 'MS Mincho', serif; font-size: 11pt; line-height: 1.5; }
-                    ruby { ruby-position: over; ruby-align: center; }
-                    rt { font-size: 6pt; }
-                    p { margin: 0 0 1em 0; }
-                </style>
-            `;
-            
-            // MHTMLフォーマットの骨組み
-            const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>ルビ付き文書</title>" + style + "</head><body>";
-            const footer = "</body></html>";
-            const sourceHTML = header + outputHTML + footer;
-
-            // BOM (\ufeff) を付与してUTF-8として認識させる
+            const outputHTML = document.getElementById('outputArea').innerHTML;
+            const style = `<style>body { font-family: 'Yu Mincho', 'MS Mincho', serif; font-size: 11pt; } ruby { ruby-position: over; ruby-align: center; } rt { font-size: 6pt; } p { margin: 0 0 1em 0; }</style>`;
+            const sourceHTML = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>ルビ付き文書</title>" + style + "</head><body>" + outputHTML + "</body></html>";
             const source = 'data:application/vnd.ms-word;charset=utf-8,\ufeff' + encodeURIComponent(sourceHTML);
-            
             const fileDownload = document.createElement("a");
             document.body.appendChild(fileDownload);
             fileDownload.href = source;
             fileDownload.download = 'ルビ付き文書.doc';
             fileDownload.click();
             document.body.removeChild(fileDownload);
-            
-            showToast("Wordファイルとして保存しました");
+            showToast("Word保存しました");
         }
     </script>
 </body>
