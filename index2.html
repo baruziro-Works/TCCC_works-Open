@@ -6,8 +6,8 @@
     <title>自動ふりがな付与ツール</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Kuromoji.js 本体 (unpkgに変更) -->
-    <script src="https://unpkg.com/kuromoji@0.1.2/build/kuromoji.js"></script>
+    <!-- Kuromoji.js 本体 (jsDelivrに戻す) -->
+    <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js"></script>
     <!-- Mammoth.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
     <style>
@@ -147,28 +147,53 @@
         // --- Kuromoji.js 初期化 ---
         let tokenizer = null;
 
-        // DOMの読み込みが完了したらすぐに辞書のロードを開始する (window.onload から変更)
         document.addEventListener('DOMContentLoaded', function() {
-            
-            // 辞書の読み込み先を unpkg に変更
-            kuromoji.builder({ dicPath: "https://unpkg.com/kuromoji@0.1.2/dict" }).build(function (err, _tokenizer) {
-                const overlay = document.getElementById('loadingOverlay');
-                const loadingText = document.getElementById('loadingText');
+            const overlay = document.getElementById('loadingOverlay');
+            const loadingText = document.getElementById('loadingText');
+            const spinner = document.querySelector('.spinner');
 
-                if (err) {
-                    console.error("Kuromoji初期化エラー:", err);
-                    showToast("辞書の読み込みに失敗しました。ページを再読み込みしてください。");
-                    // ローディングのくるくるを消してエラーメッセージを表示
-                    document.querySelector('.spinner').style.display = 'none';
-                    loadingText.innerHTML = '<p class="text-red-500 font-bold mb-2">辞書データの読み込みに失敗しました</p><p class="text-sm text-slate-600">お使いのネットワーク設定によりブロックされている可能性があります。<br>ページを再読み込み（リロード）してみてください。</p>';
-                } else {
-                    tokenizer = _tokenizer;
-                    // ローディング非表示、ボタン有効化
-                    overlay.classList.add('opacity-0');
-                    setTimeout(() => overlay.style.display = 'none', 300);
-                    document.getElementById('processBtn').disabled = false;
+            // エラー表示用の共通関数
+            function showError(message, detail) {
+                if(spinner) spinner.style.display = 'none';
+                loadingText.innerHTML = `<p class="text-red-500 font-bold mb-2">${message}</p><p class="text-sm text-slate-600">${detail}</p>`;
+            }
+
+            try {
+                // Kuromoji本体が読み込めていない（ブロックされている）場合のエラーハンドリング
+                if (typeof kuromoji === 'undefined') {
+                    showError("システムの読み込みに失敗しました", "ブラウザの広告ブロック機能やセキュリティ設定により、解析プログラム(kuromoji.js)がブロックされている可能性があります。<br>設定をオフにしてページを再読み込みしてください。");
+                    return;
                 }
-            });
+
+                // 長時間読み込みが終わらない場合にメッセージを追加するタイマー
+                const slowLoadTimer = setTimeout(() => {
+                    const hint = document.createElement('p');
+                    hint.className = "text-orange-500 text-sm mt-3 font-medium animate-pulse";
+                    hint.textContent = "※通信に時間がかかっています。環境によっては1分程度かかる場合があります...";
+                    loadingText.appendChild(hint);
+                }, 8000); // 8秒経過で表示
+
+                // 辞書の読み込み先を jsDelivr に戻す
+                kuromoji.builder({ dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict" }).build(function (err, _tokenizer) {
+                    clearTimeout(slowLoadTimer); // 読み込みが完了したらタイマーを解除
+
+                    if (err) {
+                        console.error("Kuromoji初期化エラー:", err);
+                        showError("辞書データの読み込みに失敗しました", "ネットワークエラーが発生しました。インターネット接続を確認するか、ページを再読み込みしてください。");
+                    } else {
+                        tokenizer = _tokenizer;
+                        // ローディング非表示、ボタン有効化
+                        overlay.classList.add('opacity-0');
+                        setTimeout(() => overlay.style.display = 'none', 300);
+                        document.getElementById('processBtn').disabled = false;
+                        showToast("辞書データの準備が完了しました");
+                    }
+                });
+
+            } catch (error) {
+                console.error("予期せぬエラー:", error);
+                showError("予期せぬエラーが発生しました", "申し訳ありません。ページを再読み込みして再度お試しください。");
+            }
         });
 
         // --- トースト通知 ---
