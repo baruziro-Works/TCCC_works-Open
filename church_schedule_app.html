@@ -73,14 +73,24 @@ body { font-family:'Hiragino Kaku Gothic Pro','Meiryo','MS Gothic',sans-serif; b
 
 /* 日曜ヘッダー：必ず1行・はみ出しは省略 */
 .sunday-row {
-  background:var(--sunday-bg); padding:3px 6px;
+  background:var(--sunday-bg);
   border-bottom:1px solid var(--border);
+  padding:0;
+}
+/* 1行目：日付＋日曜行事＋聖書箇所 */
+.sunday-row-top {
   display:flex; align-items:baseline;
-  overflow:hidden; white-space:nowrap;
+  padding:3px 6px; overflow:hidden; white-space:nowrap;
+}
+/* 2行目：祈りと献金（長くても全部表示） */
+.sunday-row-sub {
+  padding:1px 6px 3px 6px;
+  font-size:.76rem; color:var(--sun-col);
+  border-top:1px dotted #ccc;
+  white-space:normal; line-height:1.4;
 }
 .sd-num    { font-size:1.0rem; color:var(--sun-col); font-weight:bold; flex-shrink:0; margin-right:4px; }
 .sd-events { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.78rem; }
-/* ★日曜の聖書箇所：2行でもセルが広がらないよう非表示扱いで右端に固定 */
 .sd-reading {
   flex-shrink:0; font-size:.62rem; color:#555;
   text-align:right; font-weight:normal;
@@ -107,22 +117,23 @@ body { font-family:'Hiragino Kaku Gothic Pro','Meiryo','MS Gothic',sans-serif; b
   #preview-area { max-width:100% !important; margin:0 !important; padding:0 !important; }
   .schedule-wrapper { box-shadow:none !important; padding:0 !important; }
 
-  /* フォントサイズをA4に合わせて縮小 */
-  .schedule-title { font-size:1.05rem; margin-bottom:2px; }
-  .theme-verse    { font-size:.65rem; margin-bottom:5px; line-height:1.5; }
-  .praise-cell    { font-size:.66rem; padding:3px 6px; line-height:1.7; }
-  .praise-cell .pt{ font-size:.68rem; }
-  .pre-table td, .wd-table td { padding:1px 3px; }
-  .pre-table, .wd-table { font-size:.66rem; }
-  .pre-table .rc, .wd-table .rc { font-size:.58rem; width:6em; }
-  .svc-info       { font-size:.67rem; padding:2px 2px; margin-bottom:3px; }
-  .servant-table  { font-size:.66rem; }
+  /* フォントサイズ：A4に合わせつつなるべく大きく */
+  .schedule-title { font-size:1.15rem; margin-bottom:3px; }
+  .theme-verse    { font-size:.72rem; margin-bottom:6px; line-height:1.6; }
+  .praise-cell    { font-size:.76rem; padding:4px 7px; line-height:1.8; }
+  .praise-cell .pt{ font-size:.78rem; }
+  .pre-table td, .wd-table td { padding:1px 4px; }
+  .pre-table, .wd-table { font-size:.75rem; }
+  .pre-table .rc, .wd-table .rc { font-size:.65rem; width:6.5em; }
+  .svc-info       { font-size:.76rem; padding:2px 2px; margin-bottom:3px; }
+  .servant-table  { font-size:.75rem; }
   .servant-table td { padding:1px 4px; }
-  .servant-table .role { font-size:.62rem; }
-  .sd-num         { font-size:.85rem; }
-  .sd-events      { font-size:.64rem; }
-  .sd-reading     { font-size:.56rem; max-width:7em; }
-  .footer-note    { font-size:.65rem; margin-top:3px; padding-top:3px; }
+  .servant-table .role { font-size:.70rem; }
+  .sd-num         { font-size:.95rem; }
+  .sd-events      { font-size:.73rem; }
+  .sd-reading     { font-size:.62rem; max-width:8em; }
+  .sunday-row-sub { font-size:.70rem; }
+  .footer-note    { font-size:.74rem; margin-top:3px; padding-top:3px; }
   .week-block     { margin-bottom:2px; }
   .top-table      { margin-bottom:3px; }
 }
@@ -445,22 +456,28 @@ function generateSchedule() {
     const evs     = D.events[ds]   || [];
     const isFirst = (idx === 1);
 
-    // 日曜ヘッダーのイベント文字列（1行に収める）
-    const parts = [];
-    if (isFirst) parts.push(`<span class="sp-tag">聖餐式</span>`);
-    for (const e of evs) parts.push(`<span class="ev-tag">${e}</span>`);
-    if (isFirst && target) parts.push(`<span class="sp-tag">●祈りと献金（${target}）</span>`);
-    const evStr = parts.join('　');
+    // 日曜ヘッダー1行目：日付＋聖餐式＋その他行事
+    const topParts = [];
+    if (isFirst) topParts.push(`<span class="sp-tag">聖餐式</span>`);
+    for (const e of evs) topParts.push(`<span class="ev-tag">${e}</span>`);
+    const evStr = topParts.join('　');
 
-    // 日曜の聖書箇所（nowrap 1行）
+    // 日曜ヘッダー2行目：祈りと献金（あれば）
+    const subLine = (isFirst && target)
+      ? `<div class="sunday-row-sub">●祈りと献金（${target}）</div>`
+      : '';
+
     const sunReading = rhtml(ds);
 
     h += `<div class="week-block">
       <div class="week-left">
         <div class="sunday-row">
-          <span class="sd-num">${sun} 日</span>
-          <span class="sd-events">${evStr}</span>
-          <span class="sd-reading">${sunReading}</span>
+          <div class="sunday-row-top">
+            <span class="sd-num">${sun} 日</span>
+            <span class="sd-events">${evStr}</span>
+            <span class="sd-reading">${sunReading}</span>
+          </div>
+          ${subLine}
         </div>
         <table class="servant-table">`;
 
@@ -488,7 +505,21 @@ function generateSchedule() {
     sun += 7;
   }
 
-  const ftext = pmtxt === 'お休み' ? '祈祷会（水）　お休み' : `祈祷会（水）　${pmtxt}`;
+  // 祈祷会フッター：月内の行事に「祈祷会」が含まれるか自動判定
+  const hasPrayerMeeting = Object.entries(D.events).some(([dateKey, evList]) => {
+    // 同じ年月のキーかチェック
+    if (!dateKey.startsWith(ym)) return false;
+    return evList.some(e => e.includes('祈祷会'));
+  });
+  let ftext;
+  if (hasPrayerMeeting) {
+    // 祈祷会あり → 祈祷会シートから時間取得（なければデフォルト）
+    const pmTime = D.pm[ym] || D.pm[ymAlt(year,month)] || '20:00-22:00';
+    ftext = `祈祷会（水）　${pmTime}`;
+  } else {
+    // 祈祷会なし → お休み
+    ftext = '祈祷会（水）　お休み';
+  }
   h += `<div class="footer-note">
     <span>${ftext}</span>
     <span>ともに祈る時間　水・土　20:00-22:00</span>
