@@ -106,36 +106,42 @@ body { font-family:'Hiragino Kaku Gothic Pro','Meiryo','MS Gothic',sans-serif; b
 
 .footer-note { margin-top:6px; font-size:.8rem; color:#333; display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; border-top:1px solid #ccc; padding-top:4px; }
 
-/* ===== 印刷・PDF用（A4縦1枚） ===== */
+/* ===== 印刷・PDF用（A4縦1枚・文字最大化） ===== */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 6mm 7mm 6mm 7mm;
+    margin: 5mm 6mm 5mm 6mm;
   }
   html, body { background:white !important; padding:0 !important; margin:0 !important; }
   #control-panel, #status, #debug { display:none !important; }
   #preview-area { max-width:100% !important; margin:0 !important; padding:0 !important; }
-  .schedule-wrapper { box-shadow:none !important; padding:0 !important; }
+  /* scale()でA4幅(198mm)に縮小しながら文字を最大化 */
+  .schedule-wrapper {
+    box-shadow:none !important; padding:0 !important;
+    transform-origin: top left;
+    transform: scale(0.82);
+    width: 122% !important;  /* 100/0.82 ≈ 122% で元の幅を補正 */
+  }
 
-  /* フォントサイズ：A4に合わせつつなるべく大きく */
-  .schedule-title { font-size:1.15rem; margin-bottom:3px; }
-  .theme-verse    { font-size:.72rem; margin-bottom:6px; line-height:1.6; }
-  .praise-cell    { font-size:.76rem; padding:4px 7px; line-height:1.8; }
-  .praise-cell .pt{ font-size:.78rem; }
-  .pre-table td, .wd-table td { padding:1px 4px; }
-  .pre-table, .wd-table { font-size:.75rem; }
-  .pre-table .rc, .wd-table .rc { font-size:.65rem; width:6.5em; }
-  .svc-info       { font-size:.76rem; padding:2px 2px; margin-bottom:3px; }
-  .servant-table  { font-size:.75rem; }
-  .servant-table td { padding:1px 4px; }
-  .servant-table .role { font-size:.70rem; }
-  .sd-num         { font-size:.95rem; }
-  .sd-events      { font-size:.73rem; }
-  .sd-reading     { font-size:.62rem; max-width:8em; }
-  .sunday-row-sub { font-size:.70rem; }
-  .footer-note    { font-size:.74rem; margin-top:3px; padding-top:3px; }
-  .week-block     { margin-bottom:2px; }
-  .top-table      { margin-bottom:3px; }
+  /* 画面サイズのまま（大きめ）のフォントを維持 */
+  .schedule-title { font-size:1.3rem; margin-bottom:4px; }
+  .theme-verse    { font-size:.78rem; margin-bottom:6px; line-height:1.65; }
+  .praise-cell    { font-size:.82rem; padding:5px 9px; line-height:1.9; }
+  .praise-cell .pt{ font-size:.84rem; }
+  .pre-table td, .wd-table td { padding:2px 5px; }
+  .pre-table, .wd-table { font-size:.80rem; }
+  .pre-table .rc, .wd-table .rc { font-size:.68rem; width:7.5em; }
+  .svc-info       { font-size:.82rem; padding:3px 2px; margin-bottom:4px; }
+  .servant-table  { font-size:.80rem; }
+  .servant-table td { padding:2px 5px; }
+  .servant-table .role { font-size:.76rem; }
+  .sd-num         { font-size:1.0rem; }
+  .sd-events      { font-size:.78rem; }
+  .sd-reading     { font-size:.65rem; max-width:8.5em; }
+  .sunday-row-sub { font-size:.76rem; }
+  .footer-note    { font-size:.80rem; margin-top:5px; padding-top:4px; }
+  .week-block     { margin-bottom:3px; }
+  .top-table      { margin-bottom:4px; }
 }
 </style>
 </head>
@@ -301,8 +307,13 @@ function parseSheet(name, csv) {
 
   } else if (name === '祈りの対象') {
     rows.forEach(r => {
+      if (!r[0] || !r[1]) return;
+      const s = r[0].trim().replace(/-/g, '/');
+      // 日付形式(YYYY/M/D = スラッシュが2つ)は除外、年月形式のみ受け付ける
+      const slashCount = (s.match(/\//g) || []).length;
+      if (slashCount >= 2) return; // 日付形式なのでスキップ
       const ym = ymKey(r[0]);
-      if (ym && r[1]) D.target[ym] = r[1].trim();
+      if (ym) D.target[ym] = r[1].trim();
     });
 
   } else if (name === '祈祷会') {
@@ -394,6 +405,18 @@ function useSampleData() {
   generateSchedule();
 }
 
+// ===== 祈りの対象テキストのクリーニング（聖書箇所が混入した場合に除去） =====
+// 聖書箇所パターン例: ヨハネ12:44、Ⅱ列王記8-9 など
+function cleanTarget(t) {
+  if (!t) return '';
+  // コロンや数字-数字のパターン（聖書箇所）が含まれる場合は除去
+  // ただし「のために」などの正常な文字列はそのまま
+  // 聖書書名パターン：漢字/カナ＋数字:数字 または 数字-数字
+  const biblePattern = /[ぁ-ヿa-zA-ZⅠ-Ⅹ一-鿿]+\d+[:：\-]\d+.*/;
+  // パターンにマッチする部分を除去
+  return t.replace(/[　\s]*[ぁ-ヿa-zA-ZⅠ-Ⅹ一-鿿]+\d+[:：]\d+[\d\-:：,，\s]*/g, '').trim();
+}
+
 // ===== 聖書箇所テキスト（2行表示） =====
 function rhtml(ds) {
   const a = (D.r1[ds] || '').trim();
@@ -463,8 +486,10 @@ function generateSchedule() {
     const evStr = topParts.join('　');
 
     // 日曜ヘッダー2行目：祈りと献金（あれば）
-    const subLine = (isFirst && target)
-      ? `<div class="sunday-row-sub">●祈りと献金（${target}）</div>`
+    // cleanTargetで聖書箇所が混入していた場合も除去して表示
+    const cleanedTarget = cleanTarget(target);
+    const subLine = (isFirst && cleanedTarget)
+      ? `<div class="sunday-row-sub">●祈りと献金（${cleanedTarget}）</div>`
       : '';
 
     const sunReading = rhtml(ds);
