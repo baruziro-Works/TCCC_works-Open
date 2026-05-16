@@ -114,33 +114,49 @@ body { font-family:'Hiragino Kaku Gothic Pro','Meiryo','MS Gothic',sans-serif; b
   #preview-area { max-width:100% !important; margin:0 !important; padding:0 !important; }
   .schedule-wrapper { box-shadow:none !important; padding:0 !important; }
 
-  /* A4（余白込み実寸約197mm）にすべて収まるサイズ設定 */
-  .schedule-title { font-size:13pt; margin-bottom:2pt; }
-  .theme-verse    { font-size:7.5pt; margin-bottom:3pt; line-height:1.45; }
-  .praise-cell    { font-size:8pt; padding:3pt 5pt; line-height:1.65; width:46%; }
-  .praise-cell .pt{ font-size:8pt; margin-bottom:1pt; padding-bottom:1pt; }
+  /* タイトル・テーマ */
+  .schedule-title { font-size:14pt; margin-bottom:2pt; }
+  .theme-verse    { font-size:8pt; margin-bottom:3pt; line-height:1.45; }
+
+  /* 賛美欄：曲名を大きく */
+  .praise-cell    { font-size:9.5pt; padding:3pt 5pt; line-height:1.8; width:46%; }
+  .praise-cell .pt{ font-size:9.5pt; margin-bottom:1pt; padding-bottom:1pt; }
   .top-table      { margin-bottom:3pt; }
-  .pre-table      { font-size:8pt; }
+
+  /* 月初平日：日付大きく、聖書箇所は小さいまま */
+  .pre-table      { font-size:9pt; }
   .pre-table td   { padding:1pt 3pt; }
-  .pre-table .dc  { width:3em; }
-  .pre-table .rc  { font-size:6.5pt; width:5.5em; }
-  .svc-info       { font-size:8pt; padding:1.5pt 2pt; margin-bottom:2pt; }
+  .pre-table .dc  { width:3em; font-size:9pt; }
+  .pre-table .rc  { font-size:6pt; width:5em; }  /* 聖書箇所：小さいまま */
+
+  /* 礼拝案内 */
+  .svc-info       { font-size:9pt; padding:1.5pt 2pt; margin-bottom:2pt; }
+
+  /* 週ブロック */
   .week-block     { margin-bottom:2pt; }
   .week-left      { width:46%; }
   .week-right     { width:54%; }
+
+  /* 日曜ヘッダー */
   .sunday-row-top { padding:2pt 4pt; }
-  .sunday-row-sub { font-size:7.5pt; padding:1pt 4pt 2pt; }
-  .sd-num         { font-size:10pt; }
-  .sd-events      { font-size:7.5pt; }
-  .sd-reading     { font-size:6.5pt; max-width:7.5em; }
-  .servant-table  { font-size:8pt; }
+  .sunday-row-sub { font-size:9pt; padding:1pt 4pt 2pt; font-weight:bold; }
+  .sd-num         { font-size:11pt; }
+  .sd-events      { font-size:9pt; }
+  .sd-reading     { font-size:6pt; max-width:7em; }  /* 聖書箇所：小さいまま */
+
+  /* 奉仕者：名前を大きく */
+  .servant-table  { font-size:9.5pt; }
   .servant-table td { padding:0.8pt 3pt; }
-  .servant-table .role { font-size:7pt; }
-  .wd-table       { font-size:8pt; }
-  .wd-table td    { padding:1pt 3pt; }
-  .wd-table .dc   { width:3em; }
-  .wd-table .rc   { font-size:6.5pt; width:5.5em; }
-  .footer-note    { font-size:7.5pt; margin-top:2pt; padding-top:2pt; }
+  .servant-table .role { font-size:8.5pt; }
+
+  /* 平日：行事名を大きく、聖書箇所は小さいまま */
+  .wd-table       { font-size:9pt; }
+  .wd-table td    { padding:0.8pt 3pt; }
+  .wd-table .dc   { width:3em; font-size:9pt; }
+  .wd-table .rc   { font-size:6pt; width:5em; }  /* 聖書箇所：小さいまま */
+
+  /* フッター */
+  .footer-note    { font-size:8.5pt; margin-top:2pt; padding-top:2pt; }
 }
 </style>
 </head>
