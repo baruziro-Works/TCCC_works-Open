@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>テキスト読み上げ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --border: #e0ddd6;
+    --border-hover: #c8c4bb;
+    --text: #1a1917;
+    --text-sub: #6b6860;
+    --text-hint: #a09d97;
+    --accent: #2a6b50;
+    --accent-light: #e8f4ef;
+    --accent-mid: #5daa88;
+    --warn: #b05e10;
+    --current-bg: #c8eadb;
+    --current-text: #164d35;
+    --prev-bg: #f0ede8;
+    --next-bg: #fafaf8;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --bar-h: 160px; /* 下部固定バーの高さ */
+  }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 1.5rem 1rem calc(var(--bar-h) + 1.5rem);
+  }
+
+  .container { max-width: 720px; margin: 0 auto; }
+
+  header {
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+  header span { font-size: 12px; color: var(--text-hint); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-hint);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 9px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  textarea {
+    width: 100%;
+    height: 150px;
+    resize: vertical;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    line-height: 1.8;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  textarea:focus { border-color: var(--accent-mid); }
+  textarea::placeholder { color: var(--text-hint); }
+  .char-count { font-size: 11px; color: var(--text-hint); text-align: right; margin-top: 4px; }
+
+  /* ── 設定パネル（折りたたみ） ── */
+  #settings-panel {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.3s ease, opacity 0.25s ease, margin-bottom 0.3s ease;
+    margin-bottom: 0;
+  }
+  #settings-panel.open {
+    max-height: 400px;
+    opacity: 1;
+    margin-bottom: 0.75rem;
+  }
+  .settings-inner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+  }
+  .settings-grid   { display: grid; grid-template-columns: 1fr 1fr;     gap: 14px; margin-bottom: 14px; }
+  .settings-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .field label { font-size: 12px; color: var(--text-sub); display: block; margin-bottom: 5px; }
+  .field label span { font-weight: 600; color: var(--text); }
+  select {
+    width: 100%; padding: 7px 10px;
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: var(--bg); color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif; font-size: 13px;
+    outline: none; cursor: pointer;
+  }
+  select:focus { border-color: var(--accent-mid); }
+  input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; margin-top: 2px; }
+  .saved-badge {
+    font-size: 10px; color: var(--accent); background: var(--accent-light);
+    border-radius: 20px; padding: 2px 8px; font-weight: 600;
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .saved-badge.show { opacity: 1; }
+
+  /* ── ウィンドウ型プレビュー ── */
+  #preview-panel { display: none; }
+  #preview-panel.visible { display: block; }
+
+  .preview-window {
+    position: relative;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  /* 上下のフェードアウト */
+  .preview-window::before,
+  .preview-window::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 36px;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .preview-window::before {
+    top: 0;
+    background: linear-gradient(to bottom, var(--bg), transparent);
+  }
+  .preview-window::after {
+    bottom: 0;
+    background: linear-gradient(to top, var(--bg), transparent);
+  }
+
+  #preview-scroll {
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 20px 14px;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+  }
+  #preview-scroll::-webkit-scrollbar { display: none; }
+
+  .seg-item {
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 4px;
+    font-size: 14px;
+    line-height: 1.8;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s, transform 0.2s;
+    opacity: 0.35;
+    transform: scale(0.98);
+  }
+  .seg-item:hover { opacity: 0.6; background: var(--accent-light); }
+
+  .seg-item.prev-item {
+    opacity: 0.55;
+    transform: scale(0.99);
+  }
+  .seg-item.current-item {
+    background: var(--current-bg);
+    color: var(--current-text);
+    font-weight: 500;
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 1px 4px rgba(42,107,80,0.12);
+  }
+  .seg-item.next-item {
+    opacity: 0.45;
+    transform: scale(0.99);
+  }
+
+  .note { font-size: 11px; color: var(--text-hint); margin-top: 7px; line-height: 1.6; }
+
+  /* ── 固定下部バー ── */
+  #bottom-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    padding: 10px 1rem 14px;
+    z-index: 100;
+  }
+
+  .bar-inner { max-width: 720px; margin: 0 auto; }
+
+  /* 再生位置スライダー */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .slider-row input[type=range] {
+    flex: 1;
+    accent-color: var(--accent);
+    height: 4px;
+  }
+  .pos-label { font-size: 11px; font-weight: 600; min-width: 68px; text-align: right; color: var(--text-sub); }
+
+  /* ボタン行 */
+  .btn-row { display: flex; gap: 8px; }
+
+  button {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.12s, border-color 0.12s, transform 0.1s;
+    white-space: nowrap;
+  }
+  button:hover:not(:disabled) { background: var(--bg); border-color: var(--border-hover); }
+  button:active:not(:disabled) { transform: scale(0.97); }
+  button:disabled { opacity: 0.36; cursor: not-allowed; }
+
+  #btn-play { flex: 2; background: var(--accent); color: #fff; border-color: var(--accent); }
+  #btn-play:hover:not(:disabled) { background: #1f5440; border-color: #1f5440; }
+  #btn-pause { flex: 1; }
+  #btn-stop  { padding: 10px 14px; }
+  #btn-settings { padding: 10px 14px; }
+  #btn-settings.active { background: var(--accent-light); border-color: var(--accent-mid); color: var(--accent); }
+
+  /* ステータス */
+  .status-inline {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 6px;
+  }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .status-text { font-size: 12px; color: var(--text-sub); }
+
+  .btn-clear {
+    font-size: 11px; padding: 3px 10px; border-radius: 20px;
+    background: transparent; border: 1px solid var(--border); color: var(--text-sub);
+  }
+  .btn-paste {
+    font-size: 11px; padding: 3px 12px; border-radius: 20px;
+    background: var(--accent); border: 1px solid var(--accent);
+    color: #fff; font-weight: 600; display: flex; align-items: center; gap: 5px;
+    transition: background 0.15s;
+  }
+  .btn-paste:hover:not(:disabled) { background: #1f5440; border-color: #1f5440; }
+  .btn-paste.ok { background: #1a7a58; border-color: #1a7a58; }
+  .btn-paste.err { background: #b05e10; border-color: #b05e10; }
+
+  .btn-play-mini {
+    font-size: 11px; padding: 3px 12px; border-radius: 20px;
+    background: var(--accent); border: 1px solid var(--accent);
+    color: #fff; font-weight: 600; display: flex; align-items: center; gap: 5px;
+    transition: background 0.15s;
+  }
+  .btn-play-mini:hover:not(:disabled) { background: #1f5440; border-color: #1f5440; }
+  .btn-play-mini.pausing {
+    background: var(--warn); border-color: var(--warn);
+  }
+  .btn-play-mini.pausing:hover:not(:disabled) { background: #8a4a0c; border-color: #8a4a0c; }
+  .btn-play-mini.resuming {
+    background: #1a5c9a; border-color: #1a5c9a;
+  }
+  .btn-play-mini.resuming:hover:not(:disabled) { background: #144a7e; border-color: #144a7e; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>テキスト読み上げ</h1>
+    <span>Text to Speech</span>
+  </header>
+
+  <!-- テキスト入力 -->
+  <div class="card">
+    <div class="card-label">
+      <span>テキストを入力</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="btn-play-mini" id="btn-play-mini" onclick="togglePlayMini()">
+          <span id="play-mini-icon">▶</span><span id="play-mini-label">再生</span>
+        </button>
+        <button class="btn-paste" id="btn-paste" onclick="pasteFromClipboard()">
+          <span id="paste-icon">📋</span><span id="paste-label">貼り付け</span>
+        </button>
+        <button class="btn-clear" onclick="clearAll()">クリア</button>
+      </div>
+    </div>
+    <textarea id="tts-input" oninput="onTextInput()" placeholder="ここにテキストを貼り付けてください..."></textarea>
+    <div class="char-count"><span id="char-count">0</span> 文字</div>
+  </div>
+
+  <!-- 音声設定（折りたたみ） -->
+  <div id="settings-panel">
+    <div class="settings-inner">
+      <div class="card-label">
+        <span>音声設定</span>
+        <span class="saved-badge" id="saved-badge">保存済み ✓</span>
+      </div>
+      <div class="settings-grid">
+        <div class="field">
+          <label>声の種類</label>
+          <select id="voice-select" onchange="saveSettings()"></select>
+        </div>
+        <div class="field">
+          <label>言語</label>
+          <select id="lang-select" onchange="filterVoices(); saveSettings()">
+            <option value="ja">日本語</option>
+            <option value="en">英語</option>
+            <option value="zh">中国語</option>
+            <option value="ko">韓国語</option>
+            <option value="">すべて</option>
+          </select>
+        </div>
+      </div>
+      <div class="settings-grid-3">
+        <div class="field">
+          <label>速度 <span id="rate-val">1.0</span>×</label>
+          <input type="range" id="rate" min="0.5" max="4" step="0.1" value="1.0"
+            oninput="document.getElementById('rate-val').textContent=parseFloat(this.value).toFixed(1); saveSettings()">
+        </div>
+        <div class="field">
+          <label>音程 <span id="pitch-val">1.0</span></label>
+          <input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1.0"
+            oninput="document.getElementById('pitch-val').textContent=parseFloat(this.value).toFixed(1); saveSettings()">
+        </div>
+        <div class="field">
+          <label>音量 <span id="vol-val">100</span>%</label>
+          <input type="range" id="volume" min="0" max="1" step="0.05" value="1"
+            oninput="document.getElementById('vol-val').textContent=Math.round(this.value*100); saveSettings()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- プレビュー（ウィンドウ型） -->
+  <div class="card" id="preview-panel">
+    <div class="card-label">
+      <span>読み上げプレビュー</span>
+      <span id="seg-info" style="font-weight:400;"></span>
+    </div>
+    <div class="preview-window">
+      <div id="preview-scroll">
+        <div id="preview-box"></div>
+      </div>
+    </div>
+    <p class="note">文をクリックするとその位置から読み上げます</p>
+  </div>
+
+</div>
+
+<!-- 固定下部バー -->
+<div id="bottom-bar">
+  <div class="bar-inner">
+    <!-- ステータス -->
+    <div class="status-inline">
+      <div class="status-dot" id="status-dot"></div>
+      <span class="status-text" id="status-text">待機中</span>
+    </div>
+    <!-- 再生位置スライダー -->
+    <div class="slider-row">
+      <input type="range" id="pos-slider" min="0" max="0" value="0" step="1" oninput="onSliderChange(this.value)">
+      <span class="pos-label" id="pos-label">— / —</span>
+    </div>
+    <!-- ボタン -->
+    <div class="btn-row">
+      <button id="btn-play" onclick="startSpeech()"><span>▶</span> 読み上げ開始</button>
+      <button id="btn-pause" onclick="togglePause()" disabled>
+        <span id="pause-icon">⏸</span><span id="pause-label">一時停止</span>
+      </button>
+      <button id="btn-stop" onclick="stopSpeech()" disabled title="停止">⏹</button>
+      <button id="btn-settings" onclick="toggleSettings()" title="音声設定">⚙</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let voices = [], segments = [], currentIdx = 0, paused = false, playing = false;
+
+/* ─ ミニ再生ボタン ─ */
+function togglePlayMini() {
+  if (!playing && !paused) {
+    // 停止中 → 再生開始
+    startSpeech();
+  } else if (playing && !paused) {
+    // 再生中 → 一時停止
+    togglePause();
+  } else if (paused) {
+    // 一時停止中 → 再開
+    togglePause();
+  }
+}
+
+function updateMiniBtn() {
+  const btn   = document.getElementById('btn-play-mini');
+  const icon  = document.getElementById('play-mini-icon');
+  const label = document.getElementById('play-mini-label');
+  btn.classList.remove('pausing', 'resuming');
+  if (playing && !paused) {
+    // 再生中 → 押すと一時停止
+    btn.classList.add('pausing');
+    icon.textContent  = '⏸';
+    label.textContent = '一時停止';
+  } else if (paused) {
+    // 一時停止中 → 押すと再開
+    btn.classList.add('resuming');
+    icon.textContent  = '▶';
+    label.textContent = '再開';
+  } else {
+    // 停止中 → 押すと再生
+    icon.textContent  = '▶';
+    label.textContent = '再生';
+  }
+}
+
+
+async function pasteFromClipboard() {
+  const btn   = document.getElementById('btn-paste');
+  const icon  = document.getElementById('paste-icon');
+  const label = document.getElementById('paste-label');
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text) { flashPaste(btn, icon, label, false, '空です'); return; }
+    const ta = document.getElementById('tts-input');
+    ta.value = text;
+    onTextInput();
+    flashPaste(btn, icon, label, true, '貼り付けました');
+  } catch(e) {
+    // Clipboard API が拒否された場合はフォールバック案内
+    flashPaste(btn, icon, label, false, '許可が必要です');
+  }
+}
+function flashPaste(btn, icon, label, ok, msg) {
+  btn.classList.add(ok ? 'ok' : 'err');
+  icon.textContent  = ok ? '✓' : '✕';
+  label.textContent = msg;
+  clearTimeout(btn._t);
+  btn._t = setTimeout(() => {
+    btn.classList.remove('ok','err');
+    icon.textContent  = '📋';
+    label.textContent = '貼り付け';
+  }, 2000);
+}
+
+
+function saveSettings() {
+  const s = {
+    lang: document.getElementById('lang-select').value,
+    voiceName: getSelectedVoiceName(),
+    rate:   document.getElementById('rate').value,
+    pitch:  document.getElementById('pitch').value,
+    volume: document.getElementById('volume').value,
+  };
+  try { localStorage.setItem('tts_settings', JSON.stringify(s)); } catch(e) {}
+  const b = document.getElementById('saved-badge');
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), 1800);
+}
+function getSelectedVoiceName() {
+  const idx = document.getElementById('voice-select').value;
+  return (idx !== '' && voices[parseInt(idx)]) ? voices[parseInt(idx)].name : '';
+}
+function loadSettings() {
+  try { const r = localStorage.getItem('tts_settings'); return r ? JSON.parse(r) : null; }
+  catch(e) { return null; }
+}
+function applySettings(s) {
+  if (!s) return;
+  if (s.lang   !== undefined) document.getElementById('lang-select').value = s.lang;
+  if (s.rate   !== undefined) { document.getElementById('rate').value = s.rate; document.getElementById('rate-val').textContent = parseFloat(s.rate).toFixed(1); }
+  if (s.pitch  !== undefined) { document.getElementById('pitch').value = s.pitch; document.getElementById('pitch-val').textContent = parseFloat(s.pitch).toFixed(1); }
+  if (s.volume !== undefined) { document.getElementById('volume').value = s.volume; document.getElementById('vol-val').textContent = Math.round(s.volume * 100); }
+}
+
+/* ─ 設定パネル開閉 ─ */
+function toggleSettings() {
+  const p = document.getElementById('settings-panel');
+  const b = document.getElementById('btn-settings');
+  const open = p.classList.toggle('open');
+  b.classList.toggle('active', open);
+}
+
+/* ─ テキスト分割 ─ */
+function splitSegments(text) {
+  const lang = document.getElementById('lang-select').value || 'ja';
+  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+    try {
+      const r = Array.from(
+        new Intl.Segmenter(lang, { granularity: 'sentence' }).segment(text),
+        s => s.segment.trim()
+      ).filter(s => s.length > 0);
+      if (r.length > 0) return r;
+    } catch(e) {}
+  }
+  return (text.match(/[^。！？\n\.!?]+[。！？\n\.!?]?/g) || [])
+    .map(s => s.trim()).filter(s => s.length > 0);
+}
+
+function onTextInput() {
+  const text = document.getElementById('tts-input').value;
+  document.getElementById('char-count').textContent = text.length;
+  segments = splitSegments(text);
+  currentIdx = 0;
+  renderPreview();
+  updateSlider();
+  const show = segments.length > 0;
+  document.getElementById('preview-panel').classList.toggle('visible', show);
+  document.getElementById('seg-info').textContent = show ? segments.length + '文に分割' : '';
+}
+
+/* ─ ウィンドウ型プレビュー描画 ─ */
+const WINDOW = 3; // 前後に表示する文数
+
+function renderPreview() {
+  const box = document.getElementById('preview-box');
+  if (!segments.length) { box.innerHTML = ''; return; }
+
+  const start = Math.max(0, currentIdx - WINDOW);
+  const end   = Math.min(segments.length - 1, currentIdx + WINDOW);
+
+  let html = '';
+  for (let i = start; i <= end; i++) {
+    let cls = 'seg-item';
+    if (i < currentIdx)  cls += ' prev-item';
+    if (i === currentIdx) cls += ' current-item';
+    if (i > currentIdx)  cls += ' next-item';
+    const esc = segments[i].replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    html += `<div class="${cls}" onclick="jumpTo(${i})" data-idx="${i}">${esc}</div>`;
+  }
+  box.innerHTML = html;
+
+  // 現在文を中央にスクロール
+  requestAnimationFrame(() => {
+    const cur = box.querySelector('.current-item');
+    const scroll = document.getElementById('preview-scroll');
+    if (cur && scroll) {
+      const itemTop    = cur.offsetTop;
+      const itemHeight = cur.offsetHeight;
+      const areaHeight = scroll.clientHeight;
+      scroll.scrollTop = itemTop - (areaHeight / 2) + (itemHeight / 2);
+    }
+  });
+}
+
+function jumpTo(i) {
+  currentIdx = i;
+  updateSlider();
+  renderPreview();
+  if (playing) { speechSynthesis.cancel(); speakFrom(i); }
+}
+
+function updateSlider() {
+  const sl = document.getElementById('pos-slider');
+  sl.max   = Math.max(0, segments.length - 1);
+  sl.value = currentIdx;
+  document.getElementById('pos-label').textContent =
+    segments.length > 0 ? `文 ${currentIdx + 1} / ${segments.length}` : '— / —';
+}
+
+function onSliderChange(val) {
+  currentIdx = parseInt(val);
+  document.getElementById('pos-label').textContent = `文 ${currentIdx + 1} / ${segments.length}`;
+  renderPreview();
+  if (playing) { speechSynthesis.cancel(); speakFrom(currentIdx); }
+}
+
+/* ─ 音声再生 ─ */
+function getVoice() {
+  const idx = document.getElementById('voice-select').value;
+  return (idx !== '' && voices[parseInt(idx)]) ? voices[parseInt(idx)] : null;
+}
+
+function speakFrom(startIdx) {
+  if (startIdx >= segments.length) {
+    setStatus('完了', '#2a6b50'); setButtonState(false); playing = false;
+    updateMiniBtn();
+    return;
+  }
+  currentIdx = startIdx;
+  renderPreview();
+  updateSlider();
+
+  const u = new SpeechSynthesisUtterance(segments[startIdx]);
+  const v = getVoice(); if (v) u.voice = v;
+  u.rate   = Math.min(4, parseFloat(document.getElementById('rate').value));
+  u.pitch  = parseFloat(document.getElementById('pitch').value);
+  u.volume = parseFloat(document.getElementById('volume').value);
+  u.onend  = () => { if (playing) speakFrom(startIdx + 1); };
+  u.onerror = e => {
+    if (e.error === 'interrupted' || e.error === 'canceled') return;
+    setStatus('エラー: ' + e.error, '#b05e10');
+    setButtonState(false); playing = false;
+  };
+  speechSynthesis.speak(u);
+}
+
+function startSpeech() {
+  if (!segments.length) { setStatus('テキストを入力してください', '#b05e10'); return; }
+  speechSynthesis.cancel(); paused = false; playing = true;
+  setButtonState(true); setStatus('読み上げ中...', '#2a6b50');
+  updateMiniBtn();
+  speakFrom(currentIdx);
+}
+
+function togglePause() {
+  if (!speechSynthesis.speaking && !paused) return;
+  if (paused) {
+    speechSynthesis.resume(); paused = false; setStatus('読み上げ中...', '#2a6b50');
+  } else {
+    speechSynthesis.pause(); paused = true; setStatus('一時停止中', '#b05e10');
+  }
+  document.getElementById('pause-icon').textContent  = paused ? '▶' : '⏸';
+  document.getElementById('pause-label').textContent = paused ? '再開' : '一時停止';
+  updateMiniBtn();
+}
+
+function stopSpeech() {
+  playing = false; paused = false; speechSynthesis.cancel();
+  setStatus('停止しました', '#a09d97'); setButtonState(false);
+  document.getElementById('pause-icon').textContent  = '⏸';
+  document.getElementById('pause-label').textContent = '一時停止';
+  updateMiniBtn();
+}
+
+function clearAll() {
+  stopSpeech();
+  document.getElementById('tts-input').value = '';
+  segments = []; currentIdx = 0;
+  document.getElementById('char-count').textContent = '0';
+  document.getElementById('preview-box').innerHTML = '';
+  document.getElementById('preview-panel').classList.remove('visible');
+  updateSlider();
+}
+
+function setStatus(t, c) {
+  document.getElementById('status-text').textContent = t;
+  document.getElementById('status-dot').style.background = c;
+}
+function setButtonState(a) {
+  ['btn-pause','btn-stop'].forEach(id => { document.getElementById(id).disabled = !a; });
+}
+
+/* ─ 音声リスト ─ */
+function loadVoices() {
+  voices = speechSynthesis.getVoices();
+  const saved = loadSettings();
+  filterVoices(saved ? saved.voiceName : '');
+}
+function filterVoices(preferName) {
+  const lang = document.getElementById('lang-select').value;
+  const sel  = document.getElementById('voice-select');
+  const filt = lang ? voices.filter(v => v.lang.startsWith(lang)) : voices;
+  sel.innerHTML = '';
+  if (!filt.length) { sel.innerHTML = '<option value="">利用可能な声がありません</option>'; return; }
+  let matchIdx = 0;
+  filt.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = voices.indexOf(v);
+    opt.textContent = v.name + ' (' + v.lang + ')';
+    if (preferName && v.name === preferName) matchIdx = sel.options.length;
+    sel.appendChild(opt);
+  });
+  sel.selectedIndex = matchIdx;
+}
+
+/* ─ 初期化 ─ */
+if (typeof speechSynthesis !== 'undefined') {
+  applySettings(loadSettings());
+  if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = loadVoices;
+  loadVoices();
+  setTimeout(loadVoices, 500);
+} else {
+  setStatus('このブラウザは音声合成に対応していません', '#b05e10');
+}
+</script>
+</body>
+</html>
