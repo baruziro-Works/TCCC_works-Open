@@ -302,6 +302,16 @@
     background: #1a5c9a; border-color: #1a5c9a;
   }
   .btn-play-mini.resuming:hover:not(:disabled) { background: #144a7e; border-color: #144a7e; }
+
+  .btn-all {
+    font-size: 11px; padding: 3px 12px; border-radius: 20px;
+    background: #5a3e9e; border: 1px solid #5a3e9e;
+    color: #fff; font-weight: 600; display: flex; align-items: center; gap: 5px;
+    transition: background 0.15s;
+  }
+  .btn-all:hover:not(:disabled) { background: #452e7a; border-color: #452e7a; }
+  .btn-all.running { background: #2a6b50; border-color: #2a6b50; }
+  .btn-all.err     { background: #b05e10; border-color: #b05e10; }
 </style>
 </head>
 <body>
@@ -317,6 +327,9 @@
     <div class="card-label">
       <span>テキストを入力</span>
       <div style="display:flex;gap:6px;align-items:center;">
+        <button class="btn-all" id="btn-all" onclick="clearPastePlay()" title="クリア→貼り付け→再生">
+          <span id="all-icon">⚡</span><span id="all-label">まとめて再生</span>
+        </button>
         <button class="btn-play-mini" id="btn-play-mini" onclick="togglePlayMini()">
           <span id="play-mini-icon">▶</span><span id="play-mini-label">再生</span>
         </button>
@@ -417,7 +430,49 @@
 <script>
 let voices = [], segments = [], currentIdx = 0, paused = false, playing = false;
 
-/* ─ ミニ再生ボタン ─ */
+/* ─ まとめて再生（クリア→貼り付け→再生） ─ */
+async function clearPastePlay() {
+  const btn   = document.getElementById('btn-all');
+  const icon  = document.getElementById('all-icon');
+  const label = document.getElementById('all-label');
+
+  try {
+    // 1. クリア
+    clearAll();
+
+    // 2. クリップボードから貼り付け
+    const text = await navigator.clipboard.readText();
+    if (!text) {
+      btn.classList.add('err');
+      icon.textContent  = '✕';
+      label.textContent = 'クリップボードが空';
+      clearTimeout(btn._t);
+      btn._t = setTimeout(() => { btn.classList.remove('err'); icon.textContent = '⚡'; label.textContent = 'まとめて再生'; }, 2000);
+      return;
+    }
+    document.getElementById('tts-input').value = text;
+    onTextInput();
+
+    // 3. 再生
+    btn.classList.add('running');
+    icon.textContent  = '▶';
+    label.textContent = '再生中...';
+    startSpeech();
+
+    // ボタン表示を元に戻す（2秒後）
+    clearTimeout(btn._t);
+    btn._t = setTimeout(() => { btn.classList.remove('running'); icon.textContent = '⚡'; label.textContent = 'まとめて再生'; }, 2000);
+
+  } catch(e) {
+    btn.classList.add('err');
+    icon.textContent  = '✕';
+    label.textContent = '許可が必要です';
+    clearTimeout(btn._t);
+    btn._t = setTimeout(() => { btn.classList.remove('err'); icon.textContent = '⚡'; label.textContent = 'まとめて再生'; }, 2500);
+  }
+}
+
+
 function togglePlayMini() {
   if (!playing && !paused) {
     // 停止中 → 再生開始
