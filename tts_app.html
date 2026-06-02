@@ -668,7 +668,13 @@ function getVoice() {
 
 function speakFrom(startIdx) {
   if (startIdx >= segments.length) {
-    setStatus('完了', '#2a6b50'); setButtonState(false); playing = false;
+    playing = false;
+    setButtonState(false);
+    // 完了後は先頭に戻す
+    currentIdx = 0;
+    updateSlider();
+    renderPreview();
+    setStatus('完了 — もう一度再生するには▶を押してください', '#2a6b50');
     updateMiniBtn();
     return;
   }
