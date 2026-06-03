@@ -659,7 +659,7 @@
                 },
                 { 
                     title: "信仰告白 (使徒信条)", 
-                    content: "ポンテオ・ピラトのもとに苦[くる]しみを受け、十字架[じゅうじか]に付けられ、\n死[し]に、葬[ほう]むられ、陰府[よみ]に下[くだ]り, \n三日[みっか]目[め]に死人[しにん]の内[うち]よりよみがえり、天[てん]に昇[のぼ]り、\n全能[ぜんのう]の父[ちち]なる神[かみ]の右[みぎ]に座[ざ]したまえり、", 
+                    content: "ポンテオ・ピラトのもとに苦[くる]しみを受け、十字架[じゅうじか]に付けられ、\n死[し]に、葬[ほう]むられ、陰府[よみ]に下[くだ]り, \n三日[みっか]目[め]に死人[しにん]の内[うち]よりよみがえり、天[てん]に昇[のぼ]り、\n全能[ぜんのう]の父[ち力]なる神[かみ]の右[みぎ]に座[ざ]したまえり、", 
                     bottomLeft: "信仰告白",
                     fontSize: 100, titleFontSize: 100, footerFontSize: 100, padding: "standard", verticalAlign: "center", hideFooter: false
                 },
@@ -794,29 +794,38 @@
         }
 
         function initKuromojiEngine() {
-            if (typeof kuromoji === 'undefined') {
-                console.error("Kuromoji.js が読み込まれていません。");
-                const statusBadge = document.getElementById('kuromojiStatusBadge');
-                if (statusBadge) statusBadge.innerText = "エラー (未読込)";
-                return;
-            }
-            kuromoji.builder({ dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/" }).build(function (err, tokenizer) {
-                const statusBadge = document.getElementById('kuromojiStatusBadge');
-                if (err) {
-                    console.error("Kuromoji init error:", err);
-                    if (statusBadge) {
-                        statusBadge.innerText = "オフライン・制限あり";
-                        statusBadge.className = "text-[10px] px-2 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/20";
-                    }
+            try {
+                if (typeof kuromoji === 'undefined') {
+                    console.error("Kuromoji.js が読み込まれていません。");
+                    const statusBadge = document.getElementById('kuromojiStatusBadge');
+                    if (statusBadge) statusBadge.innerText = "エラー (未読込)";
                     return;
                 }
-                kTokenizer = tokenizer;
-                console.log("Kuromoji.js ローカルルビ振りエンジン起動成功！");
+                kuromoji.builder({ dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/" }).build(function (err, tokenizer) {
+                    const statusBadge = document.getElementById('kuromojiStatusBadge');
+                    if (err) {
+                        console.error("Kuromoji init error:", err);
+                        if (statusBadge) {
+                            statusBadge.innerText = "オフライン・制限あり";
+                            statusBadge.className = "text-[10px] px-2 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/20";
+                        }
+                        return;
+                    }
+                    kTokenizer = tokenizer;
+                    console.log("Kuromoji.js ローカルルビ振りエンジン起動成功！");
+                    if (statusBadge) {
+                        statusBadge.innerText = "🟢 ローカル即時ルビ対応";
+                        statusBadge.className = "text-[10px] px-2 py-0.5 rounded border bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                    }
+                });
+            } catch (error) {
+                console.warn("Kuromoji loading failed (CORS/Network block):", error);
+                const statusBadge = document.getElementById('kuromojiStatusBadge');
                 if (statusBadge) {
-                    statusBadge.innerText = "🟢 ローカル即時ルビ対応";
-                    statusBadge.className = "text-[10px] px-2 py-0.5 rounded border bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                    statusBadge.innerText = "オフライン (制限あり)";
+                    statusBadge.className = "text-[10px] px-2 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/20";
                 }
-            });
+            }
         }
 
         function splitOkurigana(surface, readingHiragana) {
@@ -977,7 +986,7 @@
 
             if (!success && resArea) {
                 resArea.className = "bg-rose-955/40 border border-rose-900/50 p-3 rounded-lg text-[11px] text-rose-300";
-                let jaExplanation = lastError.toLowerCase().includes("quota") ? "【解説】 1日の無料制限枠上限に到達しました。" : "【解説】 キーのスペルミス、制限設定、混雑などが考えられます。";
+                let jaExplanation = lastError.toLowerCase().includes("quota") ? "【解説】 1日の無料制限枠上限に到達しました。" : "【解説】 キーのスペルミス, 制限設定, 混雑などが考えられます。";
                 resArea.innerHTML = `❌ 接続テスト失敗\n詳細: ${lastError}\n\n${jaExplanation}`;
             }
 
@@ -2272,6 +2281,7 @@
             if (overlay) overlay.classList.add('hidden');
         }
 
+        // スライド全消去
         function clearAllSlidesAndReset() {
             slides = [{
                 title: "新しい礼拝スライド",
