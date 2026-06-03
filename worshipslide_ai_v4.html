@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- パワポpptxファイルやZIP解析に必須のZIP解析ライブラリ JSZip -->
+    <!-- パワポpptxファイルやZIP解析に必須 of ZIP解析ライブラリ JSZip -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- 純国産オープンソース日本語形態素解析器 Kuromoji.js -->
     <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js"></script>
@@ -1244,7 +1244,7 @@
 【厳格なルール】
 1. すべての漢字に「漢字[かんじ]」形式でブラケットルビを付与してください。
 2. ${contextPrompt}
-3. 必ず入力のID（id）と正確に対応させて、JSONオブジェクト形式の配列「results」として返答してください。解説などは含めないでください。`;
+3. 必ず入力のID（id）と正確に対応させて、JSONオブジェクト形式 of 配列「results」として返答してください。解説などは含めないでください。`;
 
             const inputItems = contentsArray.map((text, idx) => ({ id: idx, content: text }));
             let delay = 3000; 
@@ -1439,7 +1439,7 @@
                             rowsToProcess.forEach(row => row.formattedContent = row.content);
                         }
 
-                        // 元のCSVの行順の通りに、新スライド配列を組み立てる
+                        // 元のCSV of 行順の通りに新スライドを組み立て
                         for (let row of validRows) {
                             if (row.isPreset) {
                                 newDirectSlides.push(...row.presetSlides);
