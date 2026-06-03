@@ -36,4 +36,4 @@ https://baruziro-works.github.io/TCCC_works-Open/worshipslide_aiV1.html
 
 worshipslide_ai v4.html
 Ws スライド作成
-https://baruziro-works.github.io/TCCC_works-Open/worshipslide_ai v4.html
+https://baruziro-works.github.io/TCCC_works-Open/
