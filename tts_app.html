@@ -666,11 +666,32 @@ function getVoice() {
   return (idx !== '' && voices[parseInt(idx)]) ? voices[parseInt(idx)] : null;
 }
 
+let _watchdog = null;
+
+// Chrome の SpeechSynthesis フリーズ対策：
+// speaking中に定期的にpause/resumeしてエンジンを生かし続ける
+let _keepAlive = null;
+function startKeepAlive() {
+  stopKeepAlive();
+  _keepAlive = setInterval(() => {
+    if (speechSynthesis.speaking && !paused) {
+      speechSynthesis.pause();
+      speechSynthesis.resume();
+    }
+  }, 10000);
+}
+function stopKeepAlive() {
+  clearInterval(_keepAlive);
+  _keepAlive = null;
+}
+
 function speakFrom(startIdx) {
+  clearTimeout(_watchdog);
+
   if (startIdx >= segments.length) {
+    stopKeepAlive();
     playing = false;
     setButtonState(false);
-    // 完了後は先頭に戻す
     currentIdx = 0;
     updateSlider();
     renderPreview();
@@ -678,6 +699,7 @@ function speakFrom(startIdx) {
     updateMiniBtn();
     return;
   }
+
   currentIdx = startIdx;
   renderPreview();
   updateSlider();
@@ -687,12 +709,25 @@ function speakFrom(startIdx) {
   u.rate   = Math.min(4, parseFloat(document.getElementById('rate').value));
   u.pitch  = parseFloat(document.getElementById('pitch').value);
   u.volume = parseFloat(document.getElementById('volume').value);
-  u.onend  = () => { if (playing) speakFrom(startIdx + 1); };
+
+  u.onstart = () => {
+    clearTimeout(_watchdog);
+    startKeepAlive();
+  };
+  u.onend = () => {
+    clearTimeout(_watchdog);
+    if (playing) speakFrom(startIdx + 1);
+  };
   u.onerror = e => {
+    clearTimeout(_watchdog);
     if (e.error === 'interrupted' || e.error === 'canceled') return;
     setStatus('エラー: ' + e.error, '#b05e10');
-    setButtonState(false); playing = false;
+    setButtonState(false);
+    playing = false;
+    stopKeepAlive();
+    updateMiniBtn();
   };
+
   speechSynthesis.speak(u);
 }
 
@@ -717,7 +752,10 @@ function togglePause() {
 }
 
 function stopSpeech() {
-  playing = false; paused = false; speechSynthesis.cancel();
+  playing = false; paused = false;
+  clearTimeout(_watchdog);
+  stopKeepAlive();
+  speechSynthesis.cancel();
   setStatus('停止しました', '#a09d97'); setButtonState(false);
   document.getElementById('pause-icon').textContent  = '⏸';
   document.getElementById('pause-label').textContent = '一時停止';
