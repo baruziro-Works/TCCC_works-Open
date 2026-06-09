@@ -12,6 +12,10 @@ index.html
 教会QRコード案内用作成
 https://baruziro-works.github.io/TCCC_works-Open/index.html
 
+Ws2index.html
+スライド作成、　音源対応版（祈祷会）
+https://baruziro-works.github.io/TCCC_works-Open/Ws2index.html
+
 index2.html
 https://baruziro-works.github.io/TCCC_works-Open/index2.html
 
