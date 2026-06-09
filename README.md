@@ -1,6 +1,10 @@
 ここにメモを残せる
 このリポジトリに入っているアプリは
 
+kaigi_memo_final.html
+会議文字おこし
+https://baruziro-works.github.io/TCCC_works-Open/kaigi_memo_final.html
+
 church_schedule_app.html
 教会スケジュール作成
 https://baruziro-works.github.io/TCCC_works-Open/church_schedule_app.html
