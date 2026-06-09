@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>会議メモ</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic',sans-serif;background:#f5f5f3;color:#1a1a18;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ヘッダー */
+.top-bar{background:#fff;border-bottom:0.5px solid #e0e0dc;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.top-title{font-size:17px;font-weight:500;display:flex;align-items:center;gap:8px}
+.top-date{font-size:13px;color:#888}
+
+/* 2カラムレイアウト */
+.main-layout{display:flex;flex:1;overflow:hidden;gap:0}
+
+/* 左パネル */
+.left-panel{width:380px;min-width:320px;flex-shrink:0;display:flex;flex-direction:column;padding:16px;gap:12px;overflow-y:auto;border-right:0.5px solid #e0e0dc;background:#fafaf8}
+
+/* 右パネル */
+.right-panel{flex:1;display:flex;flex-direction:column;padding:16px;overflow:hidden}
+.right-panel-title{font-size:11px;font-weight:500;color:#888;letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.log-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+
+/* カード */
+.card{background:#fff;border:0.5px solid #e0e0dc;border-radius:12px;padding:14px 16px}
+.label{font-size:11px;font-weight:500;color:#888;letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px}
+
+/* 録音エリア */
+.rec-area{display:flex;flex-direction:column;align-items:center;gap:12px;padding:.5rem 0 .25rem}
+.rec-ring{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.rec-ring.idle{background:#fef2f2;border:2px solid #fca5a5}
+.rec-ring.recording{background:#f0fdf4;border:2px solid #86efac;animation:pulse-ring 1.5s infinite}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(134,239,172,.5)}50%{box-shadow:0 0 0 12px rgba(134,239,172,0)}}
+.rec-btn{width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;transition:transform .1s}
+.rec-btn.idle{background:#ef4444;color:#fff}
+.rec-btn.recording{background:#22c55e;color:#fff}
+.rec-btn:active{transform:scale(.93)}
+
+.pause-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:7px 12px;border-radius:8px;border:0.5px solid #d0d0cc;background:#fff;font-size:13px;cursor:pointer;color:#555;margin-top:8px}
+.pause-btn:hover{background:#f5f5f3}
+.pause-btn.paused{background:#fef3c7;border-color:#fcd34d;color:#92400e}
+
+.rec-meta{display:flex;align-items:center;gap:14px}
+.dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0}
+.dot.active{background:#22c55e;animation:blink-dot 1s infinite}
+@keyframes blink-dot{0%,100%{opacity:1}50%{opacity:.2}}
+.rec-status{font-size:13px;font-weight:500;color:#888}
+.timer{font-size:26px;font-weight:500;font-variant-numeric:tabular-nums;color:#333}
+.timer.active{color:#22c55e}
+
+/* 認識テキスト */
+.transcript-box{background:#f9f9f7;border-radius:8px;padding:10px 12px;font-size:13px;min-height:56px;max-height:120px;overflow-y:auto;line-height:1.7;word-break:break-all;border:0.5px solid #e8e8e4;scroll-behavior:smooth}
+.interim{color:#aaa;font-style:italic}
+
+/* 手動メモ */
+.memo-input{width:100%;border:0.5px solid #e0e0dc;border-radius:8px;padding:9px 11px;font-size:14px;resize:none;height:72px;font-family:inherit;background:#fff;color:#1a1a18}
+.memo-input:focus{outline:none;border-color:#999}
+.add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:8px;border-radius:8px;font-size:14px;cursor:pointer;margin-top:8px;background:#fff;border:0.5px solid #d0d0cc;color:#333}
+.add-btn:hover{background:#f5f5f3}
+
+/* 終了ボタン */
+.finish-btn{width:100%;padding:12px;border-radius:10px;border:none;font-size:15px;font-weight:500;cursor:pointer;background:#1d6fad;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;flex-shrink:0}
+.finish-btn:hover{background:#155d94}
+.finish-btn:disabled{background:#e8e8e4;color:#aaa;cursor:default}
+
+/* ログアイテム */
+.log-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:#fff;border-radius:8px;font-size:13px;border:0.5px solid #e8e8e4;flex-shrink:0}
+.log-item.auto{border-left:3px solid #86efac}
+.log-item.manual{border-left:3px solid #93c5fd}
+.time-tag{font-size:11px;color:#aaa;min-width:36px;margin-top:1px;font-variant-numeric:tabular-nums;flex-shrink:0}
+.badge-auto{font-size:10px;background:#dcfce7;color:#166534;padding:1px 6px;border-radius:99px;flex-shrink:0;margin-top:1px}
+.badge-manual{font-size:10px;background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:99px;flex-shrink:0;margin-top:1px}
+.del{margin-left:auto;color:#ddd;cursor:pointer;font-size:15px;flex-shrink:0;padding:1px 3px}
+.del:hover{color:#ef4444}
+.log-count{font-size:12px;color:#aaa;font-weight:400}
+
+/* 警告 */
+.warn-box{background:#fef3c7;border-radius:8px;padding:9px 12px;font-size:12px;color:#92400e;line-height:1.6}
+
+/* ローディング・結果は全画面 */
+.fullscreen{position:fixed;inset:0;background:#f5f5f3;z-index:50;overflow-y:auto}
+.loading-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem}
+.result-wrap{max-width:720px;margin:0 auto;padding:24px 16px}
+.result-card{background:#fff;border:0.5px solid #e0e0dc;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
+.result-title{font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px;margin-bottom:10px;color:#1a1a18}
+.result-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:0.5px solid #f0f0ec;font-size:14px;color:#1a1a18}
+.result-item:last-child{border-bottom:none;padding-bottom:0}
+.result-item i{margin-top:2px;flex-shrink:0;color:#555}
+.badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px}
+.badge-blue{background:#dbeafe;color:#1e40af}
+.badge-green{background:#dcfce7;color:#166534}
+.badge-amber{background:#fef3c7;color:#92400e}
+.back-btn{display:flex;align-items:center;gap:6px;font-size:14px;color:#888;cursor:pointer;border:none;background:none;padding:4px 0;margin-bottom:1rem}
+.back-btn:hover{color:#333}
+.copy-btn{display:flex;align-items:center;gap:6px;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;background:#fff;border:0.5px solid #d0d0cc;color:#333}
+.copy-btn:hover{background:#f5f5f3}
+.hidden{display:none}
+.loading-dots span{animation:blink 1.2s infinite}
+.loading-dots span:nth-child(2){animation-delay:.2s}
+.loading-dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+</style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<div class="top-bar" id="top-bar">
+  <div class="top-title">🎙 会議メモ</div>
+  <div class="top-date" id="meeting-date"></div>
+</div>
+
+<!-- 2カラムメイン -->
+<div class="main-layout" id="main-layout">
+
+  <!-- 左：操作パネル -->
+  <div class="left-panel">
+
+    <div class="card">
+      <div class="label">録音・音声認識</div>
+      <div class="rec-area">
+        <div class="rec-ring idle" id="rec-ring">
+          <button class="rec-btn idle" id="rec-btn" onclick="toggleRecording()">
+            <i class="ti ti-microphone"></i>
+          </button>
+        </div>
+        <div class="rec-meta">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="dot" id="rec-dot"></div>
+            <span class="rec-status" id="rec-status">タップして録音開始</span>
+          </div>
+          <div class="timer" id="timer">00:00</div>
+        </div>
+      </div>
+      <button class="pause-btn hidden" id="pause-btn" onclick="togglePause()">
+        <i class="ti ti-player-pause" id="pause-icon"></i>
+        <span id="pause-label">一時停止</span>
+      </button>
+      <div style="font-size:11px;color:#aaa;margin-bottom:5px;display:flex;align-items:center;gap:4px">
+        <i class="ti ti-writing" style="font-size:13px"></i> 認識中のテキスト
+      </div>
+      <div class="transcript-box" id="transcript-box">
+        <span style="color:#bbb;font-size:12px">録音を開始すると話した言葉がここに表示されます</span>
+      </div>
+      <div id="sr-warning" class="warn-box hidden" style="margin-top:10px">
+        ⚠ 音声認識はChromeまたはSafariでご利用ください。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label">手動メモ</div>
+      <textarea class="memo-input" id="memo-input" placeholder="追加で書き留めたいことを入力..."></textarea>
+      <button class="add-btn" onclick="addMemo()">
+        <i class="ti ti-plus"></i> メモを追加
+      </button>
+    </div>
+
+    <button class="finish-btn" id="finish-btn" onclick="finishMeeting()" disabled>
+      <i class="ti ti-check"></i> 会議を終了してまとめを作成
+    </button>
+
+  </div>
+
+  <!-- 右：ログパネル -->
+  <div class="right-panel">
+    <div class="right-panel-title">
+      <span>記録ログ（新しい順）</span>
+      <span class="log-count" id="log-count"></span>
+    </div>
+    <div class="log-list" id="log-list">
+      <div style="color:#bbb;font-size:13px;text-align:center;margin-top:2rem">録音またはメモ追加で記録が表示されます</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ローディング -->
+<div id="view-loading" class="fullscreen hidden">
+  <div class="loading-inner">
+    <div style="font-size:44px;margin-bottom:1rem">✨</div>
+    <div style="font-size:17px;font-weight:500;margin-bottom:8px">AIがまとめを作成中...</div>
+    <div style="font-size:14px;color:#888">決定事項・ToDoを整理しています<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>
+  </div>
+</div>
+
+<!-- 結果 -->
+<div id="view-result" class="fullscreen hidden">
+  <div class="result-wrap">
+    <button class="back-btn" onclick="backToNew()">
+      <i class="ti ti-arrow-left"></i> 新しい会議
+    </button>
+    <div style="font-size:20px;font-weight:500;margin-bottom:4px">📋 会議まとめ</div>
+    <div style="font-size:13px;color:#888;margin-bottom:20px" id="result-date"></div>
+
+    <div class="result-card">
+      <div class="result-title"><i class="ti ti-notes"></i> 概要 <span class="badge badge-blue" id="result-duration"></span></div>
+      <div id="result-summary" style="font-size:14px;line-height:1.8;color:#333"></div>
+    </div>
+    <div class="result-card">
+      <div class="result-title"><i class="ti ti-circle-check"></i> 決定事項 <span class="badge badge-green" id="decisions-count"></span></div>
+      <div id="result-decisions"></div>
+    </div>
+    <div class="result-card">
+      <div class="result-title"><i class="ti ti-checkbox"></i> ToDoリスト <span class="badge badge-amber" id="todos-count"></span></div>
+      <div id="result-todos"></div>
+    </div>
+    <div class="result-card">
+      <div class="result-title"><i class="ti ti-list"></i> 記録全文</div>
+      <div id="result-all-memos"></div>
+    </div>
+    <button class="copy-btn" onclick="copyResult()">
+      <i class="ti ti-copy"></i> まとめをコピー
+    </button>
+  </div>
+</div>
+
+<script>
+let isRecording=false,isPaused=false,timerInterval=null,seconds=0,memos=[],memoIdCounter=0,recognition=null,finalTranscript='',srSupported=false;
+
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function fmtDate(d){return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日（'+'日月火水木金土'[d.getDay()]+'）'}
+
+const now=new Date();
+document.getElementById('meeting-date').textContent=fmtDate(now);
+
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR){
+  srSupported=true;
+  recognition=new SR();
+  recognition.lang='ja-JP';
+  recognition.continuous=true;
+  recognition.interimResults=true;
+  recognition.onresult=(e)=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const t=e.results[i][0].transcript;
+      if(e.results[i].isFinal){
+        finalTranscript+=t;
+        memos.unshift({id:memoIdCounter++,time:fmt(seconds),text:t.trim(),auto:true});
+        renderLog();
+        document.getElementById('finish-btn').disabled=false;
+      } else interim+=t;
+    }
+    const box=document.getElementById('transcript-box');
+    box.innerHTML=(finalTranscript?'<span>'+finalTranscript+'</span>':'')+(interim?'<span class="interim">'+interim+'</span>':'');
+    box.scrollTop=box.scrollHeight;
+  };
+  recognition.onerror=(e)=>{if(e.error!=='no-speech')console.warn('SR error:',e.error)};
+  recognition.onend=()=>{if(isRecording){try{recognition.start()}catch(e){}}};
+} else {
+  document.getElementById('sr-warning').classList.remove('hidden');
+}
+
+function toggleRecording(){
+  const btn=document.getElementById('rec-btn');
+  const ring=document.getElementById('rec-ring');
+  const dot=document.getElementById('rec-dot');
+  const timer=document.getElementById('timer');
+  const status=document.getElementById('rec-status');
+  if(!isRecording){
+    isRecording=true;
+    btn.className='rec-btn recording';
+    btn.innerHTML='<i class="ti ti-player-stop"></i>';
+    ring.className='rec-ring recording';
+    dot.className='dot active';
+    status.textContent='録音中';status.style.color='#22c55e';
+    timer.className='timer active';
+    timerInterval=setInterval(()=>{seconds++;timer.textContent=fmt(seconds)},1000);
+    if(srSupported){
+      finalTranscript='';
+      document.getElementById('transcript-box').innerHTML='<span class="interim">聞いています...</span>';
+      try{recognition.start()}catch(e){}
+    }
+    document.getElementById('finish-btn').disabled=false;
+    document.getElementById('pause-btn').classList.remove('hidden');
+  } else {
+    isRecording=false;
+    btn.className='rec-btn idle';
+    btn.innerHTML='<i class="ti ti-microphone"></i>';
+    ring.className='rec-ring idle';
+    dot.className='dot';
+    status.textContent='停止中';status.style.color='#888';
+    timer.className='timer';
+    clearInterval(timerInterval);
+    if(srSupported){try{recognition.stop()}catch(e){}}
+    isPaused=false;
+    document.getElementById('pause-btn').classList.add('hidden');
+    document.getElementById('pause-btn').className='pause-btn hidden';
+    document.getElementById('pause-icon').className='ti ti-player-pause';
+    document.getElementById('pause-label').textContent='一時停止';
+  }
+}
+
+function addMemo(){
+  const input=document.getElementById('memo-input');
+  const text=input.value.trim();
+  if(!text)return;
+  memos.unshift({id:memoIdCounter++,time:fmt(seconds),text,auto:false});
+  input.value='';
+  renderLog();
+  document.getElementById('finish-btn').disabled=false;
+}
+
+function renderLog(){
+  const list=document.getElementById('log-list');
+  const count=document.getElementById('log-count');
+  if(!memos.length){
+    list.innerHTML='<div style="color:#bbb;font-size:13px;text-align:center;margin-top:2rem">録音またはメモ追加で記録が表示されます</div>';
+    count.textContent='';
+    return;
+  }
+  count.textContent=memos.length+'件';
+  list.innerHTML=memos.map(m=>`
+    <div class="log-item ${m.auto?'auto':'manual'}">
+      <span class="time-tag">${m.time}</span>
+      <span class="${m.auto?'badge-auto':'badge-manual'}">${m.auto?'音声':'メモ'}</span>
+      <span style="flex:1;line-height:1.6">${m.text}</span>
+      <span class="del" onclick="deleteMemo(${m.id})"><i class="ti ti-x"></i></span>
+    </div>`).join('');
+}
+
+function deleteMemo(id){
+  memos=memos.filter(m=>m.id!==id);
+  renderLog();
+  if(!memos.length) document.getElementById('finish-btn').disabled=true;
+}
+
+async function finishMeeting(){
+  if(isRecording)toggleRecording();
+  document.getElementById('view-loading').classList.remove('hidden');
+  const sortedMemos=[...memos].reverse();
+  const memosText=sortedMemos.length?sortedMemos.map(m=>`[${m.time}] ${m.auto?'（音声）':'（メモ）'}${m.text}`).join('\n'):'（記録なし）';
+  const duration=fmt(seconds);
+  const prompt=`以下は会議の記録です。JSONのみで返答してください（マークダウンや説明文は不要）。\n会議時間: ${duration}\n記録:\n${memosText}\n\n以下のJSONフォーマットで返してください:\n{\n  "summary": "会議の概要を2〜3文で",\n  "decisions": ["決定事項1", "決定事項2"],\n  "todos": ["ToDo1", "ToDo2"]\n}\n\n記録が少ない場合は内容から推測せず、あるものだけを整理してください。`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();
+    const raw=data.content.map(i=>i.text||'').join('');
+    const parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    showResult(parsed,duration);
+  }catch(e){showResult({summary:'AIによる要約を取得できませんでした。記録をご確認ください。',decisions:[],todos:[]},duration)}
+}
+
+function showResult(data,duration){
+  document.getElementById('view-loading').classList.add('hidden');
+  document.getElementById('view-result').classList.remove('hidden');
+  document.getElementById('result-date').textContent=fmtDate(now)+' ・ '+duration;
+  document.getElementById('result-duration').textContent=duration;
+  document.getElementById('result-summary').textContent=data.summary;
+  const dec=document.getElementById('result-decisions');
+  document.getElementById('decisions-count').textContent=(data.decisions||[]).length+'件';
+  dec.innerHTML=data.decisions&&data.decisions.length?data.decisions.map(d=>`<div class="result-item"><i class="ti ti-circle-check"></i><span>${d}</span></div>`).join(''):'<div style="font-size:14px;color:#aaa;padding:8px 0">決定事項はありませんでした</div>';
+  const todos=document.getElementById('result-todos');
+  document.getElementById('todos-count').textContent=(data.todos||[]).length+'件';
+  todos.innerHTML=data.todos&&data.todos.length?data.todos.map(t=>`<div class="result-item"><i class="ti ti-checkbox"></i><span>${t}</span></div>`).join(''):'<div style="font-size:14px;color:#aaa;padding:8px 0">ToDoはありませんでした</div>';
+  const dispMemos=[...memos].reverse();
+  const allMemos=document.getElementById('result-all-memos');
+  allMemos.innerHTML=dispMemos.length?dispMemos.map(m=>`<div class="result-item"><span style="font-size:11px;color:#aaa;min-width:38px;margin-top:2px">${m.time}</span><span class="${m.auto?'badge-auto':'badge-manual'}" style="margin-top:2px;flex-shrink:0">${m.auto?'音声':'メモ'}</span><span>${m.text}</span></div>`).join(''):'<div style="font-size:14px;color:#aaa;padding:8px 0">記録はありませんでした</div>';
+  window._resultData=data;window._duration=duration;
+}
+
+function copyResult(){
+  const d=window._resultData;
+  let text=`【会議まとめ】${fmtDate(now)} (${window._duration})\n\n■ 概要\n${d.summary}\n\n■ 決定事項\n${(d.decisions||[]).map(x=>'・'+x).join('\n')||'なし'}\n\n■ ToDo\n${(d.todos||[]).map(x=>'□ '+x).join('\n')||'なし'}\n\n■ 記録全文\n${[...memos].reverse().map(m=>`[${m.time}]${m.auto?'（音声）':'（メモ）'} ${m.text}`).join('\n')||'なし'}`;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.querySelector('.copy-btn');
+    const orig=btn.innerHTML;btn.innerHTML='<i class="ti ti-check"></i> コピーしました';
+    setTimeout(()=>btn.innerHTML=orig,2000);
+  });
+}
+
+function backToNew(){
+  memos=[];seconds=0;isRecording=false;clearInterval(timerInterval);finalTranscript='';
+  document.getElementById('timer').textContent='00:00';document.getElementById('timer').className='timer';
+  document.getElementById('rec-status').textContent='タップして録音開始';document.getElementById('rec-status').style.color='#888';
+  document.getElementById('rec-btn').className='rec-btn idle';document.getElementById('rec-btn').innerHTML='<i class="ti ti-microphone"></i>';
+  document.getElementById('rec-ring').className='rec-ring idle';document.getElementById('rec-dot').className='dot';
+  document.getElementById('transcript-box').innerHTML='<span style="color:#bbb;font-size:12px">録音を開始すると話した言葉がここに表示されます</span>';
+  document.getElementById('finish-btn').disabled=true;
+  document.getElementById('view-result').classList.add('hidden');
+  document.getElementById('meeting-date').textContent=fmtDate(new Date());
+  renderLog();
+}
+
+function togglePause(){
+  const btn=document.getElementById('pause-btn');
+  const icon=document.getElementById('pause-icon');
+  const label=document.getElementById('pause-label');
+  const status=document.getElementById('rec-status');
+  const dot=document.getElementById('rec-dot');
+  if(!isPaused){
+    isPaused=true;
+    clearInterval(timerInterval);
+    if(srSupported){try{recognition.stop()}catch(e){}}
+    btn.className='pause-btn paused';
+    icon.className='ti ti-player-play';
+    label.textContent='再開する';
+    status.textContent='一時停止中';
+    status.style.color='#b45309';
+    dot.className='dot';
+    document.getElementById('rec-ring').className='rec-ring idle';
+    document.getElementById('rec-btn').className='rec-btn idle';
+    document.getElementById('rec-btn').innerHTML='<i class="ti ti-player-pause"></i>';
+    document.getElementById('timer').className='timer';
+  } else {
+    isPaused=false;
+    timerInterval=setInterval(()=>{seconds++;document.getElementById('timer').textContent=fmt(seconds)},1000);
+    if(srSupported){try{recognition.start()}catch(e){}}
+    btn.className='pause-btn';
+    icon.className='ti ti-player-pause';
+    label.textContent='一時停止';
+    status.textContent='録音中';
+    status.style.color='#22c55e';
+    dot.className='dot active';
+    document.getElementById('rec-ring').className='rec-ring recording';
+    document.getElementById('rec-btn').className='rec-btn recording';
+    document.getElementById('rec-btn').innerHTML='<i class="ti ti-player-stop"></i>';
+    document.getElementById('timer').className='timer active';
+  }
+}
+
+</script>
+</body>
+</html>
