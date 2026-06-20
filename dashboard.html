@@ -12,21 +12,21 @@
             box-sizing: border-box;
             font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Hiragino Kaku Gothic ProN, "ヒラギノ角ゴ ProN W3", Arial, sans-serif;
             
-            /* iPad mini2におけるダブルタップ時の画面ガタつき・ズームをCSSレベルで徹底排除 */
+            /* iPadにおけるダブルタップ時の画面ズームやガタつきを防止 */
             touch-action: manipulation;
             
-            /* ボタン連打時の文字選択の青い網掛け防止 */
+            /* ボタン連打時の文字選択（青い網掛け）を防止 */
             -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
             
-            /* タップ時のグレーのハイライトを透明化して画面のチラつきを防止 */
+            /* タップ時のグレーのハイライトを透明化してチラつきを防止 */
             -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
             outline: none !important;
         }
         
-        /* メモのテキスト入力エリアだけは標準のタッチ操作・文字入力を完全に許可 */
-        textarea, input[type="text"] {
+        /* メモ入力やタイマーの数値入力欄は通常の文字入力を許可 */
+        textarea, input[type="text"], input[type="number"] {
             -webkit-user-select: text !important;
             user-select: text !important;
             touch-action: auto !important;
@@ -40,7 +40,7 @@
             background-color: #f0f2f5;
             overflow: hidden;
             color: #333;
-            position: fixed; /* 画面全体のバウンス（引っ張りスクロール）を徹底防止 */
+            position: fixed; /* 画面全体の引っ張りバウンスを完全に防止 */
         }
 
         #safe-wrapper {
@@ -60,7 +60,7 @@
             overflow: hidden;
         }
 
-        /* 左カラム（時計＋固定ツール＋メモ一覧を内包） */
+        /* 左カラム（時計＋垂直ツールバー＋メモ一覧） */
         #left-col {
             width: 380px; 
             border-right: 1px solid #e5e5ea;
@@ -71,7 +71,7 @@
             flex-shrink: 0;
         }
 
-        /* 右カラム（タイマーや電卓、メモビューの表示エリア） */
+        /* 右カラム */
         #right-col {
             flex: 1;
             background-color: #f7f9fa;
@@ -79,7 +79,7 @@
             position: relative;
         }
 
-        /* 時計表示エリア（さらに大きく、横並びを強調） */
+        /* 時計表示エリア */
         .header-area {
             padding: 14px 18px;
             border-bottom: 1px solid #e5e5ea;
@@ -118,7 +118,6 @@
             font-weight: 700;
         }
 
-        /* 固定ツール＋メモ一覧を横に並べるメインエリア */
         .sidebar-main-content {
             display: flex;
             flex: 1;
@@ -126,7 +125,7 @@
             overflow: hidden;
         }
 
-        /* 左側に完全に固定される垂直ツールバー */
+        /* 垂直ツールバー */
         .tools-sidebar {
             width: 85px;
             background-color: #f5f5f7;
@@ -140,7 +139,7 @@
             flex-shrink: 0;
         }
 
-        /* 右側のメモ一覧スクロールエリア */
+        /* メモ一覧エリア */
         .memos-sidebar {
             flex: 1;
             overflow-y: auto;
@@ -149,7 +148,6 @@
             height: 100%;
         }
 
-        /* ツールボタンのデザイン */
         .sidebar-tool-btn, .sidebar-tool-btn-link {
             width: 68px;
             height: 74px;
@@ -175,7 +173,6 @@
             transform: scale(0.95);
         }
 
-        /* アクティブな機能ボタンのハイライト効果 */
         .sidebar-tool-btn.active {
             background-color: #007aff;
             color: white !important;
@@ -193,10 +190,10 @@
         }
 
         .sidebar-tool-btn-link i {
-            color: #34c759; /* 聖書は美しいグリーン */
+            color: #34c759;
         }
 
-        /* 新しいメモ項目のデザイン */
+        /* メモ項目のデザイン */
         .memo-item-wrapper {
             display: flex;
             align-items: center;
@@ -243,7 +240,6 @@
             gap: 4px;
         }
 
-        /* 個別メモ用の小さな削除ボタン */
         .memo-delete-btn {
             width: 50px;
             height: 100%;
@@ -283,7 +279,6 @@
             flex-direction: column;
         }
 
-        /* Split-view dashboard design */
         .split-view {
             display: flex;
             flex-direction: column;
@@ -358,7 +353,6 @@
             align-items: center;
         }
 
-        /* ボタンデザインの統一 */
         .btn {
             padding: 12px 20px;
             font-size: 15px;
@@ -410,7 +404,7 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
 
         .timer-preset-btn {
@@ -480,11 +474,14 @@
             border-bottom: 1px solid #f2f2f7;
         }
 
+        /* ============================================
+           電卓デザイン修正（iPadでの縦潰れを徹底防止）
+           ============================================ */
         .calc-wrapper {
             background-color: #1c1c1e;
             border-radius: 24px;
             padding: 16px;
-            max-width: 400px;
+            max-width: 340px; /* 横幅を最適化 */
             margin: 0 auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             width: 100%;
@@ -506,12 +503,14 @@
         .calc-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            gap: 12px;
         }
 
+        /* 縦横比を1:1(正円)に保ち、iPad上の自動伸縮による変形を防ぐ */
         .calc-btn {
-            aspect-ratio: 1;
-            border-radius: 50%;
+            width: 64px;
+            height: 64px;
+            border-radius: 50% !important;
             font-size: 22px;
             font-weight: bold;
             display: flex;
@@ -519,7 +518,9 @@
             justify-content: center;
             cursor: pointer;
             border: none;
+            margin: 0 auto;
             transition: all 0.1s ease;
+            -webkit-appearance: none; /* iOS独自の標準ボタン化を解除 */
         }
 
         .calc-btn:active {
@@ -527,10 +528,19 @@
             transform: scale(0.92);
         }
 
+        /* 0ボタン：横長のカプセル型にし、幅だけを2個分に拡張 */
+        .calc-btn-double {
+            grid-column: span 2; 
+            width: 140px; 
+            height: 64px;
+            border-radius: 32px !important; 
+            padding-left: 22px; 
+            justify-content: flex-start; 
+        }
+
         .calc-btn-gray { background-color: #a5a5a5; color: #000000; }
         .calc-btn-dark { background-color: #333333; color: #ffffff; }
         .calc-btn-orange { background-color: #ff9f0a; color: #ffffff; }
-        .calc-btn-double { grid-column: span 2; aspect-ratio: auto; border-radius: 40px; padding-left: 20px; justify-content: flex-start; }
     </style>
 </head>
 <body>
@@ -600,9 +610,10 @@
             </div>
 
             <div id="view-timer" class="view-panel">
-                <div class="text-xl font-extrabold text-gray-800 mb-4 flex items-center gap-2">
+                <div class="text-xl font-extrabold text-gray-800 mb-3 flex items-center gap-2">
                     <i class="fa-solid fa-hourglass-half text-blue-500"></i>タイマーツール
                 </div>
+                
                 <div class="timer-grid">
                     <div class="timer-preset-btn" onclick="setTimerPreset(1)">1分</div>
                     <div class="timer-preset-btn" onclick="setTimerPreset(3)">3分</div>
@@ -613,9 +624,20 @@
                     <div class="timer-preset-btn font-black text-blue-500" onclick="adjustTimer(60)">+1分</div>
                     <div class="timer-preset-btn font-black text-red-500" onclick="adjustTimer(-60)">-1分</div>
                 </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-3 flex items-center justify-between">
+                    <span class="text-sm font-bold text-blue-800"><i class="fa-solid fa-sliders mr-1"></i>時間を細かく設定：</span>
+                    <div class="flex items-center gap-1">
+                        <input type="number" id="input-timer-min" min="0" max="99" class="w-14 p-1 text-center font-bold border border-gray-300 rounded-lg text-lg" value="0">
+                        <span class="text-xs font-bold text-gray-600">分</span>
+                        <input type="number" id="input-timer-sec" min="0" max="59" class="w-14 p-1 text-center font-bold border border-gray-300 rounded-lg text-lg" value="0">
+                        <span class="text-xs font-bold text-gray-600">秒</span>
+                        <button class="btn btn-primary py-1 px-3 text-xs ml-2 rounded-lg" onclick="applyCustomTimer()">適用</button>
+                    </div>
+                </div>
                 
                 <div class="timer-display-box">
-                    <div class="timer-numbers" id="timer-text">00:00</div>
+                    <div class="timer-numbers" id="timer-text">00:00:00</div>
                     <div class="flex gap-4 w-full max-w-sm">
                         <button class="btn btn-primary flex-1 py-4 text-lg" id="btn-timer-start" onclick="toggleTimer()">スタート</button>
                         <button class="btn btn-secondary py-4 text-lg w-20" id="btn-timer-reset" onclick="resetTimer()">C</button>
@@ -659,7 +681,7 @@
                         
                         <button class="calc-btn calc-btn-dark" onclick="pressCalc('1')">1</button>
                         <button class="calc-btn calc-btn-dark" onclick="pressCalc('2')">2</button>
-                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('3')">3</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('3') text-white">3</button>
                         <button class="calc-btn calc-btn-orange" onclick="pressCalc('+')">+</button>
                         
                         <button class="calc-btn calc-btn-dark calc-btn-double" onclick="pressCalc('0')">0</button>
@@ -679,7 +701,30 @@
     var selectedMemoId = null;
     var currentViewId = 'view-dash';
 
-    // 音声認識のセットアップ
+    // iOS/iPadOS 向け Web Audio API 解放用のオーディオコンテキスト
+    var audioCtx = null;
+
+    // iPadOSのセキュリティ制限（ユーザーのタップ直後でないと音が鳴らせない仕様）を完全に回避するため、
+    // 画面のどこかを最初に触った瞬間にAudioContextを生成・解放する仕組み
+    function initAudioContext() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // サイレントバッファを1度再生してブラウザのアラーム制限を解除
+            var buffer = audioCtx.createBuffer(1, 1, 22050);
+            var source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioCtx.destination);
+            if (source.start) { source.start(0); } else { source.noteOn(0); }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+    window.addEventListener('touchstart', initAudioContext, { passive: true });
+    window.addEventListener('click', initAudioContext);
+
+    // 音声認識セットアップ
     var recognition = null;
     try {
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -712,15 +757,14 @@
             };
         }
     } catch(e) {
-        console.log("Speech recognition not supported in this environment.");
+        console.log("Speech recognition not supported.");
     }
 
-    // 音声認識ボタン動作
     var speechBtn = document.getElementById('btn-speech');
     if (speechBtn) {
         speechBtn.addEventListener('click', function() {
             if (!recognition) {
-                alert('お使いの環境はマイク音声入力に対応していません。実機iPad上のSafariやドルフィンブラウザでお試しください。');
+                alert('お使いの環境はマイク音声入力に対応していません。');
                 return;
             }
             if (speechBtn.classList.contains('text-red-500')) {
@@ -734,18 +778,13 @@
     }
 
     window.onload = function() {
-        // 保存棚(localStorage)からの安全な読み込み
         try {
             var saved = localStorage.getItem('dashboard_memos');
-            if (saved) {
-                memos = JSON.parse(saved);
-            }
+            if (saved) { memos = JSON.parse(saved); }
         } catch(e) {
-            console.log("Storage access blocked. Falling back to temporary in-memory storage.");
             memos = [];
         }
         
-        // メモが空なら初期サンプルを追加
         if (!memos || memos.length === 0) {
             memos = [
                 { id: 'm1', text: 'ダッシュボードへようこそ！\n左側のマイクボタンでいつでも音声入力ができます。', time: Date.now(), checked: false },
@@ -754,16 +793,13 @@
             saveData();
         }
 
-        // 画面の初期レンダリング
         renderMemoList();
         updateClock();
         setInterval(updateClock, 1000);
-        
-        // 完了済みメモの整理
         sweepMemos();
+        updateTimerDisplay(); // タイマーの初期表示を秒まで対応
     };
 
-    // メモ一覧のレンダリング
     function renderMemoList() {
         var container = document.getElementById('list-memos');
         if (!container) return;
@@ -778,15 +814,10 @@
             var itemWrapper = document.createElement('div');
             itemWrapper.className = 'memo-item-wrapper';
 
-            // 1. タップして選択できるメモ部分
             var clickCell = document.createElement('div');
             clickCell.className = 'memo-clickable-cell';
-            if (selectedMemoId === m.id) {
-                clickCell.classList.add('selected');
-            }
-            if (m.checked) {
-                clickCell.classList.add('checked-style');
-            }
+            if (selectedMemoId === m.id) { clickCell.classList.add('selected'); }
+            if (m.checked) { clickCell.classList.add('checked-style'); }
 
             var titleStr = m.text.split('\n')[0] || '無題のメモ';
             var dateFormatted = new Date(m.time).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit' }) + ' ' +
@@ -796,7 +827,6 @@
                 '<div class="memo-title-text">' + (m.checked ? '☑ ' : '') + titleStr + '</div>' +
                 '<div class="memo-meta-text"><i class="fa-regular fa-clock"></i>' + dateFormatted + '</div>';
 
-            // iOS 12対策: タッチイベントとクリックイベントの両方を優しくサポート
             var handleSelect = function(e) {
                 e.preventDefault();
                 selectMemo(m.id);
@@ -806,7 +836,6 @@
 
             itemWrapper.appendChild(clickCell);
 
-            // 2. 右端のゴミ箱ボタン
             var deleteBtn = document.createElement('button');
             deleteBtn.className = 'memo-delete-btn';
             deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
@@ -827,11 +856,9 @@
         });
     }
 
-    // 右側のビューを切り替える 【修正ポイント：アンダーバーからハイフンに修正】
     function switchView(action) {
         var targetViewId = 'view-' + action; 
         
-        // ビューパネルの表示切替
         document.querySelectorAll('.view-panel').forEach(function(p) {
             p.classList.remove('active');
             p.style.display = 'none';
@@ -844,32 +871,26 @@
             currentViewId = targetViewId;
         }
         
-        // 固定ツールバーのactive表示の更新
         document.querySelectorAll('.sidebar-tool-btn').forEach(function(btn) {
             btn.classList.remove('active');
         });
         var activeBtn = document.getElementById('tool-btn-' + action);
-        if (activeBtn) {
-            activeBtn.classList.add('active');
-        }
+        if (activeBtn) { activeBtn.classList.add('active'); }
     }
 
-    // メモの上書き、または新規追加
     function addOrModifyMemo() {
         var text = document.getElementById('txt-memo-input').value.trim();
         if (!text) return;
         
         if (selectedMemoId) {
-            // 上書き修正モード
             var index = memos.findIndex(function(item) { return item.id === selectedMemoId; });
             if (index !== -1) {
                 memos[index].text = text;
                 memos[index].time = Date.now();
                 saveData();
-                selectMemo(selectedMemoId); // 編集後の内容でビューアーを更新
+                selectMemo(selectedMemoId);
             }
         } else {
-            // 新規作成モード
             var newMemo = {
                 id: 'memo_' + Date.now(),
                 text: text,
@@ -877,7 +898,6 @@
                 checked: false,
                 checkedTime: null
             };
-            
             memos.unshift(newMemo);
             saveData();
             document.getElementById('txt-memo-input').value = '';
@@ -885,10 +905,8 @@
         }
     }
 
-    // メモをタップして選択・編集欄へ読み込む
     function selectMemo(id) {
         selectedMemoId = id;
-        
         var m = memos.find(function(item) { return item.id === id; });
         if (!m) return;
         
@@ -898,14 +916,12 @@
         if (viewerTitle && viewerBody) {
             viewerTitle.innerHTML = '';
             
-            // チェックボックスの作成
             var chk = document.createElement('input');
             chk.type = 'checkbox';
             chk.style.transform = 'scale(1.8)';
             chk.style.marginRight = '18px';
             chk.style.cursor = 'pointer';
             chk.checked = m.checked;
-            
             chk.addEventListener('change', function() {
                 toggleCheckMemo(m.id, chk.checked);
             });
@@ -924,28 +940,19 @@
             viewerBody.appendChild(bodySpan);
         }
         
-        // 入力エリアへの自動読み込みと、ボタンの文字変化
         var inputArea = document.getElementById('txt-memo-input');
-        if (inputArea) {
-            inputArea.value = m.text;
-        }
+        if (inputArea) { inputArea.value = m.text; }
         
         var saveBtn = document.getElementById('btn-input-save');
-        if (saveBtn) {
-            saveBtn.innerHTML = '<i class="fa-solid fa-file-pen"></i>メモを上書き保存';
-        }
+        if (saveBtn) { saveBtn.innerHTML = '<i class="fa-solid fa-file-pen"></i>メモを上書き保存'; }
         
         var clearBtn = document.getElementById('btn-input-clear');
-        if (clearBtn) {
-            clearBtn.innerText = '選択を解除';
-        }
+        if (clearBtn) { clearBtn.innerText = '選択を解除'; }
         
-        // メモ帳ビューへ戻す
         switchView('dash');
-        renderMemoList(); // リストのアクティブ表示(水色背景)を更新
+        renderMemoList();
     }
 
-    // メモの完了（チェック）状態切り替え
     function toggleCheckMemo(id, isChecked) {
         var index = memos.findIndex(function(item) { return item.id === id; });
         if (index === -1) return;
@@ -953,10 +960,8 @@
         memos[index].checked = isChecked;
         memos[index].checkedTime = isChecked ? Date.now() : null;
         
-        // 未完了を上に、完了済みを下に整理
         var activeItems = memos.filter(function(item) { return !item.checked; });
         var checkedItems = memos.filter(function(item) { return item.checked; });
-        
         checkedItems.sort(function(a, b) { return b.checkedTime - a.checkedTime; });
         
         memos = activeItems.concat(checkedItems);
@@ -964,45 +969,30 @@
         selectMemo(id);
     }
 
-    // 編集状態のクリア（新規作成モードに戻す）
     function clearInput() {
         var inputArea = document.getElementById('txt-memo-input');
-        if (inputArea) {
-            inputArea.value = '';
-        }
+        if (inputArea) { inputArea.value = ''; }
         
         if (selectedMemoId) {
             selectedMemoId = null;
             var saveBtn = document.getElementById('btn-input-save');
-            if (saveBtn) {
-                saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i>覚書メモとして保存';
-            }
+            if (saveBtn) { saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i>覚書メモとして保存'; }
             var clearBtn = document.getElementById('btn-input-clear');
-            if (clearBtn) {
-                clearBtn.innerText = 'クリア';
-            }
+            if (clearBtn) { clearBtn.innerText = 'クリア'; }
             var viewerTitle = document.getElementById('view-title');
-            if (viewerTitle) {
-                viewerTitle.innerHTML = '<i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>選択されていません';
-            }
+            if (viewerTitle) { viewerTitle.innerHTML = '<i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>選択されていません'; }
             var viewerBody = document.getElementById('view-body');
-            if (viewerBody) {
-                viewerBody.innerText = '左側のリストからメモを選んでください。選択すると、ここで編集や上書きができます。';
-            }
+            if (viewerBody) { viewerBody.innerText = '左側のリストからメモを選んでください。選択すると、ここで編集や上書きができます。'; }
             renderMemoList();
         }
     }
 
-    // メモの削除
     function deleteMemo(id) {
         memos = memos.filter(function(item) { return item.id !== id; });
-        if (selectedMemoId === id) {
-            clearInput();
-        }
+        if (selectedMemoId === id) { clearInput(); }
         saveData();
     }
 
-    // 完了から26時間経過したメモを自動消去
     function sweepMemos() {
         var now = Date.now();
         var cutoffTime = 26 * 60 * 60 * 1000;
@@ -1012,24 +1002,18 @@
             if (m.checked && m.checkedTime) {
                 var elapsed = now - m.checkedTime;
                 var hour = new Date().getHours();
-                if (elapsed >= cutoffTime && hour === 0) {
-                    return false;
-                }
+                if (elapsed >= cutoffTime && hour === 0) { return false; }
             }
             return true;
         });
         
-        if (memos.length !== originalLength) {
-            saveData();
-        }
+        if (memos.length !== originalLength) { saveData(); }
     }
 
     function saveData() {
         try {
             localStorage.setItem('dashboard_memos', JSON.stringify(memos));
-        } catch(e) {
-            console.log("Could not save to localStorage (temporary fallback active).");
-        }
+        } catch(e) {}
         renderMemoList();
     }
 
@@ -1041,9 +1025,7 @@
         var dayName = dayList[d.getDay()];
         
         var dateLbl = document.getElementById('lbl-date');
-        if(dateLbl) {
-            dateLbl.innerText = month + '月' + date + '日 (' + dayName + ')';
-        }
+        if(dateLbl) { dateLbl.innerText = month + '月' + date + '日 (' + dayName + ')'; }
         
         var hrs = d.getHours();
         var mins = d.getMinutes();
@@ -1060,7 +1042,7 @@
     }
 
     // ============================================
-    // タイマーツール（一時停止・リセット機能付き）
+    // タイマーツール（秒対応版）
     // ============================================
     var timerSeconds = 0;
     var timerInterval = null;
@@ -1075,10 +1057,25 @@
         updateTimerDisplay();
     }
 
+    // 入力フォームから秒単位でタイマーを適用する機能
+    function applyCustomTimer() {
+        var minInput = parseInt(document.getElementById('input-timer-min').value) || 0;
+        var secInput = parseInt(document.getElementById('input-timer-sec').value) || 0;
+        
+        timerSeconds = (minInput * 60) + secInput;
+        updateTimerDisplay();
+    }
+
+    // 表示を「時:分:秒」に拡張
     function updateTimerDisplay() {
-        var mins = Math.floor(timerSeconds / 60);
+        var hrs = Math.floor(timerSeconds / 3600);
+        var mins = Math.floor((timerSeconds % 3600) / 60);
         var secs = timerSeconds % 60;
-        var displayStr = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+        
+        var displayStr = (hrs < 10 ? '0' : '') + hrs + ':' + 
+                         (mins < 10 ? '0' : '') + mins + ':' + 
+                         (secs < 10 ? '0' : '') + secs;
+                         
         var timerText = document.getElementById('timer-text');
         if (timerText) timerText.innerText = displayStr;
     }
@@ -1088,7 +1085,6 @@
         if (!startBtn) return;
         
         if (timerInterval) {
-            // 一時停止
             clearInterval(timerInterval);
             timerInterval = null;
             startBtn.innerText = 'スタート';
@@ -1103,12 +1099,11 @@
                     timerSeconds--;
                     updateTimerDisplay();
                 } else {
-                    // タイムアップ
                     clearInterval(timerInterval);
                     timerInterval = null;
                     startBtn.innerText = 'スタート';
                     startBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
-                    playAlarmSound();
+                    playAlarmSound(); // タイムアップで数式ブザー発音
                 }
             }, 1000);
         }
@@ -1124,25 +1119,64 @@
             startBtn.innerText = 'スタート';
             startBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
         }
+        document.getElementById('input-timer-min').value = 0;
+        document.getElementById('input-timer-sec').value = 0;
     }
 
+    // ============================================
+    // Web Audio APIによる100%オフライン電子ブザー音
+    // ============================================
     function playAlarmSound() {
         if ('vibrate' in navigator) {
             navigator.vibrate([100, 50, 100, 50, 200]);
         }
+        
         try {
-            var context = new (window.AudioContext || window.webkitAudioContext)();
-            var osc = context.createOscillator();
-            var gain = context.createGain();
-            osc.connect(gain);
-            gain.connect(context.destination);
-            osc.frequency.value = 880;
-            gain.gain.setValueAtTime(0.5, context.currentTime);
-            osc.start();
-            setTimeout(function() {
-                osc.stop();
-            }, 1200);
-        } catch(e) {}
+            // グローバルで解放したaudioCtxを使用（未生成ならその場で生成を試みる）
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            // ピピッ、ピピッ、ピピピピッという美しいアラームのリズムをプログラムの数式だけで生成
+            var now = audioCtx.currentTime;
+            
+            function pulse(startTime, duration) {
+                var osc = audioCtx.createOscillator();
+                var gain = audioCtx.createGain();
+                
+                osc.type = 'sine'; // 澄んだ電子音（サイン波）
+                osc.frequency.setValueAtTime(880, startTime); // 高めのピピッという音（A5音）
+                
+                // ブツブツ音を防ぐための優しい音量カーブ
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(0.4, startTime + 0.02);
+                gain.gain.setValueAtTime(0.4, startTime + duration - 0.02);
+                gain.gain.linearRampToValueAtTime(0, startTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            }
+
+            // 1.5秒間にわたるリズム発音トリガー
+            pulse(now + 0.0, 0.15);
+            pulse(now + 0.25, 0.15);
+            
+            pulse(now + 0.55, 0.15);
+            pulse(now + 0.80, 0.15);
+            
+            pulse(now + 1.10, 0.12);
+            pulse(now + 1.25, 0.12);
+            pulse(now + 1.40, 0.25);
+
+        } catch(e) {
+            console.log("Audio presentation failed: ", e);
+        }
     }
 
     // ============================================
@@ -1158,14 +1192,12 @@
         if (!sBtn) return;
         
         if (swInterval) {
-            // 一時停止
             clearInterval(swInterval);
             swInterval = null;
             swElapsedMs += Date.now() - swStartTime;
             sBtn.innerText = 'スタート';
             sBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
         } else {
-            // 計測開始
             swStartTime = Date.now();
             sBtn.innerText = '一時停止';
             sBtn.className = 'btn btn-danger flex-1 py-4 text-lg';
