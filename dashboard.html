@@ -1,23 +1,31 @@
-<!-- ... existing code ... -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ダッシュボードアプリ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         * {
             box-sizing: border-box;
             font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Hiragino Kaku Gothic ProN, "ヒラギノ角ゴ ProN W3", Arial, sans-serif;
             
-            /* iPad mini2 におけるダブルタップ時のメニューバー呼び出し動作・画面ガタつきをCSSレベルで徹底排除 */
-            touch-action: none;
+            /* iPad mini2におけるダブルタップ時の画面ガタつき・ズームをCSSレベルで徹底排除 */
+            touch-action: manipulation;
             
-            /* ボタンや枠を連打した際に、文字選択の青い網掛けが出るのを完全に防止 */
+            /* ボタン連打時の文字選択の青い網掛け防止 */
             -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
             
-            /* タップ時のグレーのハイライトを透明化し、画面のチラつきやガタつきを防止 */
+            /* タップ時のグレーのハイライトを透明化して画面のチラつきを防止 */
             -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
             outline: none !important;
         }
         
-        /* メモのテキスト入力エリアだけは、標準のタッチ操作・文字入力を完全に許可 */
+        /* メモのテキスト入力エリアだけは標準のタッチ操作・文字入力を完全に許可 */
         textarea, input[type="text"] {
             -webkit-user-select: text !important;
             user-select: text !important;
@@ -32,17 +40,13 @@
             background-color: #f0f2f5;
             overflow: hidden;
             color: #333;
-            position: fixed; /* 画面全体のバウンス（引っ張りスクロール）とメニューバー連動挙動を徹底防止 */
+            position: fixed; /* 画面全体のバウンス（引っ張りスクロール）を徹底防止 */
         }
 
-        /* ==========================================
-           【重要】メニューバー誤作動防止プロテクター（透明な壁）
-           上下に30px、左右に20pxの、さらに強力にした絶対防衛マージンを設置します。
-           ========================================== */
         #safe-wrapper {
             width: 100%;
             height: 100%;
-            padding: 30px 20px; 
+            padding: 15px 15px; 
             background-color: #f0f2f5;
         }
 
@@ -52,19 +56,20 @@
             height: 100%;
             table-layout: fixed;
             background-color: #ffffff;
-            border-radius: 12px; /* 全体を少し丸くして保護マージンと馴染ませます */
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
             overflow: hidden;
         }
 
         #left-col {
             display: table-cell;
-            width: 360px; 
+            width: 380px; 
             vertical-align: top;
             background-color: #ffffff;
-            border-right: 1px solid #d1d1d6;
+            border-right: 1px solid #e5e5ea;
             height: 100%;
         }
+
         #right-col {
             display: table-cell;
             vertical-align: top;
@@ -72,192 +77,789 @@
             height: 100%;
             position: relative;
         }
-        /* Left Column Sub-layout */
+
+        /* Left Column Header */
         .left-box {
             display: flex;
             flex-direction: column;
             height: 100%;
         }
+
         .header-area {
-            padding: 16px;
+            padding: 14px 18px;
             border-bottom: 1px solid #e5e5ea;
-            background-color: #fafafa;
+            background: linear-gradient(135deg, #ffffff 0%, #f9f9fb 100%);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            height: 80px;
         }
+
         .clock-date {
-            font-size: 24px;
-            color: #111;
-            font-weight: bold;
+            font-size: 21px;
+            color: #1c1c1e;
+            font-weight: 800;
+            letter-spacing: -0.5px;
         }
+
         .clock-time {
-            font-weight: 700;
-            color: #111;
+            font-weight: 800;
+            color: #007aff;
             display: flex;
             align-items: baseline;
         }
+
         #lbl-time {
-            font-size: 46px;
+            font-size: 42px;
+            line-height: 1;
+            letter-spacing: -1px;
         }
+
         .clock-sec {
-            font-size: 26px;
-            color: #888;
-            margin-left: 6px;
+            font-size: 22px;
+            color: #8e8e93;
+            margin-left: 4px;
+            font-weight: 600;
         }
         
-        /* スクロールはすべてJavaScriptによるカスタム物理スクロール(SmoothScroll)で制御 */
+        /* Custom Scrolling List Container for Memos and Tools */
         .list-container {
             flex: 1;
-            overflow: hidden;
-            position: relative;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            background-color: #ffffff;
         }
+
         .memo-row-wrapper {
             display: table;
             width: 100%;
-            border-bottom: 1px solid #e5e5ea;
+            border-bottom: 1px solid #f2f2f7;
+            height: 90px;
         }
+
         .btn-cell {
             display: table-cell;
-            width: 65px; 
+            width: 75px; 
             vertical-align: middle;
             text-align: center;
-            border-right: 1px solid #e5e5ea;
+            border-right: 1px solid #f2f2f7;
             background-color: #fafafa;
+            padding: 4px;
         }
         
         .tool-btn, .tool-btn-link {
-            width: 54px;
-            height: 85px;
-            background-color: #e5e5ea;
-            border: 1px solid #c7c7cc;
-            border-radius: 8px;
+            width: 62px;
+            height: 78px;
+            background-color: #f2f2f7;
+            border: 1px solid #d1d1d6;
+            border-radius: 12px;
             font-size: 11px;
             font-weight: bold;
             color: #333;
-            padding: 4px 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
             cursor: pointer;
-            display: inline-block;
-            line-height: 1.3;
-            text-align: center;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
             text-decoration: none !important;
-            color: #333 !important;
+            transition: all 0.15s ease;
         }
+
         .tool-btn:active, .tool-btn-link:active {
-            background-color: #d1d1d6;
+            background-color: #e5e5ea;
+            transform: scale(0.96);
         }
+
         .tool-btn.active {
             background-color: #007aff;
             color: white !important;
             border-color: #0051a8;
+            box-shadow: 0 3px 8px rgba(0,122,255,0.3);
         }
+
+        .tool-btn.active i {
+            color: white !important;
+        }
+
         .tool-icon {
-            font-size: 18px;
-            display: block;
-            margin-bottom: 2px;
+            font-size: 20px;
+            color: #007aff;
         }
+
         .memo-cell {
             display: table-cell;
             vertical-align: middle;
-            padding: 16px;
+            padding: 14px 18px;
             cursor: pointer;
             background-color: #fff;
+            transition: background-color 0.15s ease;
         }
+
         .memo-cell:active {
             background-color: #f2f2f7;
         }
+
         .memo-cell.selected {
             background-color: #e3f2fd;
         }
+
         .memo-title-text {
-            font-size: 19px;
-            font-weight: bold;
+            font-size: 18px;
+            font-weight: 700;
+            color: #1c1c1e;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         .memo-meta-text {
             font-size: 13px;
             color: #8e8e93;
-            margin-top: 6px;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        
-        /* Right Column Main View */
+
         .view-panel {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            padding: 20px;
+            padding: 24px;
             display: none;
             background-color: #f7f9fa;
+            overflow-y: auto;
         }
+
         .view-panel.active {
-            display: block;
+            display: flex;
+            flex-direction: column;
         }
-<!-- ... existing code ... -->
+
+        /* Split-view dashboard design */
+        .split-view {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%;
+        }
+
+        .memo-display-box {
+            flex: 1;
+            background-color: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid #e5e5ea;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .memo-display-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1c1c1e;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f2f2f7;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .memo-display-body {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #2c2c2e;
+            flex: 1;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .memo-input-container {
+            background-color: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #e5e5ea;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .memo-textarea {
+            width: 100%;
+            height: 110px;
+            border: 1px solid #d1d1d6;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 16px;
+            resize: none;
+            background-color: #fafafa;
+            transition: all 0.2s ease;
+        }
+
+        .memo-textarea:focus {
+            background-color: #ffffff;
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
+        }
+
+        .memo-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Button standardizations */
+        .btn {
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: none;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background-color: #007aff;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,122,255,0.2);
+        }
+
+        .btn-primary:active {
+            background-color: #0051a8;
+        }
+
+        .btn-secondary {
+            background-color: #e5e5ea;
+            color: #3a3a3c;
+        }
+
+        .btn-secondary:active {
+            background-color: #d1d1d6;
+        }
+
+        .btn-danger {
+            background-color: #ff3b30;
+            color: white;
+            box-shadow: 0 4px 10px rgba(255,59,48,0.2);
+        }
+
+        .btn-danger:active {
+            background-color: #c9241a;
+        }
+
+        .timer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .timer-preset-btn {
+            background-color: #ffffff;
+            border: 1.5px solid #d1d1d6;
+            border-radius: 12px;
+            padding: 16px 8px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #1c1c1e;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            cursor: pointer;
+        }
+
+        .timer-preset-btn:active {
+            background-color: #f2f2f7;
+            transform: scale(0.95);
+        }
+
+        .timer-display-box {
+            background-color: #ffffff;
+            border: 1px solid #e5e5ea;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            margin-bottom: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .timer-numbers {
+            font-size: 80px;
+            font-weight: 800;
+            font-family: monospace, sans-serif;
+            color: #1c1c1e;
+            line-height: 1;
+            margin-bottom: 20px;
+        }
+
+        .stopwatch-display-box {
+            background-color: #ffffff;
+            border: 1px solid #e5e5ea;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            margin-bottom: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .stopwatch-numbers {
+            font-size: 70px;
+            font-weight: 800;
+            font-family: monospace, sans-serif;
+            color: #1c1c1e;
+            line-height: 1;
+            margin-bottom: 20px;
+        }
+
+        .lap-list {
+            width: 100%;
+            max-height: 120px;
+            overflow-y: auto;
+            border-top: 1px solid #e5e5ea;
+            padding-top: 10px;
+        }
+
+        .lap-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 16px;
+            font-size: 16px;
+            border-bottom: 1px solid #f2f2f7;
+        }
+
+        .calc-wrapper {
+            background-color: #1c1c1e;
+            border-radius: 24px;
+            padding: 20px;
+            max-width: 440px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            width: 100%;
+        }
+
+        .calc-display {
+            width: 100%;
+            height: 80px;
+            background-color: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 48px;
+            text-align: right;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-family: monospace, sans-serif;
+        }
+
+        .calc-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .calc-btn {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+            transition: all 0.1s ease;
+        }
+
+        .calc-btn:active {
+            filter: brightness(1.3);
+            transform: scale(0.92);
+        }
+
+        .calc-btn-gray { background-color: #a5a5a5; color: #000000; }
+        .calc-btn-dark { background-color: #333333; color: #ffffff; }
+        .calc-btn-orange { background-color: #ff9f0a; color: #ffffff; }
+        .calc-btn-double { grid-column: span 2; aspect-ratio: auto; border-radius: 40px; padding-left: 24px; justify-content: flex-start; }
+    </style>
+</head>
 <body>
 
 <div id="safe-wrapper">
     <div id="container">
-        <!-- Left Column (Static) -->
+        <!-- Left Column (Fixed Width & Sidebar list) -->
         <div id="left-col">
             <div class="left-box">
-                <!-- Clock (Horizontal Layout) -->
+                <!-- Clock Row: Enlarged & Side-by-Side Horizontal Layout -->
                 <div class="header-area">
                     <div class="clock-date" id="lbl-date">--月--日 (ー)</div>
-                    <div class="clock-time"><span id="lbl-time">00:00</span><span class="clock-sec" id="lbl-sec">00</span></div>
+                    <div class="clock-time">
+                        <span id="lbl-time">00:00</span>
+                        <span class="clock-sec" id="lbl-sec">00</span>
+                    </div>
                 </div>
                 
-                <!-- Memo List with tool toggles embedded on the left gutter line -->
+                <!-- Memo List: Integrated with side tool buttons on the left margin -->
                 <div class="list-container" id="list-memos">
-                    <!-- Rows dynamically injected -->
+                    <!-- Dynamic Rows will be injected here via JavaScript -->
                 </div>
-                
-                <!-- Bottom Navigation is removed for more memo list space -->
             </div>
         </div>
         
         <!-- Right Column (Dynamic Views) -->
         <div id="right-col">
-            <!-- View 0: Dashboard Default -->
+            
+            <!-- VIEW 0: Dashboard Home & Memo Display Area -->
             <div id="view-dash" class="view-panel active">
                 <div class="split-view">
+                    <!-- Top Selected Memo Viewer -->
                     <div class="memo-display-box" id="memo-viewer">
-                        <div class="memo-display-title" id="view-title">選択されていません</div>
-                        <div class="memo-display-body" id="view-body">左側のリストからメモを選んでください。</div>
+                        <div class="memo-display-title" id="view-title">
+                            <i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>選択されていません
+                        </div>
+                        <div class="memo-display-body" id="view-body">左側のリストからメモを選んでください。選択すると、ここで編集や上書きができます。</div>
                     </div>
+                    
+                    <!-- Bottom Memo Input Area with Speech dictation support -->
                     <div class="memo-input-container">
-                        <textarea class="memo-textarea" id="txt-memo-input" placeholder="ここに音声を流すか、入力してください..."></textarea>
+                        <div class="flex justify-between items-center px-1">
+                            <span class="text-sm font-bold text-gray-500">メモ作成 &amp; 編集エリア</span>
+                            <!-- Speech-to-text dictation button for easy input -->
+                            <button class="text-sm text-blue-500 font-bold flex items-center gap-1 active:scale-95" id="btn-speech">
+                                <i class="fa-solid fa-microphone"></i>音声入力を開始
+                            </button>
+                        </div>
+                        <textarea class="memo-textarea" id="txt-memo-input" placeholder="ここに入力するか、マイクボタンを押して声で入力してください..."></textarea>
                         <div class="memo-actions">
                             <button class="btn btn-secondary" id="btn-input-clear">クリア</button>
-                            <button class="btn btn-primary" id="btn-input-save">覚書メモとして保存</button>
+                            <button class="btn btn-primary" id="btn-input-save">
+                                <i class="fa-solid fa-floppy-disk"></i>覚書メモとして保存
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-<!-- ... existing code ... -->
-    // 各ボタン高速フック登録
-    bindFastTap('btn-input-clear', clearInput);
-    bindFastTap('btn-input-save', addMemo);
 
-    // メモ処理 (新規保存＆上書き変更の判定)
-    function addMemo() {
+            <!-- VIEW 1: Countdown Timer Panel -->
+            <div id="view-timer" class="view-panel">
+                <div class="text-xl font-extrabold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-hourglass-half text-blue-500"></i>タイマーツール
+                </div>
+                <!-- Presets for fast entry -->
+                <div class="timer-grid">
+                    <div class="timer-preset-btn" onclick="setTimerPreset(1)">1分</div>
+                    <div class="timer-preset-btn" onclick="setTimerPreset(3)">3分</div>
+                    <div class="timer-preset-btn" onclick="setTimerPreset(5)">5分</div>
+                    <div class="timer-preset-btn" onclick="setTimerPreset(10)">10分</div>
+                    <div class="timer-preset-btn" onclick="setTimerPreset(15)">15分</div>
+                    <div class="timer-preset-btn" onclick="setTimerPreset(30)">30分</div>
+                    <div class="timer-preset-btn font-black text-blue-500" onclick="adjustTimer(60)">+1分</div>
+                    <div class="timer-preset-btn font-black text-red-500" onclick="adjustTimer(-60)">-1分</div>
+                </div>
+                
+                <!-- Main digital counter block -->
+                <div class="timer-display-box">
+                    <div class="timer-numbers" id="timer-text">00:00</div>
+                    <div class="flex gap-4 w-full max-w-sm">
+                        <!-- Controls for start, pause, and full reset -->
+                        <button class="btn btn-primary flex-1 py-4 text-lg" id="btn-timer-start" onclick="toggleTimer()">スタート</button>
+                        <button class="btn btn-secondary py-4 text-lg w-20" id="btn-timer-reset" onclick="resetTimer()">C</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: Stopwatch Panel -->
+            <div id="view-stopwatch" class="view-panel">
+                <div class="text-xl font-extrabold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-stopwatch text-green-500"></i>ストップウォッチ
+                </div>
+                <div class="stopwatch-display-box">
+                    <div class="stopwatch-numbers" id="stopwatch-text">00:00.00</div>
+                    <div class="flex gap-4 w-full max-w-sm mb-4">
+                        <button class="btn btn-primary flex-1 py-4 text-lg" id="btn-sw-start" onclick="toggleStopwatch()">スタート</button>
+                        <button class="btn btn-secondary py-4 text-lg" id="btn-sw-lap" onclick="lapStopwatch()">ラップ</button>
+                        <button class="btn btn-secondary py-4 text-lg w-16" id="btn-sw-reset" onclick="resetStopwatch()">C</button>
+                    </div>
+                    <div class="lap-list" id="sw-lap-container"></div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: Calculator Panel -->
+            <div id="view-calc" class="view-panel justify-center items-center">
+                <div class="calc-wrapper">
+                    <input type="text" class="calc-display" id="calc-screen" readonly value="0">
+                    <div class="calc-grid">
+                        <button class="calc-btn calc-btn-gray" onclick="pressCalc('C')">C</button>
+                        <button class="calc-btn calc-btn-gray" onclick="pressCalc('+/-')">+/-</button>
+                        <button class="calc-btn calc-btn-gray" onclick="pressCalc('%')">%</button>
+                        <button class="calc-btn calc-btn-orange" onclick="pressCalc('/')">÷</button>
+                        
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('7')">7</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('8')">8</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('9')">9</button>
+                        <button class="calc-btn calc-btn-orange" onclick="pressCalc('*')">×</button>
+                        
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('4')">4</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('5')">5</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('6')">6</button>
+                        <button class="calc-btn calc-btn-orange" onclick="pressCalc('-')">-</button>
+                        
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('1')">1</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('2')">2</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('3')">3</button>
+                        <button class="calc-btn calc-btn-orange" onclick="pressCalc('+')">+</button>
+                        
+                        <button class="calc-btn calc-btn-dark calc-btn-double" onclick="pressCalc('0')">0</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('.')">.</button>
+                        <button class="calc-btn calc-btn-orange" onclick="pressCalc('=')">=</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // System core state storage
+    var memos = [];
+    var selectedMemoId = null;
+    var currentViewId = 'view-dash';
+
+    // --- Audio Voice Dictation Speech-to-Text Support ---
+    var recognition = null;
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        var SpeechReq = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechReq();
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.lang = 'ja-JP';
+
+        recognition.onresult = function(event) {
+            var resultText = event.results[event.results.length - 1][0].transcript;
+            var inputArea = document.getElementById('txt-memo-input');
+            inputArea.value = inputArea.value + (inputArea.value ? '\n' : '') + resultText;
+        };
+
+        recognition.onerror = function() {
+            document.getElementById('btn-speech').innerHTML = '<i class="fa-solid fa-microphone"></i>音声入力を開始';
+            document.getElementById('btn-speech').classList.remove('text-red-500');
+        };
+
+        recognition.onend = function() {
+            document.getElementById('btn-speech').innerHTML = '<i class="fa-solid fa-microphone"></i>音声入力を開始';
+            document.getElementById('btn-speech').classList.remove('text-red-500');
+        };
+    }
+
+    // Toggles the dictation status
+    document.getElementById('btn-speech').addEventListener('click', function() {
+        if (!recognition) {
+            alert('お使いのブラウザは音声入力に対応していません。ドルフィンブラウザまたはSafariをご利用ください。');
+            return;
+        }
+        var dictBtn = document.getElementById('btn-speech');
+        if (dictBtn.classList.contains('text-red-500')) {
+            recognition.stop();
+        } else {
+            dictBtn.innerHTML = '<i class="fa-solid fa-microphone-lines animate-pulse"></i>認識中...（停止）';
+            dictBtn.classList.add('text-red-500');
+            recognition.start();
+        }
+    });
+
+    window.onload = function() {
+        // Load data from LocalStorage
+        var saved = localStorage.getItem('dashboard_memos');
+        if (saved) {
+            try {
+                memos = JSON.parse(saved);
+            } catch(e) {
+                memos = [];
+            }
+        }
+        
+        // Populate sample memo if completely empty
+        if (memos.length === 0) {
+            memos = [
+                { id: 'm1', text: 'ダッシュボードへようこそ！\n左側のマイクボタンでいつでも音声入力ができます。', time: Date.now(), checked: false },
+                { id: 'm2', text: 'タイマーやストップウォッチ、電卓は左側の切り替えボタンから一瞬で開けます。', time: Date.now() - 60000, checked: false }
+            ];
+            saveData();
+        }
+
+        // Apply physical-like smooth tapping mechanics to prevent delays on iPad mini 2
+        bindFastTap('btn-input-clear', clearInput);
+        bindFastTap('btn-input-save', addOrModifyMemo);
+
+        // Render visual screens
+        renderMemoList();
+        updateClock();
+        setInterval(updateClock, 1000); // Trigger precision second tick
+        
+        // Clean sweep any long-completed checked memos past cutoff period
+        sweepMemos();
+    };
+
+    // Fast-tap binding helper to bypass iOS 300ms delay safely
+    function bindFastTap(elemId, handler) {
+        var el = document.getElementById(elemId);
+        if (!el) return;
+        el.addEventListener('click', function(e) {
+            e.preventDefault();
+            handler();
+        });
+    }
+
+    function renderMemoList() {
+        var container = document.getElementById('list-memos');
+        container.innerHTML = '';
+
+        // Fixed tools mapping to keep action shelf pinned alongside list
+        var tools = [
+            { id: 'tool_dash', icon: 'fa-house', name: 'メモ帳', action: 'dash' },
+            { id: 'tool_timer', icon: 'fa-hourglass-half', name: 'タイマー', action: 'timer' },
+            { id: 'tool_sw', icon: 'fa-stopwatch', name: '計測器', action: 'stopwatch' },
+            { id: 'tool_calc', icon: 'fa-calculator', name: '電卓', action: 'calc' }
+        ];
+
+        var rowCount = Math.max(memos.length, 4); // Always render at least 4 rows to hold the tool keys
+
+        for (var i = 0; i < rowCount; i++) {
+            var m = memos[i];
+            var tool = tools[i]; // Corresponding tool toggle if index <= 3
+
+            var rowWrapper = document.createElement('div');
+            rowWrapper.className = 'memo-row-wrapper';
+
+            // 1. Tool button / action panel column (Left gutter)
+            var btnCell = document.createElement('div');
+            btnCell.className = 'btn-cell';
+
+            if (tool) {
+                // Pin primary tools to the top 4 rows
+                var tBtn = document.createElement('button');
+                tBtn.className = 'tool-btn' + (currentViewId === ('view_' + tool.action) ? ' active' : '');
+                tBtn.innerHTML = '<i class="fa-solid ' + tool.icon + ' tool-icon"></i>' + tool.name;
+                tBtn.setAttribute('data-action', tool.action);
+                
+                // Closure binding for view panel shifting
+                (function(act) {
+                    tBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        switchView(act);
+                    });
+                })(tool.action);
+
+                btnCell.appendChild(tBtn);
+            } else {
+                // Render custom delete key for rows 5 and onwards
+                if (m) {
+                    var dBtn = document.createElement('button');
+                    dBtn.className = 'tool-btn bg-red-50 text-red-500 border-red-200';
+                    dBtn.innerHTML = '<i class="fa-solid fa-trash-can text-red-500 text-lg"></i>削除';
+                    (function(targetMemoId) {
+                        dBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            deleteMemo(targetMemoId);
+                        });
+                    })(m.id);
+                    btnCell.appendChild(dBtn);
+                }
+            }
+            rowWrapper.appendChild(btnCell);
+
+            // 2. Memo descriptive details column (Right container)
+            var memoCell = document.createElement('div');
+            memoCell.className = 'memo-cell';
+            if (m) {
+                if (selectedMemoId === m.id) {
+                    memoCell.classList.add('selected');
+                }
+                if (m.checked) {
+                    memoCell.style.opacity = '0.55';
+                }
+
+                var titleStr = m.text.split('\n')[0] || '無題のメモ';
+                var dateFormatted = new Date(m.time).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit' }) + ' ' +
+                                new Date(m.time).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+
+                memoCell.innerHTML = 
+                    '<div class="memo-title-text">' + (m.checked ? '☑ ' : '') + titleStr + '</div>' +
+                    '<div class="memo-meta-text"><i class="fa-regular fa-clock"></i>' + dateFormatted + '</div>';
+
+                (function(targetMemoId) {
+                    memoCell.addEventListener('click', function() {
+                        selectMemo(targetMemoId);
+                    });
+                })(m.id);
+            } else {
+                // Empty placeholder cell for rows without associated memos
+                memoCell.innerHTML = '<div class="text-gray-300 italic text-sm">空のメモスロット</div>';
+                memoCell.style.cursor = 'default';
+            }
+            rowWrapper.appendChild(memoCell);
+
+            container.appendChild(rowWrapper);
+        }
+    }
+
+    function switchView(action) {
+        var targetViewId = 'view_' + action;
+        
+        // Toggle view visibility
+        document.querySelectorAll('.view-panel').forEach(function(p) {
+            p.classList.remove('active');
+        });
+        
+        var targetPanel = document.getElementById(targetViewId);
+        if (targetPanel) {
+            targetPanel.classList.add('active');
+            currentViewId = targetViewId;
+        }
+        
+        // Redraw memo sidebar list to reflect active panel highlights
+        renderMemoList();
+    }
+
+    // Adds a brand new memo, or overwrites existing memo in database
+    function addOrModifyMemo() {
         var text = document.getElementById('txt-memo-input').value.trim();
         if (!text) return;
         
         if (selectedMemoId) {
-            // 【変更】編集モード：選ばれているメモの中身を直接上書き保存します
+            // Edit Mode: Overwrite the contents of the chosen memo directly
             var index = memos.findIndex(function(item) { return item.id === selectedMemoId; });
             if (index !== -1) {
                 memos[index].text = text;
+                memos[index].time = Date.now(); // Update timestamp on edit
                 saveData();
-                selectMemo(selectedMemoId); // 再描画して詳細エリアを更新
+                selectMemo(selectedMemoId); // Refresh selected view details
             }
         } else {
-            // 新規作成モード
+            // Creation Mode: Add brand new memo item to the array
             var newMemo = {
                 id: 'memo_' + Date.now(),
                 text: text,
@@ -272,22 +874,7 @@
             selectMemo(newMemo.id);
         }
     }
-    
-    // クリア / 選択解除ボタンの動作
-    function clearInput() {
-        document.getElementById('txt-memo-input').value = '';
-        if (selectedMemoId) {
-            // 【変更】メモ選択中なら選択状態を安全に解除します
-            selectedMemoId = null;
-            document.getElementById('btn-input-save').innerText = '覚書メモとして保存';
-            document.getElementById('btn-input-clear').innerText = 'クリア';
-            document.getElementById('view-title').innerText = '選択されていません';
-            document.getElementById('view-body').innerText = '左側のリストからメモを選んでください。';
-            renderMemoList();
-        }
-    }
-    
-    // メモが選ばれたときの処理
+
     function selectMemo(id) {
         selectedMemoId = id;
         renderMemoList();
@@ -300,10 +887,12 @@
         
         viewerTitle.innerHTML = '';
         
+        // Large-target toggle checkbox for quick resolution marking
         var chk = document.createElement('input');
         chk.type = 'checkbox';
-        chk.style.transform = 'scale(1.6)';
-        chk.style.marginRight = '16px';
+        chk.style.transform = 'scale(1.8)';
+        chk.style.marginRight = '18px';
+        chk.style.cursor = 'pointer';
         chk.checked = m.checked;
         
         chk.addEventListener('change', function() {
@@ -312,25 +901,26 @@
         
         var titleSpan = document.createElement('span');
         titleSpan.style.verticalAlign = 'middle';
+        titleSpan.className = 'font-extrabold';
         titleSpan.innerText = m.text.split('\n')[0] || '無題のメモ';
         
         viewerTitle.appendChild(chk);
         viewerTitle.appendChild(titleSpan);
         
         viewerBody.innerHTML = '';
-        
         var bodySpan = document.createElement('span');
         bodySpan.innerText = m.text;
         viewerBody.appendChild(bodySpan);
         
-        // 【変更】選択したメモの内容を入力エリアにロードし、ボタンの表示を編集モードに切り替えます
+        // Load target text back into textarea, setting interface parameters to edit state
         document.getElementById('txt-memo-input').value = m.text;
-        document.getElementById('btn-input-save').innerText = 'メモを上書き保存';
+        document.getElementById('btn-input-save').innerHTML = '<i class="fa-solid fa-file-pen"></i>メモを上書き保存';
         document.getElementById('btn-input-clear').innerText = '選択を解除';
         
-        showDashboard();
+        switchView('dash');
     }
-    
+
+    // Toggle checked resolution timestamp
     function toggleCheckMemo(id, isChecked) {
         var index = memos.findIndex(function(item) { return item.id === id; });
         if (index === -1) return;
@@ -338,6 +928,7 @@
         memos[index].checked = isChecked;
         memos[index].checkedTime = isChecked ? Date.now() : null;
         
+        // Re-prioritize: place incomplete items up top, resolved checklist down below
         var activeItems = memos.filter(function(item) { return !item.checked; });
         var checkedItems = memos.filter(function(item) { return item.checked; });
         
@@ -347,16 +938,38 @@
         saveData();
         selectMemo(id);
     }
-    
+
+    function clearInput() {
+        document.getElementById('txt-memo-input').value = '';
+        if (selectedMemoId) {
+            selectedMemoId = null;
+            document.getElementById('btn-input-save').innerHTML = '<i class="fa-solid fa-floppy-disk"></i>覚書メモとして保存';
+            document.getElementById('btn-input-clear').innerText = 'クリア';
+            document.getElementById('view-title').innerHTML = '<i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>選択されていません';
+            document.getElementById('view-body').innerText = '左側のリストからメモを選んでください。選択すると、ここで編集や上書きができます。';
+            renderMemoList();
+        }
+    }
+
+    function deleteMemo(id) {
+        memos = memos.filter(function(item) { return item.id !== id; });
+        if (selectedMemoId === id) {
+            clearInput();
+        }
+        saveData();
+    }
+
+    // Performs daily automatic clean-up sweep on aged resolved list items
     function sweepMemos() {
         var now = Date.now();
-        var cutoffTime = 26 * 60 * 60 * 1000;
+        var cutoffTime = 26 * 60 * 60 * 1000; // 26 hours duration
         var originalLength = memos.length;
         
         memos = memos.filter(function(m) {
             if (m.checked && m.checkedTime) {
                 var elapsed = now - m.checkedTime;
                 var hour = new Date().getHours();
+                // Sweep clean at midnights for a fresh morning dashboard
                 if (elapsed >= cutoffTime && hour === 0) {
                     return false;
                 }
@@ -366,32 +979,235 @@
         
         if (memos.length !== originalLength) {
             saveData();
-            if (!memos.find(function(m) { return m.id === selectedMemoId; })) {
-                document.getElementById('view-title').innerText = '選択されていません';
-                document.getElementById('view-body').innerText = '左側のリストからメモを選んでください。';
-            }
         }
     }
-    
+
     function saveData() {
         localStorage.setItem('dashboard_memos', JSON.stringify(memos));
         renderMemoList();
     }
 
-    // --- 各ツールの動作ロジック ---
-<!-- ... existing code ... -->
-```
-eof
+    function updateClock() {
+        var d = new Date();
+        var month = d.getMonth() + 1;
+        var date = d.getDate();
+        var dayList = ['日', '月', '火', '水', '木', '金', '土'];
+        var dayName = dayList[d.getDay()];
+        
+        document.getElementById('lbl-date').innerText = month + '月' + date + '日 (' + dayName + ')';
+        
+        var hrs = d.getHours();
+        var mins = d.getMinutes();
+        var secs = d.getSeconds();
+        
+        var timeStr = (hrs < 10 ? '0' : '') + hrs + ':' + (mins < 10 ? '0' : '') + mins;
+        var secStr = (secs < 10 ? '0' : '') + secs;
+        
+        document.getElementById('lbl-time').innerText = timeStr;
+        document.getElementById('lbl-sec').innerText = secStr;
+    }
 
----
+    // ============================================
+    // TIMER TOOL LOGIC (Fully Non-Blocking, Always Editable)
+    // ============================================
+    var timerSeconds = 0;
+    var timerInterval = null;
 
-### 🛠️ 今回のアップデートまとめ
+    function setTimerPreset(mins) {
+        timerSeconds = mins * 60;
+        updateTimerDisplay();
+    }
 
-1. **既存メモの修正ができるようになりました！**
-   メモを一覧からタップすると、自動的にその内容がすぐに入力欄へ読み込まれます。必要箇所を直して、青い「メモを上書き保存」ボタンを押すだけでいつでも文章をアップデートできます。「選択を解除」を押せば、いつでも新規メモ作成に戻れます。
-2. **日付と時間を超・大きく横並び表示！**
-   スペースをうまく活かして1行に収めたため、日付の視認性も時間のフォントの迫力も数段パワーアップしました。ダッシュボードがより見やすくなっています。
-3. **無駄な「戻る」ボタンのカットで一覧性が向上！**
-   ドルフィンブラウザ上でメニューボタンをパチパチ触るだけで表示切り替えができるようになったため、余分なフッター（底のボタンエリア）をカットしました。その分メモ一覧の下限が広がり、一度にスクロールできる高さが大幅に増えてすっきりしました。
+    function adjustTimer(change) {
+        timerSeconds = Math.max(0, timerSeconds + change);
+        updateTimerDisplay();
+    }
 
-この新しいコードをいつものようにGitHubに上書きしていただき、アップデート後の使い心地をぜひ試してみてください！
+    function updateTimerDisplay() {
+        var mins = Math.floor(timerSeconds / 60);
+        var secs = timerSeconds % 60;
+        var displayStr = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+        document.getElementById('timer-text').innerText = displayStr;
+    }
+
+    function toggleTimer() {
+        var startBtn = document.getElementById('btn-timer-start');
+        if (timerInterval) {
+            // Un-blocking instantaneous Pause Action
+            clearInterval(timerInterval);
+            timerInterval = null;
+            startBtn.innerText = 'スタート';
+            startBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
+        } else {
+            if (timerSeconds <= 0) return;
+            startBtn.innerText = '一時停止';
+            startBtn.className = 'btn btn-danger flex-1 py-4 text-lg'; // Distinct red color on pause mode
+            
+            // Continuous decrement cycle
+            timerInterval = setInterval(function() {
+                if (timerSeconds > 0) {
+                    timerSeconds--;
+                    updateTimerDisplay();
+                } else {
+                    // Timeout complete trigger
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    startBtn.innerText = 'スタート';
+                    startBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
+                    playAlarmSound();
+                }
+            }, 1000);
+        }
+    }
+
+    function resetTimer() {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timerSeconds = 0;
+        updateTimerDisplay();
+        var startBtn = document.getElementById('btn-timer-start');
+        startBtn.innerText = 'スタート';
+        startBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
+    }
+
+    function playAlarmSound() {
+        // Safe, non-blocking notification for aged iOS 12 devices using Audio Synthesis APIs
+        if ('vibrate' in navigator) {
+            navigator.vibrate([100, 50, 100, 50, 200]);
+        }
+        try {
+            var context = new (window.AudioContext || window.webkitAudioContext)();
+            var osc = context.createOscillator();
+            var gain = context.createGain();
+            osc.connect(gain);
+            gain.connect(context.destination);
+            osc.frequency.value = 880; // High clear chime frequency
+            gain.gain.setValueAtTime(0.5, context.currentTime);
+            osc.start();
+            // Shut sound generator down after exactly 1.2 seconds
+            setTimeout(function() {
+                osc.stop();
+            }, 1200);
+        } catch(e) {}
+    }
+
+    // ============================================
+    // STOPWATCH LOGIC
+    // ============================================
+    var swStartTime = 0;
+    var swElapsedMs = 0;
+    var swInterval = null;
+    var swLaps = [];
+
+    function toggleStopwatch() {
+        var sBtn = document.getElementById('btn-sw-start');
+        if (swInterval) {
+            // Pause action
+            clearInterval(swInterval);
+            swInterval = null;
+            swElapsedMs += Date.now() - swStartTime;
+            sBtn.innerText = 'スタート';
+            sBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
+        } else {
+            // Start action
+            swStartTime = Date.now();
+            sBtn.innerText = '一時停止';
+            sBtn.className = 'btn btn-danger flex-1 py-4 text-lg';
+            swInterval = setInterval(function() {
+                var currentMs = swElapsedMs + (Date.now() - swStartTime);
+                updateSwDisplay(currentMs);
+            }, 10);
+        }
+    }
+
+    function updateSwDisplay(totalMs) {
+        var ms = Math.floor((totalMs % 1000) / 10);
+        var secs = Math.floor((totalMs / 1000) % 60);
+        var mins = Math.floor(totalMs / 60000);
+        
+        var dStr = (mins < 10 ? '0' : '') + mins + ':' +
+                   (secs < 10 ? '0' : '') + secs + '.' +
+                   (ms < 10 ? '0' : '') + ms;
+        
+        document.getElementById('stopwatch-text').innerText = dStr;
+    }
+
+    function lapStopwatch() {
+        if (!swInterval) return;
+        var currentMs = swElapsedMs + (Date.now() - swStartTime);
+        swLaps.unshift(currentMs);
+        
+        var container = document.getElementById('sw-lap-container');
+        container.innerHTML = '';
+        swLaps.forEach(function(lap, index) {
+            var ms = Math.floor((lap % 1000) / 10);
+            var secs = Math.floor((lap / 1000) % 60);
+            var mins = Math.floor(lap / 60000);
+            var dStr = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs + '.' + (ms < 10 ? '0' : '') + ms;
+            
+            var div = document.createElement('div');
+            div.className = 'lap-item';
+            div.innerHTML = '<span class="text-gray-400">ラップ ' + (swLaps.length - index) + '</span><span class="font-bold text-gray-800">' + dStr + '</span>';
+            container.appendChild(div);
+        });
+    }
+
+    function resetStopwatch() {
+        clearInterval(swInterval);
+        swInterval = null;
+        swElapsedMs = 0;
+        swLaps = [];
+        updateSwDisplay(0);
+        document.getElementById('sw-lap-container').innerHTML = '';
+        var sBtn = document.getElementById('btn-sw-start');
+        sBtn.innerText = 'スタート';
+        sBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
+    }
+
+    // ============================================
+    // CALCULATOR LOGIC
+    // ============================================
+    var calcInput = '0';
+    var calcOp = null;
+    var calcValue = null;
+
+    function pressCalc(key) {
+        var screen = document.getElementById('calc-screen');
+        
+        if (key === 'C') {
+            calcInput = '0';
+            calcOp = null;
+            calcValue = null;
+        } else if (key === '+/-') {
+            calcInput = (parseFloat(calcInput) * -1).toString();
+        } else if (key === '%') {
+            calcInput = (parseFloat(calcInput) / 100).toString();
+        } else if (['+', '-', '*', '/'].indexOf(key) !== -1) {
+            calcValue = parseFloat(calcInput);
+            calcOp = key;
+            calcInput = '0';
+        } else if (key === '=') {
+            if (calcOp && calcValue !== null) {
+                var current = parseFloat(calcInput);
+                var result = 0;
+                if (calcOp === '+') result = calcValue + current;
+                else if (calcOp === '-') result = calcValue - current;
+                else if (calcOp === '*') result = calcValue * current;
+                else if (calcOp === '/') result = current !== 0 ? calcValue / current : 'エラー';
+                
+                calcInput = result.toString();
+                calcOp = null;
+                calcValue = null;
+            }
+        } else {
+            // Intercept initial placeholder zeros
+            if (calcInput === '0') calcInput = key;
+            else calcInput += key;
+        }
+        
+        screen.value = calcInput;
+    }
+</script>
+
+</body>
+</html>
