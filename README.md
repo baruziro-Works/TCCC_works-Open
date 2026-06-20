@@ -16,6 +16,10 @@ index.html
 教会QRコード案内用作成
 https://baruziro-works.github.io/TCCC_works-Open/index.html
 
+ipadmini 活用　dashboard
+https://baruziro-works.github.io/TCCC_works-Open/dashboard.html
+
+
 Ws2index.html
 スライド作成、　音源対応版（祈祷会）
 https://baruziro-works.github.io/TCCC_works-Open/Ws2index.html
