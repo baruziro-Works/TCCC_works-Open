@@ -474,14 +474,12 @@
             border-bottom: 1px solid #f2f2f7;
         }
 
-        /* ============================================
-           電卓デザイン修正（iPadでの縦潰れを徹底防止）
-           ============================================ */
+        /* 電卓デザイン */
         .calc-wrapper {
             background-color: #1c1c1e;
             border-radius: 24px;
             padding: 16px;
-            max-width: 340px; /* 横幅を最適化 */
+            max-width: 340px; 
             margin: 0 auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             width: 100%;
@@ -506,7 +504,6 @@
             gap: 12px;
         }
 
-        /* 縦横比を1:1(正円)に保ち、iPad上の自動伸縮による変形を防ぐ */
         .calc-btn {
             width: 64px;
             height: 64px;
@@ -520,7 +517,7 @@
             border: none;
             margin: 0 auto;
             transition: all 0.1s ease;
-            -webkit-appearance: none; /* iOS独自の標準ボタン化を解除 */
+            -webkit-appearance: none; 
         }
 
         .calc-btn:active {
@@ -528,7 +525,6 @@
             transform: scale(0.92);
         }
 
-        /* 0ボタン：横長のカプセル型にし、幅だけを2個分に拡張 */
         .calc-btn-double {
             grid-column: span 2; 
             width: 140px; 
@@ -547,7 +543,9 @@
 
 <div id="safe-wrapper">
     <div id="container">
+        <!-- 左カラム -->
         <div id="left-col">
+            <!-- 時計表示エリア -->
             <div class="header-area">
                 <div class="clock-date" id="lbl-date">--月--日 (ー)</div>
                 <div class="clock-time">
@@ -556,7 +554,9 @@
                 </div>
             </div>
             
+            <!-- 下部メインエリア -->
             <div class="sidebar-main-content">
+                <!-- 垂直固定ツールバー -->
                 <div class="tools-sidebar">
                     <button class="sidebar-tool-btn active" id="tool-btn-dash" onclick="switchView('dash')">
                         <i class="fa-solid fa-house"></i><span>メモ帳</span>
@@ -570,20 +570,26 @@
                     <button class="sidebar-tool-btn" id="tool-btn-calc" onclick="switchView('calc')">
                         <i class="fa-solid fa-calculator"></i><span>電卓</span>
                     </button>
+                    <!-- 聖書アプリ起動ショートカット -->
                     <a href="shortcuts://run-shortcut?name=聖書" class="sidebar-tool-btn-link" target="_blank">
                         <i class="fa-solid fa-book-bible"></i><span>聖書</span>
                     </a>
                 </div>
 
+                <!-- メモ一覧スクロールエリア -->
                 <div class="memos-sidebar" id="list-memos">
-                    </div>
+                    <!-- 動的に追加 -->
+                </div>
             </div>
         </div>
         
+        <!-- 右カラム -->
         <div id="right-col">
             
+            <!-- VIEW 0: メモ表示 & 編集 -->
             <div id="view-dash" class="view-panel active">
                 <div class="split-view">
+                    <!-- 上部選択中のメモ表示エリア -->
                     <div class="memo-display-box" id="memo-viewer">
                         <div class="memo-display-title" id="view-title">
                             <i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>選択されていません
@@ -591,6 +597,7 @@
                         <div class="memo-display-body" id="view-body">左側のリストからメモを選んでください。選択すると、ここで編集や上書きができます。</div>
                     </div>
                     
+                    <!-- 下部メモ作成・編集エリア -->
                     <div class="memo-input-container">
                         <div class="flex justify-between items-center px-1">
                             <span class="text-sm font-bold text-gray-500">メモ作成 &amp; 編集エリア</span>
@@ -609,6 +616,7 @@
                 </div>
             </div>
 
+            <!-- VIEW 1: タイマーツール -->
             <div id="view-timer" class="view-panel">
                 <div class="text-xl font-extrabold text-gray-800 mb-3 flex items-center gap-2">
                     <i class="fa-solid fa-hourglass-half text-blue-500"></i>タイマーツール
@@ -625,6 +633,7 @@
                     <div class="timer-preset-btn font-black text-red-500" onclick="adjustTimer(-60)">-1分</div>
                 </div>
 
+                <!-- 秒単位での直接カスタム設定フォーム -->
                 <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-3 flex items-center justify-between">
                     <span class="text-sm font-bold text-blue-800"><i class="fa-solid fa-sliders mr-1"></i>時間を細かく設定：</span>
                     <div class="flex items-center gap-1">
@@ -645,6 +654,7 @@
                 </div>
             </div>
 
+            <!-- VIEW 2: ストップウォッチ -->
             <div id="view-stopwatch" class="view-panel">
                 <div class="text-xl font-extrabold text-gray-800 mb-4 flex items-center gap-2">
                     <i class="fa-solid fa-stopwatch text-green-500"></i>ストップウォッチ
@@ -660,6 +670,7 @@
                 </div>
             </div>
 
+            <!-- VIEW 3: 電卓ツール -->
             <div id="view-calc" class="view-panel justify-center items-center">
                 <div class="calc-wrapper">
                     <input type="text" class="calc-display" id="calc-screen" readonly value="0">
@@ -681,7 +692,7 @@
                         
                         <button class="calc-btn calc-btn-dark" onclick="pressCalc('1')">1</button>
                         <button class="calc-btn calc-btn-dark" onclick="pressCalc('2')">2</button>
-                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('3') text-white">3</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('3')">3</button>
                         <button class="calc-btn calc-btn-orange" onclick="pressCalc('+')">+</button>
                         
                         <button class="calc-btn calc-btn-dark calc-btn-double" onclick="pressCalc('0')">0</button>
@@ -704,23 +715,20 @@
     // iOS/iPadOS 向け Web Audio API 解放用のオーディオコンテキスト
     var audioCtx = null;
 
-    // iPadOSのセキュリティ制限（ユーザーのタップ直後でないと音が鳴らせない仕様）を完全に回避するため、
-    // 画面のどこかを最初に触った瞬間にAudioContextを生成・解放する仕組み
+    // iPadOSのセキュリティ制限を完全に回避するための初期化関数
     function initAudioContext() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            
-            // サイレントバッファを1度再生してブラウザのアラーム制限を解除
-            var buffer = audioCtx.createBuffer(1, 1, 22050);
-            var source = audioCtx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(audioCtx.destination);
-            if (source.start) { source.start(0); } else { source.noteOn(0); }
-        }
-        if (audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume();
+        try {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        } catch(e) {
+            console.log("AudioContext init error: ", e);
         }
     }
+    // 画面のどこを触っても確実にロック解除が走るようイベントを登録
     window.addEventListener('touchstart', initAudioContext, { passive: true });
     window.addEventListener('click', initAudioContext);
 
@@ -797,7 +805,7 @@
         updateClock();
         setInterval(updateClock, 1000);
         sweepMemos();
-        updateTimerDisplay(); // タイマーの初期表示を秒まで対応
+        updateTimerDisplay(); 
     };
 
     function renderMemoList() {
@@ -1042,7 +1050,7 @@
     }
 
     // ============================================
-    // タイマーツール（秒対応版）
+    // タイマーツール
     // ============================================
     var timerSeconds = 0;
     var timerInterval = null;
@@ -1057,7 +1065,6 @@
         updateTimerDisplay();
     }
 
-    // 入力フォームから秒単位でタイマーを適用する機能
     function applyCustomTimer() {
         var minInput = parseInt(document.getElementById('input-timer-min').value) || 0;
         var secInput = parseInt(document.getElementById('input-timer-sec').value) || 0;
@@ -1066,7 +1073,6 @@
         updateTimerDisplay();
     }
 
-    // 表示を「時:分:秒」に拡張
     function updateTimerDisplay() {
         var hrs = Math.floor(timerSeconds / 3600);
         var mins = Math.floor((timerSeconds % 3600) / 60);
@@ -1083,6 +1089,9 @@
     function toggleTimer() {
         var startBtn = document.getElementById('btn-timer-start');
         if (!startBtn) return;
+        
+        // スタートボタンを押した際にもAudioContextを確実にアクティブ化する
+        initAudioContext();
         
         if (timerInterval) {
             clearInterval(timerInterval);
@@ -1103,7 +1112,7 @@
                     timerInterval = null;
                     startBtn.innerText = 'スタート';
                     startBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
-                    playAlarmSound(); // タイムアップで数式ブザー発音
+                    playAlarmSound(); 
                 }
             }, 1000);
         }
@@ -1132,7 +1141,7 @@
         }
         
         try {
-            // グローバルで解放したaudioCtxを使用（未生成ならその場で生成を試みる）
+            // オーディオの再生成と強制アクティブ化
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
@@ -1140,17 +1149,15 @@
                 audioCtx.resume();
             }
 
-            // ピピッ、ピピッ、ピピピピッという美しいアラームのリズムをプログラムの数式だけで生成
             var now = audioCtx.currentTime;
             
             function pulse(startTime, duration) {
                 var osc = audioCtx.createOscillator();
                 var gain = audioCtx.createGain();
                 
-                osc.type = 'sine'; // 澄んだ電子音（サイン波）
-                osc.frequency.setValueAtTime(880, startTime); // 高めのピピッという音（A5音）
+                osc.type = 'sine'; 
+                osc.frequency.setValueAtTime(880, startTime); 
                 
-                // ブツブツ音を防ぐための優しい音量カーブ
                 gain.gain.setValueAtTime(0, startTime);
                 gain.gain.linearRampToValueAtTime(0.4, startTime + 0.02);
                 gain.gain.setValueAtTime(0.4, startTime + duration - 0.02);
@@ -1160,7 +1167,12 @@
                 gain.connect(audioCtx.destination);
                 
                 osc.start(startTime);
-                osc.stop(startTime + duration);
+                // 古いブラウザ（一部の旧iOS）の挙動対策としてstopとnoteOffの両方を安全にケア
+                if (osc.stop) {
+                    osc.stop(startTime + duration);
+                } else if (osc.noteOff) {
+                    osc.noteOff(startTime + duration);
+                }
             }
 
             // 1.5秒間にわたるリズム発音トリガー
