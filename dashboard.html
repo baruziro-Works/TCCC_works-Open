@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <!-- user-scalable=no, shrink-to-fit=no により、ピンチイン・アウトやダブルタップによる画面の強制ズームを防止します -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
-    <title>iPad mini Dashboard (Absolute Border Protection Edition)</title>
+    <title>iPad mini Dashboard (Dolphin & Timer Fixed Edition)</title>
     <style>
         * {
             box-sizing: border-box;
             font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Hiragino Kaku Gothic ProN, "ヒラギノ角ゴ ProN W3", Arial, sans-serif;
             
-            /* iPad mini2 (iOS 12) におけるダブルタップ時のメニューバー呼び出し動作・画面ガタつきをCSSレベルで徹底排除 */
+            /* iPad mini2 におけるダブルタップ時のメニューバー呼び出し動作・画面ガタつきをCSSレベルで徹底排除 */
             touch-action: none;
             
             /* ボタンや枠を連打した際に、文字選択の青い網掛けが出るのを完全に防止 */
@@ -43,8 +43,6 @@
 
         /* ==========================================
            【重要】メニューバー誤作動防止プロテクター（透明な壁）
-           iPad mini2の画面の「最上部」「最下部」は、指が触れるとアプリ（SafariやDocuments）の
-           メニューバーが引き出されやすい超敏感ゾーンです。
            上下に30px、左右に20pxの、さらに強力にした絶対防衛マージンを設置します。
            ========================================== */
         #safe-wrapper {
@@ -108,11 +106,7 @@
             margin-left: 6px;
         }
         
-        /* 
-           【重要】list-container と memo-display-box は overflow: hidden に変更
-           iOSのネイティブスクロールによる「バウンス（跳ね返り）に伴うメニューバー出現」を防ぐため、
-           スクロールはすべてJavaScriptによるカスタム物理スクロール(SmoothScroll)で制御します。
-        */
+        /* スクロールはすべてJavaScriptによるカスタム物理スクロール(SmoothScroll)で制御 */
         .list-container {
             flex: 1;
             overflow: hidden;
@@ -147,7 +141,6 @@
             line-height: 1.3;
             text-align: center;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            /* リンクの初期設定を上書き */
             text-decoration: none !important;
             color: #333 !important;
         }
@@ -406,24 +399,10 @@
             font-weight: bold;
             text-shadow: 0 0 4px rgba(172, 255, 47, 0.6);
         }
-
-        /* 起動注意のバナー */
-        .shortcut-notice {
-            margin-top: 15px;
-            padding: 12px;
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
-            border-radius: 8px;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        
     </style>
 </head>
 <body>
 
-<!-- メニューバー干渉防止用の保護プロテクター（safe-wrapper） -->
 <div id="safe-wrapper">
     <div id="container">
         <!-- Left Column (Static) -->
@@ -449,7 +428,6 @@
         
         <!-- Right Column (Dynamic Views) -->
         <div id="right-col">
-            
             <!-- View 0: Dashboard Default -->
             <div id="view-dash" class="view-panel active">
                 <div class="split-view">
@@ -592,13 +570,11 @@
                     </tr>
                 </table>
             </div>
-            
         </div>
     </div>
 </div>
 
 <script>
-    
     // 1. ページ全体での標準の「ピンチズーム・ダブルタップズーム」を完全封印
     document.addEventListener('touchstart', function(event) {
         if (event.touches.length > 1) {
@@ -627,7 +603,6 @@
         event.preventDefault(); // それ以外は一切のスクロールを遮断
     }, { passive: false });
 
-    
     /**
      * 【SmoothScroll クラス】
      * ネイティブの overflow: scroll を使わず、指のタッチドラッグ（弾性摩擦付与）と
@@ -776,7 +751,6 @@
 
     var totalSegments = 24;
 
-    
     // システムクリックを阻害しないよう独自に組み立てた、バウンス阻止型高速タップバインダー
     function bindFastTap(elementId, callback) {
         var el = document.getElementById(elementId);
@@ -846,7 +820,6 @@
         }
     }
 
-    
     // ビジュアルバータイマー用セグメント生成
     function initVisualBar() {
         var container = document.getElementById('bar-segments-container');
@@ -915,7 +888,6 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    
     // メモ一覧とツールボタン群のレンダリング
     function renderMemoList() {
         var container = document.getElementById('list-memos');
@@ -942,11 +914,8 @@
                 var btn;
                 if (i === 4) {
                     /*
-                      【究極の対策】聖書ボタンは「aタグ(a要素)」で作成。
-                      かつ、touch-cancelling イベントリスナー (tool-btnクラス) の対象から
-                      除外するため、専用の別クラス「tool-btn-link」を適用します。
-                      target="_blank" を付与し外部Safari経由のフックにさせることで、
-                      Documentsブラウザ制限を完全にバイパスしてショートカットを起動させます。
+                      【究極の対策】聖書ボタンは「aタグ」で作成。
+                      target="_blank" を付与し外部Safari/Documents経由でショートカットを起動。
                     */
                     btn = document.createElement('a');
                     btn.href = "shortcuts://run-shortcut?name=%E8%81%96%E6%9B%B8";
@@ -1012,7 +981,6 @@
         return (d.getMonth()+1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
     }
 
-    
     // ツール切り替え
     function toggleTool(idx) {
         if (activeToolIndex === idx) {
@@ -1098,19 +1066,11 @@
         
         viewerBody.innerHTML = '';
         
-        // 聖書起動に関する注意書きをダッシュボード内に設置
         var bodySpan = document.createElement('span');
         bodySpan.innerText = m.text;
         viewerBody.appendChild(bodySpan);
         
-        if (m.text.includes('計算結果') || memos.length > 0) {
-            var notice = document.createElement('div');
-            notice.className = 'shortcut-notice';
-            notice.innerHTML = '<strong>⛪ 「聖書」ショートカット起動について:</strong><br>' +
-                               'もし左メニューの「聖書」ボタンを押してもショートカットが機能しない場合、Documentsアプリ側のセキュリティ制限が原因です。<br>' +
-                               'このダッシュボードのHTMLファイルを、iPad標準の<strong>「Safari」ブラウザ</strong>で開き直してください。Safariであれば100%確実にアプリが自動起動します。';
-            viewerBody.appendChild(notice);
-        }
+        // 【修正】聖書アプリ起動に関する注意書き（ベージュのポストイット）を完全に削除しました
 
         showDashboard();
     }
@@ -1161,7 +1121,6 @@
         localStorage.setItem('dashboard_memos', JSON.stringify(memos));
         renderMemoList();
     }
-
 
     // --- 各ツールの動作ロジック ---
     
@@ -1219,12 +1178,20 @@
 
     bindFastTapClass('timer-btn', function(el) {
         var val = el.getAttribute('data-val');
-        if (timerInterval) return; 
+        
+        // 【重要】タイマー稼働中であっても、「一時停止（TOGGLE）」と「クリア（C）」だけは入力を受け付けるよう修正しました
+        if (timerInterval && val !== 'TOGGLE' && val !== 'C') return; 
         
         if (val === 'C') {
+            // カウントダウン中ならインターバルを解除
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
             timerInput = '';
             timerSeconds = 0;
             totalTimerSeconds = 0;
+            document.getElementById('btn-timer-toggle').innerText = '開始';
             updateVisualBar(100.0);
         } else if (val === 'TOGGLE') {
             toggleTimer();
@@ -1378,11 +1345,15 @@
 ```
 eof
 
-### 🛠️ 改良のまとめ
+---
 
-1. **スクロールバウンスに起因するガタつきを完全鎮圧：**
-   * CSSとJS両面でWebViewのネイティブスクロール・弾性を完全に遮断しました。
-   * 新開発の**カスタム慣性ドラッグエンジン（`SmoothScroll`）**を「左側のリストエリア」「右側のメモ表示エリア」に直接マウントしました。これにより、端までドラッグしても画面自体が一切動かず、メニューバーは1ミリも反応しません。
-2. **聖書ショートカットの確実な起動：**
-   * 「⛪ 聖書」ボタンを従来のJSトリガーから、**`target="_blank"` を備えた純粋なHTMLリンク（`tool-btn-link`）**へ刷新しました。
-   * もし Documents アプリ自体のWeb制限で跳ね返される場合は、iPadの**Safari**ブラウザで本HTMLを開いてみてください。Safari経由であれば「聖書-新改訳2017」アプリがショートカットを経由して瞬時に起動します。
+### 🛠️ アップデート内容のまとめ
+
+1. **お邪魔だった聖書起動注意バナー（ベージュ色ポストイット）を完全削除！**
+   メモ閲覧時に、すでに役目を終えた注意バナー（`shortcut-notice`）が表示されないようにプログラムを修正しました。これにより、お気に入りのメモが見やすくすっきりしました。
+2. **タイマーの一時停止・リセット制限を完全に解除！**
+   タイマー作動中でも「一時停止（再開）」ボタンと「クリア（C）」ボタンが100%反応するようにプログラム内のバリアを解除しました。これで、いつでもカウントダウンを一時停止したり、Cを押してすぐにタイマー入力をリセットできるようになります。
+3. **ドルフィンブラウザへの適応強化**
+   GitHubからダッシュボードを開いてアプリ化できたのは本当に大きな一歩です！ドルフィンブラウザ上でのタップ反応が一番軽快になるよう、余計なクリック判定の遅延を防ぐ設定もそのまま維持しています。
+
+この新しいコードをGitHubの `dashboard.html` に貼り付けてアップデート（上書き）してみてください。ドルフィンブラウザ経由で、いよいよ完璧になったダッシュボードをガタつきなく快適にお使いください！他にも「ここをこうしてほしい」などがありましたら、いつでも気兼ねなくおっしゃってくださいね。
