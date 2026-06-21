@@ -318,16 +318,18 @@
             white-space: pre-wrap;
         }
 
+        /* メモ書き込みコンテナ（格納式のトグルアコーディオン化） */
         .memo-input-container {
             background-color: #ffffff;
             border-radius: 16px;
             padding: 16px;
             border: 1px solid #e5e5ea;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
             display: flex;
             flex-direction: column;
             gap: 10px;
-            flex-shrink: 0; /* iPad miniでの画面潰れ防止に極めて重要 */
+            flex-shrink: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .memo-textarea {
@@ -423,6 +425,7 @@
             padding: 12px 16px;
             background: linear-gradient(135deg, #ffffff 0%, #f9f9fb 100%);
             border-bottom: 1px solid #e5e5ea;
+            flex-shrink: 0;
         }
 
         .calendar-grid {
@@ -532,16 +535,16 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             flex-shrink: 0;
         }
 
         /* ドット液晶目盛りを表現するバー構造 */
         .visual-segments-track {
             display: flex;
-            gap: 3px;
+            gap: 2px;
             width: 100%;
-            height: 32px; /* VBT20-BK風の美しい高さ */
+            height: 28px;
             background-color: #2c2c2e;
             border-radius: 6px;
             padding: 4px;
@@ -552,7 +555,7 @@
 
         /* アラーム鳴動中の「音波イコライザー伸縮」スタイル */
         .visual-segments-track.ringing-active {
-            height: 60px; /* 鳴動時は縦を拡張 */
+            height: 50px; 
             align-items: center;
             background-color: #1a0f0f;
             border: 1px solid #ff453a;
@@ -569,22 +572,18 @@
         /* ============================================
            キングジムVBT20-BK風液晶：残量または位置に応じた4色区分
            ============================================ */
-        /* 点灯：グリーンゾーン (75%〜100%) */
         .segment-block.lit-green {
             background: linear-gradient(180deg, #30d158 0%, #24b045 100%);
             box-shadow: 0 0 5px rgba(48, 209, 88, 0.6);
         }
-        /* 点灯：イエローゾーン (50%〜75%) */
         .segment-block.lit-yellow {
             background: linear-gradient(180deg, #ffd60a 0%, #e6be00 100%);
             box-shadow: 0 0 5px rgba(255, 214, 10, 0.6);
         }
-        /* 点灯：オレンジゾーン (25%〜50%) */
         .segment-block.lit-orange {
             background: linear-gradient(180deg, #ff9f0a 0%, #e08200 100%);
             box-shadow: 0 0 5px rgba(255, 159, 10, 0.6);
         }
-        /* 点灯：レッドゾーン (0%〜25%) */
         .segment-block.lit-red {
             background: linear-gradient(180deg, #ff453a 0%, #dd2a20 100%);
             box-shadow: 0 0 5px rgba(255, 69, 58, 0.7);
@@ -606,11 +605,11 @@
            タイマー用物理風「回転スワイプダイヤル」
            ============================================ */
         .dial-viewport {
-            width: 75px;
-            height: 110px;
+            width: 70px;
+            height: 100px;
             background-color: #1c1c1e;
             border: 3px solid #3a3a3c;
-            border-radius: 16px;
+            border-radius: 14px;
             position: relative;
             overflow: hidden;
             display: flex;
@@ -627,12 +626,12 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: 14px;
             transition: transform 0.1s ease-out;
         }
 
         .dial-number {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 900;
             color: #8e8e93;
             font-family: monospace, sans-serif;
@@ -642,9 +641,9 @@
 
         .dial-number.active-num {
             color: #007aff;
-            font-size: 28px;
+            font-size: 24px;
             opacity: 1;
-            text-shadow: 0 0 8px rgba(0,122,255,0.6);
+            text-shadow: 0 0 6px rgba(0,122,255,0.6);
         }
 
         /* ダイヤルの中央線ハイライト */
@@ -652,7 +651,7 @@
             position: absolute;
             left: 0;
             right: 0;
-            height: 38px;
+            height: 34px;
             border-top: 1px solid rgba(0, 122, 255, 0.4);
             border-bottom: 1px solid rgba(0, 122, 255, 0.4);
             background: linear-gradient(180deg, rgba(0,122,255,0.05) 0%, rgba(0,122,255,0.15) 50%, rgba(0,122,255,0.05) 100%);
@@ -662,17 +661,16 @@
         .timer-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-bottom: 14px;
-            flex-shrink: 0;
+            gap: 8px;
+            margin-bottom: 10px;
         }
 
         .timer-preset-btn {
             background-color: #ffffff;
             border: 1.5px solid #d1d1d6;
             border-radius: 12px;
-            padding: 14px 6px;
-            font-size: 17px;
+            padding: 10px 4px;
+            font-size: 16px;
             font-weight: 800;
             color: #1c1c1e;
             text-align: center;
@@ -685,14 +683,15 @@
             transform: scale(0.95);
         }
 
+        /* タイマー画面の表示ブロック(絶対に回り込まない構造に改修) */
         .timer-display-box, .stopwatch-display-box {
             background-color: #ffffff;
             border: 1px solid #e5e5ea;
             border-radius: 20px;
-            padding: 24px;
+            padding: 20px;
             text-align: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -701,11 +700,12 @@
         }
 
         .timer-numbers {
-            font-size: 72px; /* iPad miniでの回り込みを防ぐため僅かにコンパクト化 */
+            font-size: 64px; /* iPad miniでの1行収まりを完全確実にするサイズに調整 */
             font-weight: 900;
             font-family: monospace, sans-serif;
             color: #1c1c1e;
             line-height: 1;
+            letter-spacing: -1px;
         }
 
         .stopwatch-numbers {
@@ -849,8 +849,8 @@
             <div id="view-dash" class="view-panel active">
                 <div class="split-view h-full">
                     
-                    <!-- アラームセット中の簡易ステータス表示 (初期状態はhiddenとし、設定された場合のみJavaScriptで解放) -->
-                    <div id="alarm-status-bar" class="alarm-indicator hidden">
+                    <!-- アラームセット中の簡易ステータス表示 (初期はスタイルで物理的に完全に消しておく) -->
+                    <div id="alarm-status-bar" class="alarm-indicator" style="display: none;">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-bell animate-bounce"></i>
                             <span>アラームセット中: <strong id="lbl-active-alarm-time">00:00</strong> (<span id="lbl-active-alarm-text">メッセージなし</span>)</span>
@@ -877,8 +877,8 @@
                             </div>
                         </div>
 
-                        <!-- 通常のメモビューアー (カレンダーとは完全に排他的に display を切り替え) -->
-                        <div class="memo-display-box h-full hidden" id="memo-viewer">
+                        <!-- 通常のメモビューアー (初期はdisplayをnoneにしてカレンダーを優先表示) -->
+                        <div class="memo-display-box h-full" id="memo-viewer" style="display: none;">
                             <div class="memo-display-title" id="view-title">
                                 <i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>選択されていません
                             </div>
@@ -886,20 +886,29 @@
                         </div>
                     </div>
                     
-                    <!-- 下部メモ作成・編集エリア -->
-                    <div class="memo-input-container">
-                        <div class="flex justify-between items-center px-1">
-                            <span class="text-sm font-bold text-gray-500">メモ作成 &amp; 編集エリア</span>
-                            <button class="text-sm text-blue-500 font-bold flex items-center gap-1 active:scale-95" id="btn-speech">
-                                <i class="fa-solid fa-microphone"></i>音声入力を開始
+                    <!-- 下部メモ作成・編集エリア (カレンダーの時は格納ボタンによってアコーディオン開閉) -->
+                    <div class="flex flex-col gap-2 flex-shrink-0" id="dash-lower-input-wrapper">
+                        <!-- カレンダー時にのみ出現する入力トグルボタン -->
+                        <div id="calendar-input-toggle-row" class="flex justify-center px-1">
+                            <button class="bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 font-extrabold rounded-xl py-2 w-full text-sm flex items-center justify-center gap-1 active:scale-95 transition-all shadow-sm" id="btn-toggle-input" onclick="toggleInputArea()">
+                                <i class="fa-solid fa-pen-to-square"></i> <span id="lbl-toggle-input">＋ 新しいメモを書く（入力欄を開く）</span>
                             </button>
                         </div>
-                        <textarea class="memo-textarea" id="txt-memo-input" placeholder="ここに入力するか、マイクボタンを押して声で入力してください..."></textarea>
-                        <div class="memo-actions">
-                            <button class="btn btn-secondary" id="btn-input-clear" onclick="clearInput()">クリア (カレンダーに戻る)</button>
-                            <button class="btn btn-primary" id="btn-input-save" onclick="addOrModifyMemo()">
-                                <i class="fa-solid fa-floppy-disk"></i>覚書メモとして保存
-                            </button>
+
+                        <div class="memo-input-container" id="memo-input-drawer" style="display: none;">
+                            <div class="flex justify-between items-center px-1">
+                                <span class="text-xs font-bold text-gray-400">メモ作成 &amp; 編集エリア</span>
+                                <button class="text-xs text-blue-500 font-bold flex items-center gap-1 active:scale-95" id="btn-speech">
+                                    <i class="fa-solid fa-microphone"></i>音声入力を開始
+                                </button>
+                            </div>
+                            <textarea class="memo-textarea" id="txt-memo-input" placeholder="ここに入力するか、マイクボタンを押して声で入力してください..."></textarea>
+                            <div class="memo-actions">
+                                <button class="btn btn-secondary py-2 px-4 text-sm" id="btn-input-clear" onclick="clearInput()">クリア (カレンダーに戻る)</button>
+                                <button class="btn btn-primary py-2 px-4 text-sm" id="btn-input-save" onclick="addOrModifyMemo()">
+                                    <i class="fa-solid fa-floppy-disk"></i>覚書メモとして保存
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -907,21 +916,22 @@
 
             <!-- VIEW 1: タイマーツール & 指定時刻アラーム設定 -->
             <div id="view-timer" class="view-panel">
-                <div class="text-xl font-extrabold text-gray-800 mb-3 flex items-center gap-2">
+                <div class="text-xl font-extrabold text-gray-800 mb-2 flex items-center gap-2 flex-shrink-0">
                     <i class="fa-solid fa-hourglass-half text-blue-500"></i>タイマー &amp; アラーム設定
                 </div>
                 
-                <!-- キングジム VBT20-BK 風ビジュアルバータイマー (液晶風バー) -->
+                <!-- キングジム VBT20-BK 風液晶バー (4色セグメント) -->
                 <div class="visual-bar-container">
-                    <div class="flex justify-between text-xs font-bold text-gray-400 px-1">
+                    <div class="flex justify-between text-[10px] font-bold text-gray-400 px-1">
                         <span>VISUAL BAR TRACKER</span>
                         <span id="lbl-bar-percentage">100% REMAINING</span>
                     </div>
                     <div class="visual-segments-track" id="visual-bar-track">
-                        <!-- 80個の極細セグメントを動的にマウント -->
+                        <!-- 80個の極細セグメント -->
                     </div>
                 </div>
 
+                <!-- プリセット簡易ボタン (1分〜30分) -->
                 <div class="timer-grid">
                     <div class="timer-preset-btn" onclick="setTimerPreset(1)">1分</div>
                     <div class="timer-preset-btn" onclick="setTimerPreset(3)">3分</div>
@@ -933,48 +943,45 @@
                     <div class="timer-preset-btn font-black text-red-500" onclick="adjustTimer(-60)">-1分</div>
                 </div>
 
-                <!-- 直接設定フォーム -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 flex-shrink-0">
-                    <!-- タイマー調整エリア -->
-                    <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 flex flex-col justify-between">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-black text-blue-800"><i class="fa-solid fa-sliders mr-1"></i>時間を細かく設定：</span>
-                        </div>
+                <!-- 各種設定フォーム (iPad mini のために1行にスマートに凝縮、重ね着崩れを根絶) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3 flex-shrink-0">
+                    <!-- 秒加算・詳細タイマー入力 -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-xl p-2.5 flex flex-col justify-center">
+                        <span class="text-[11px] font-black text-blue-800 mb-1.5"><i class="fa-solid fa-sliders mr-1"></i>タイマー細設定：</span>
                         <div class="flex items-center gap-1">
-                            <input type="number" id="input-timer-min" min="0" max="99" class="w-12 p-1 text-center font-bold border border-gray-300 rounded-lg text-sm bg-white" value="0">
-                            <span class="text-xs font-bold text-gray-600">分</span>
-                            <input type="number" id="input-timer-sec" min="0" max="59" class="w-12 p-1 text-center font-bold border border-gray-300 rounded-lg text-sm bg-white" value="0">
-                            <span class="text-xs font-bold text-gray-600">秒</span>
-                            <button class="bg-blue-600 text-white py-1 px-2.5 text-xs font-black rounded-lg ml-1 active:scale-95" onclick="applyCustomTimer()">適用</button>
+                            <input type="number" id="input-timer-min" min="0" max="99" class="w-10 p-1 text-center font-bold border border-gray-300 rounded-lg text-sm bg-white" value="0">
+                            <span class="text-[11px] font-bold text-gray-600">分</span>
+                            <input type="number" id="input-timer-sec" min="0" max="59" class="w-10 p-1 text-center font-bold border border-gray-300 rounded-lg text-sm bg-white" value="0">
+                            <span class="text-[11px] font-bold text-gray-600">秒</span>
+                            <button class="bg-blue-600 text-white py-1 px-2 text-xs font-black rounded-lg ml-0.5 active:scale-95" onclick="applyCustomTimer()">適用</button>
                             
-                            <button class="bg-gray-200 text-gray-800 py-1 px-2 text-xs font-extrabold rounded-lg ml-1 active:scale-95" onclick="adjustTimer(10)">+10秒</button>
-                            <button class="bg-gray-200 text-gray-800 py-1 px-2 text-xs font-extrabold rounded-lg active:scale-95" onclick="adjustTimer(5)">+5秒</button>
+                            <button class="bg-gray-200 text-gray-800 py-1 px-1.5 text-xs font-extrabold rounded-lg ml-0.5 active:scale-95" onclick="adjustTimer(10)">+10秒</button>
+                            <button class="bg-gray-200 text-gray-800 py-1 px-1.5 text-xs font-extrabold rounded-lg active:scale-95" onclick="adjustTimer(5)">+5秒</button>
                         </div>
                     </div>
 
-                    <!-- 指定時刻アラーム設定エリア -->
-                    <div class="bg-orange-50 border border-orange-100 rounded-xl p-3 flex flex-col justify-between">
-                        <span class="text-xs font-black text-orange-800 mb-2"><i class="fa-solid fa-bell mr-1"></i>① 指定時刻アラームを設定：</span>
-                        <div class="flex items-center gap-1 mb-1">
-                            <input type="text" id="input-alarm-time" placeholder="18:30" class="w-20 p-1 text-center font-bold border border-gray-300 rounded-lg text-sm bg-white" />
-                            <input type="text" id="input-alarm-text" placeholder="薬を飲む時間" class="flex-1 p-1 font-bold border border-gray-300 rounded-lg text-sm bg-white" />
-                            <button class="bg-orange-500 text-white font-extrabold text-xs py-1.5 px-3 rounded-lg active:scale-95" onclick="setSpecifiedTimeAlarm()">セット</button>
+                    <!-- 指定時刻アラーム -->
+                    <div class="bg-orange-50 border border-orange-100 rounded-xl p-2.5 flex flex-col justify-center">
+                        <span class="text-[11px] font-black text-orange-800 mb-1.5"><i class="fa-solid fa-bell mr-1"></i>指定時刻アラーム (HH:MM)：</span>
+                        <div class="flex items-center gap-1">
+                            <input type="text" id="input-alarm-time" placeholder="18:30" class="w-14 p-1 text-center font-bold border border-gray-300 rounded-lg text-xs bg-white" />
+                            <input type="text" id="input-alarm-text" placeholder="アラームメモ" class="flex-1 p-1 font-bold border border-gray-300 rounded-lg text-xs bg-white" />
+                            <button class="bg-orange-500 text-white font-extrabold text-xs py-1 px-2 rounded-lg active:scale-95" onclick="setSpecifiedTimeAlarm()">セット</button>
                         </div>
-                        <div class="text-[10px] text-orange-600 font-bold">24時間表記 (HH:MM) で入力してください</div>
                     </div>
                 </div>
                 
-                <!-- カウンター＆ドラッグダイヤル表示 (iPad mini の横幅に最適化し、回り込みを徹底排除) -->
+                <!-- カウンター＆スワイプダイヤル (絶対に回り込まないテーブル横並び構造) -->
                 <div class="timer-display-box flex-1">
-                    <div class="flex items-center justify-between gap-4 w-full max-w-md px-4">
-                        <!-- カウントダウン文字列 -->
-                        <div class="flex-1 text-left">
+                    <div class="flex items-center justify-between w-full max-w-sm border-b border-gray-100 pb-3">
+                        <!-- カウントダウン文字列 (左寄せ) -->
+                        <div class="text-left">
+                            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1"><i class="fa-solid fa-clock animate-pulse"></i> TIMER COUNTER</span>
                             <div class="timer-numbers" id="timer-text">00:00:00</div>
-                            <span class="text-[11px] font-bold text-gray-400 block mt-1 ml-1"><i class="fa-solid fa-clock"></i> TIMER RUNNING</span>
                         </div>
                         
-                        <!-- 操作性アップ: 上下スワイプ式回転ダイヤル (タイマー文字列の右側に完全固定) -->
-                        <div class="flex flex-col items-center flex-shrink-0">
+                        <!-- 上下スワイプ式回転ダイヤル (右側に100%完全配置) -->
+                        <div class="flex flex-col items-center flex-shrink-0 bg-gray-50 p-1.5 rounded-2xl border border-gray-200">
                             <div class="dial-viewport" id="timer-dial-viewport">
                                 <div class="dial-center-line"></div>
                                 <div class="dial-track" id="timer-dial-track">
@@ -985,13 +992,14 @@
                                     <div class="dial-number" id="dial-num-next2">+2</div>
                                 </div>
                             </div>
-                            <span class="text-[9px] font-black text-gray-400 mt-1">上下スワイプ</span>
+                            <span class="text-[8px] font-black text-gray-400 mt-1">上下スワイプ</span>
                         </div>
                     </div>
                     
-                    <div class="flex gap-4 w-full max-w-sm mt-5">
-                        <button class="btn btn-primary flex-1 py-4 text-lg" id="btn-timer-start" onclick="toggleTimer()">スタート</button>
-                        <button class="btn btn-secondary py-4 text-lg w-20" id="btn-timer-reset" onclick="resetTimer()">C</button>
+                    <!-- コントロールボタン -->
+                    <div class="flex gap-4 w-full max-w-xs mt-3">
+                        <button class="btn btn-primary flex-1 py-3 text-base" id="btn-timer-start" onclick="toggleTimer()">スタート</button>
+                        <button class="btn btn-secondary py-3 text-base w-16" id="btn-timer-reset" onclick="resetTimer()">C</button>
                     </div>
                 </div>
             </div>
@@ -1329,7 +1337,33 @@
             memos.unshift(newMemo);
             saveData();
             document.getElementById('txt-memo-input').value = '';
+            
+            // 新規作成後はアコーディオンを一度閉じる
+            var drawer = document.getElementById('memo-input-drawer');
+            if (drawer) {
+                drawer.style.display = 'none';
+                document.getElementById('btn-toggle-input').style.display = 'flex';
+            }
+            
             selectMemo(newMemo.id);
+        }
+    }
+
+    // カレンダー時にメモ入力アコーディオン（トグル）を開閉するロジック
+    function toggleInputArea() {
+        var drawer = document.getElementById('memo-input-drawer');
+        var toggleBtn = document.getElementById('btn-toggle-input');
+        if (!drawer) return;
+
+        if (drawer.style.display === 'none' || !drawer.style.display) {
+            // アコーディオンを開く
+            drawer.style.display = 'flex';
+            toggleBtn.style.display = 'none'; // 入力中はトグル用の追加ボタンを隠す
+            document.getElementById('txt-memo-input').focus();
+        } else {
+            // 閉じる
+            drawer.style.display = 'none';
+            toggleBtn.style.display = 'flex';
         }
     }
 
@@ -1341,6 +1375,10 @@
         // メモ表示エリアを完全に表示し、カレンダーを完全に非表示(display:none)にする
         document.getElementById('calendar-view-container').style.display = 'none';
         
+        // メモ帳画面を表示する際は下部の簡易アコーディオン行を隠し、常に書き込みドロワーを解放して上書きしやすくする
+        document.getElementById('calendar-input-toggle-row').style.display = 'none';
+        document.getElementById('memo-input-drawer').style.display = 'flex';
+
         var memoViewer = document.getElementById('memo-viewer');
         memoViewer.classList.remove('hidden');
         memoViewer.style.display = 'flex';
@@ -1425,6 +1463,11 @@
         var calContainer = document.getElementById('calendar-view-container');
         calContainer.classList.remove('hidden');
         calContainer.style.display = 'flex';
+
+        // カレンダーホーム時には入力エリアをアコーディオンとして完全に畳み込み、カレンダー全画面表示にする
+        document.getElementById('calendar-input-toggle-row').style.display = 'flex';
+        document.getElementById('btn-toggle-input').style.display = 'flex';
+        document.getElementById('memo-input-drawer').style.display = 'none';
 
         var viewerTitle = document.getElementById('view-title');
         if (viewerTitle) { viewerTitle.innerHTML = '<i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>選択されていません'; }
@@ -1688,7 +1731,11 @@
 
         document.getElementById('lbl-active-alarm-time').innerText = alarmTimeStr;
         document.getElementById('lbl-active-alarm-text').innerText = alarmMessage;
-        document.getElementById('alarm-status-bar').classList.remove('hidden');
+        
+        // CSSクラスに加え、レガシーブラウザ用にDOM表示を物理スイッチ
+        var bar = document.getElementById('alarm-status-bar');
+        bar.style.display = 'flex';
+        bar.classList.remove('hidden');
 
         initAudioContext();
         alert('アラームを ' + alarmTimeStr + ' にセットしました。');
@@ -1697,7 +1744,9 @@
     function cancelAlarm() {
         alarmTimeStr = null;
         alarmMessage = "";
-        document.getElementById('alarm-status-bar').classList.add('hidden');
+        var bar = document.getElementById('alarm-status-bar');
+        bar.style.display = 'none';
+        bar.classList.add('hidden');
     }
 
     function triggerAlarm() {
