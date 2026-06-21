@@ -25,7 +25,7 @@
             outline: none !important;
         }
         
-        /* メモ入力やタイマーの数値入力欄は通常の文字入力を許可 */
+        /* ユーザーが快適に入力できるように、テキスト入力エリアなどはタッチ操作を通常解放 */
         textarea, input[type="text"], input[type="number"] {
             -webkit-user-select: text !important;
             user-select: text !important;
@@ -40,7 +40,7 @@
             background-color: #f0f2f5;
             overflow: hidden;
             color: #333;
-            position: fixed; /* 画面全体の引っ張りバウンスを完全に防止 */
+            position: fixed; /* 画面全体のバウンス（引っ張りスクロール）を完全に防止 */
         }
 
         #safe-wrapper {
@@ -400,6 +400,261 @@
             background-color: #c9241a;
         }
 
+        /* ============================================
+           カレンダー（一ヶ月表示・スワイプ対応）
+           ============================================ */
+        .calendar-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e5e5ea;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            overflow: hidden;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #f9f9fb 100%);
+            border-bottom: 1px solid #e5e5ea;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            flex: 1;
+            background-color: #e5e5ea;
+            gap: 1px;
+            height: 100%;
+        }
+
+        .calendar-weekday {
+            background-color: #f5f5f7;
+            text-align: center;
+            font-weight: 800;
+            font-size: 13px;
+            padding: 8px 2px;
+            color: #8e8e93;
+        }
+
+        .calendar-day-cell {
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            padding: 6px;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: background-color 0.1s ease;
+        }
+
+        .calendar-day-cell:active {
+            background-color: #e3f2fd;
+        }
+
+        .calendar-day-cell.other-month {
+            background-color: #fafafa;
+            color: #c7c7cc;
+        }
+
+        .calendar-day-cell.today-cell {
+            background-color: #f2f9ff;
+        }
+
+        .calendar-day-cell.today-cell .day-number {
+            background-color: #007aff;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 950;
+        }
+
+        .day-number {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1c1c1e;
+            margin-bottom: 4px;
+        }
+
+        .calendar-event-tag {
+            font-size: 10px;
+            line-height: 1.2;
+            padding: 2px 4px;
+            border-radius: 4px;
+            background-color: #e1f5fe;
+            color: #0288d1;
+            border-left: 3px solid #0288d1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+            font-weight: 800;
+        }
+
+        /* ============================================
+           アラーム機能（指定時刻設定モーダル・表示）
+           ============================================ */
+        .alarm-indicator {
+            background-color: #fff3e0;
+            border: 1px solid #ffe0b2;
+            color: #e65100;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        /* ============================================
+           キングジム風 ビジュアルバータイマー (VBT20-BK風)
+           ============================================ */
+        .visual-bar-container {
+            width: 100%;
+            background-color: #1c1c1e; /* クロ調の黒背景 */
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        /* ドット液晶目盛りを表現するバー構造 */
+        .visual-segments-track {
+            display: flex;
+            gap: 3px;
+            width: 100%;
+            height: 32px; /* VBT20-BK風の美しい高さ */
+            background-color: #2c2c2e;
+            border-radius: 6px;
+            padding: 4px;
+            overflow: hidden;
+            align-items: flex-end;
+            transition: all 0.3s ease;
+        }
+
+        /* アラーム鳴動中の「音波イコライザー伸縮」スタイル */
+        .visual-segments-track.ringing-active {
+            height: 60px; /* 鳴動時は縦を拡張 */
+            align-items: center;
+            background-color: #1a0f0f;
+            border: 1px solid #ff453a;
+        }
+
+        .segment-block {
+            flex: 1;
+            height: 100%;
+            background-color: #3a3a3c; /* 消灯時 */
+            border-radius: 1.5px;
+            transition: background-color 0.15s ease, transform 0.1s ease-in-out;
+        }
+
+        /* ============================================
+           キングジムVBT20-BK風液晶：残量または位置に応じた4色区分
+           ============================================ */
+        /* 点灯：グリーンゾーン (75%〜100%) */
+        .segment-block.lit-green {
+            background: linear-gradient(180deg, #30d158 0%, #24b045 100%);
+            box-shadow: 0 0 5px rgba(48, 209, 88, 0.6);
+        }
+        /* 点灯：イエローゾーン (50%〜75%) */
+        .segment-block.lit-yellow {
+            background: linear-gradient(180deg, #ffd60a 0%, #e6be00 100%);
+            box-shadow: 0 0 5px rgba(255, 214, 10, 0.6);
+        }
+        /* 点灯：オレンジゾーン (25%〜50%) */
+        .segment-block.lit-orange {
+            background: linear-gradient(180deg, #ff9f0a 0%, #e08200 100%);
+            box-shadow: 0 0 5px rgba(255, 159, 10, 0.6);
+        }
+        /* 点灯：レッドゾーン (0%〜25%) */
+        .segment-block.lit-red {
+            background: linear-gradient(180deg, #ff453a 0%, #dd2a20 100%);
+            box-shadow: 0 0 5px rgba(255, 69, 58, 0.7);
+        }
+
+        /* 鳴動時（タイマー液晶自体がイコライザーとして音波のように跳ね回る） */
+        @keyframes segEqualizer {
+            0% { transform: scaleY(0.1); opacity: 0.2; }
+            100% { transform: scaleY(1.3); opacity: 1; }
+        }
+
+        .visual-segments-track.ringing-active .segment-block {
+            animation: segEqualizer 0.45s ease-in-out infinite alternate;
+            background: linear-gradient(180deg, #ff453a 0%, #ff3b30 100%) !important;
+            box-shadow: 0 0 8px rgba(255, 59, 48, 0.8) !important;
+        }
+
+        /* ============================================
+           タイマー用物理風「回転スワイプダイヤル」
+           ============================================ */
+        .dial-viewport {
+            width: 75px;
+            height: 110px;
+            background-color: #1c1c1e;
+            border: 3px solid #3a3a3c;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.8), 0 2px 5px rgba(0,0,0,0.3);
+            cursor: ns-resize; /* 上下スワイプ指示 */
+        }
+
+        .dial-track {
+            position: absolute;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            transition: transform 0.1s ease-out;
+        }
+
+        .dial-number {
+            font-size: 20px;
+            font-weight: 900;
+            color: #8e8e93;
+            font-family: monospace, sans-serif;
+            opacity: 0.3;
+            transition: all 0.15s ease;
+        }
+
+        .dial-number.active-num {
+            color: #007aff;
+            font-size: 28px;
+            opacity: 1;
+            text-shadow: 0 0 8px rgba(0,122,255,0.6);
+        }
+
+        /* ダイヤルの中央線ハイライト */
+        .dial-center-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 38px;
+            border-top: 1px solid rgba(0, 122, 255, 0.4);
+            border-bottom: 1px solid rgba(0, 122, 255, 0.4);
+            background: linear-gradient(180deg, rgba(0,122,255,0.05) 0%, rgba(0,122,255,0.15) 50%, rgba(0,122,255,0.05) 100%);
+            pointer-events: none;
+        }
+
         .timer-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -586,15 +841,45 @@
         <!-- 右カラム -->
         <div id="right-col">
             
-            <!-- VIEW 0: メモ表示 & 編集 -->
+            <!-- VIEW 0: メモ表示 & 編集 または カレンダー一ヶ月表示 (メモ非選択時) -->
             <div id="view-dash" class="view-panel active">
-                <div class="split-view">
-                    <!-- 上部選択中のメモ表示エリア -->
-                    <div class="memo-display-box" id="memo-viewer">
-                        <div class="memo-display-title" id="view-title">
-                            <i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>選択されていません
+                <div class="split-view h-full">
+                    
+                    <!-- アラームセット中の簡易ステータス表示 (アラーム有効時のみ自動表示) -->
+                    <div id="alarm-status-bar" class="alarm-indicator hidden">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-bell animate-bounce"></i>
+                            <span>アラームセット中: <strong id="lbl-active-alarm-time">00:00</strong> (<span id="lbl-active-alarm-text">メッセージなし</span>)</span>
                         </div>
-                        <div class="memo-display-body" id="view-body">左側のリストからメモを選んでください。選択すると、ここで編集や上書きができます。</div>
+                        <button class="bg-red-500 text-white font-extrabold px-3 py-1 rounded-lg text-xs active:scale-95" onclick="cancelAlarm()">解除</button>
+                    </div>
+
+                    <!-- 上部メモ表示エリア または カレンダー (selectedMemoId が null の時にカレンダー表示) -->
+                    <div class="flex-1 flex flex-col overflow-hidden" id="dash-upper-dynamic-region">
+                        
+                        <!-- カレンダー表示コンテナ (初期、またはクリア押下時に出現) -->
+                        <div id="calendar-view-container" class="calendar-wrapper flex flex-col h-full">
+                            <div class="calendar-header">
+                                <button class="btn btn-secondary py-2 px-4 text-sm" onclick="shiftMonth(-1)">
+                                    <i class="fa-solid fa-chevron-left"></i> 前月
+                                </button>
+                                <span class="font-black text-xl text-gray-800" id="calendar-month-title">--年 --月</span>
+                                <button class="btn btn-secondary py-2 px-4 text-sm" onclick="shiftMonth(1)">
+                                    次月 <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            <div class="calendar-grid flex-1" id="calendar-dates-box" style="grid-template-rows: auto repeat(6, 1fr);">
+                                <!-- 動的に曜日と日付セルをマウントします -->
+                            </div>
+                        </div>
+
+                        <!-- 通常のメモビューアー (メモ選択時にカレンダーの代わりに出現) -->
+                        <div class="memo-display-box h-full hidden" id="memo-viewer">
+                            <div class="memo-display-title" id="view-title">
+                                <i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>選択されていません
+                            </div>
+                            <div class="memo-display-body" id="view-body">左側のリストからメモを選んでください。選択すると、ここで編集や上書きができます。</div>
+                        </div>
                     </div>
                     
                     <!-- 下部メモ作成・編集エリア -->
@@ -607,7 +892,7 @@
                         </div>
                         <textarea class="memo-textarea" id="txt-memo-input" placeholder="ここに入力するか、マイクボタンを押して声で入力してください..."></textarea>
                         <div class="memo-actions">
-                            <button class="btn btn-secondary" id="btn-input-clear" onclick="clearInput()">クリア</button>
+                            <button class="btn btn-secondary" id="btn-input-clear" onclick="clearInput()">クリア (カレンダーに戻る)</button>
                             <button class="btn btn-primary" id="btn-input-save" onclick="addOrModifyMemo()">
                                 <i class="fa-solid fa-floppy-disk"></i>覚書メモとして保存
                             </button>
@@ -616,12 +901,23 @@
                 </div>
             </div>
 
-            <!-- VIEW 1: タイマーツール -->
+            <!-- VIEW 1: タイマーツール & 指定時刻アラーム設定 -->
             <div id="view-timer" class="view-panel">
                 <div class="text-xl font-extrabold text-gray-800 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-hourglass-half text-blue-500"></i>タイマーツール
+                    <i class="fa-solid fa-hourglass-half text-blue-500"></i>タイマー &amp; アラーム設定
                 </div>
                 
+                <!-- キングジム VBT20-BK 風ビジュアルバータイマー (横幅最大・一目で残量がわかる液晶風バー) -->
+                <div class="visual-bar-container">
+                    <div class="flex justify-between text-xs font-bold text-gray-400 px-1">
+                        <span>VISUAL BAR TRACKER</span>
+                        <span id="lbl-bar-percentage">100% REMAINING</span>
+                    </div>
+                    <div class="visual-segments-track" id="visual-bar-track">
+                        <!-- 80個の極細セグメントを動的にマウント -->
+                    </div>
+                </div>
+
                 <div class="timer-grid">
                     <div class="timer-preset-btn" onclick="setTimerPreset(1)">1分</div>
                     <div class="timer-preset-btn" onclick="setTimerPreset(3)">3分</div>
@@ -633,21 +929,61 @@
                     <div class="timer-preset-btn font-black text-red-500" onclick="adjustTimer(-60)">-1分</div>
                 </div>
 
-                <!-- 秒単位での直接カスタム設定フォーム -->
-                <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-3 flex items-center justify-between">
-                    <span class="text-sm font-bold text-blue-800"><i class="fa-solid fa-sliders mr-1"></i>時間を細かく設定：</span>
-                    <div class="flex items-center gap-1">
-                        <input type="number" id="input-timer-min" min="0" max="99" class="w-14 p-1 text-center font-bold border border-gray-300 rounded-lg text-lg" value="0">
-                        <span class="text-xs font-bold text-gray-600">分</span>
-                        <input type="number" id="input-timer-sec" min="0" max="59" class="w-14 p-1 text-center font-bold border border-gray-300 rounded-lg text-lg" value="0">
-                        <span class="text-xs font-bold text-gray-600">秒</span>
-                        <button class="btn btn-primary py-1 px-3 text-xs ml-2 rounded-lg" onclick="applyCustomTimer()">適用</button>
+                <!-- 直接設定フォーム (秒の追加ボタン・時刻指定アラーム追加) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                    <!-- タイマー調整エリア -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-black text-blue-800"><i class="fa-solid fa-sliders mr-1"></i>時間を細かく設定：</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <input type="number" id="input-timer-min" min="0" max="99" class="w-12 p-1 text-center font-bold border border-gray-300 rounded-lg text-sm" value="0">
+                            <span class="text-xs font-bold text-gray-600">分</span>
+                            <input type="number" id="input-timer-sec" min="0" max="59" class="w-12 p-1 text-center font-bold border border-gray-300 rounded-lg text-sm" value="0">
+                            <span class="text-xs font-bold text-gray-600">秒</span>
+                            <button class="bg-blue-600 text-white py-1 px-2.5 text-xs font-black rounded-lg ml-1 active:scale-95" onclick="applyCustomTimer()">適用</button>
+                            
+                            <!-- 操作性アップ: 10秒・5秒加算ショートカットボタン -->
+                            <button class="bg-gray-200 text-gray-800 py-1 px-2 text-xs font-extrabold rounded-lg ml-1 active:scale-95" onclick="adjustTimer(10)">+10秒</button>
+                            <button class="bg-gray-200 text-gray-800 py-1 px-2 text-xs font-extrabold rounded-lg active:scale-95" onclick="adjustTimer(5)">+5秒</button>
+                        </div>
+                    </div>
+
+                    <!-- 指定時刻アラーム設定エリア -->
+                    <div class="bg-orange-50 border border-orange-100 rounded-xl p-3 flex flex-col justify-between">
+                        <span class="text-xs font-black text-orange-800 mb-2"><i class="fa-solid fa-bell mr-1"></i>① 指定時刻アラームを設定：</span>
+                        <div class="flex items-center gap-1 mb-1">
+                            <input type="text" id="input-alarm-time" placeholder="18:30" class="w-20 p-1 text-center font-bold border border-gray-300 rounded-lg text-sm bg-white" />
+                            <input type="text" id="input-alarm-text" placeholder="薬を飲む時間" class="flex-1 p-1 font-bold border border-gray-300 rounded-lg text-sm bg-white" />
+                            <button class="bg-orange-500 text-white font-extrabold text-xs py-1.5 px-3 rounded-lg active:scale-95" onclick="setSpecifiedTimeAlarm()">セット</button>
+                        </div>
+                        <div class="text-[10px] text-orange-600 font-bold">24時間表記 (HH:MM) で入力してください</div>
                     </div>
                 </div>
                 
+                <!-- カウンター＆ドラッグダイヤル表示 -->
                 <div class="timer-display-box">
-                    <div class="timer-numbers" id="timer-text">00:00:00</div>
-                    <div class="flex gap-4 w-full max-w-sm">
+                    <div class="flex items-center justify-center gap-6 w-full">
+                        <!-- カウントダウン文字列 -->
+                        <div class="timer-numbers" id="timer-text" style="margin-bottom:0px;">00:00:00</div>
+                        
+                        <!-- 操作性アップ: 上下スワイプ式回転ダイヤル (ドラッグで時間加減) -->
+                        <div class="flex flex-col items-center">
+                            <div class="dial-viewport" id="timer-dial-viewport">
+                                <div class="dial-center-line"></div>
+                                <div class="dial-track" id="timer-dial-track">
+                                    <div class="dial-number" id="dial-num-prev2">-2</div>
+                                    <div class="dial-number" id="dial-num-prev1">-1</div>
+                                    <div class="dial-number active-num" id="dial-num-curr">0分</div>
+                                    <div class="dial-number" id="dial-num-next1">+1</div>
+                                    <div class="dial-number" id="dial-num-next2">+2</div>
+                                </div>
+                            </div>
+                            <span class="text-[9px] font-black text-gray-400 mt-1">スワイプで分調整</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4 w-full max-w-sm mt-5">
                         <button class="btn btn-primary flex-1 py-4 text-lg" id="btn-timer-start" onclick="toggleTimer()">スタート</button>
                         <button class="btn btn-secondary py-4 text-lg w-20" id="btn-timer-reset" onclick="resetTimer()">C</button>
                     </div>
@@ -706,16 +1042,68 @@
     </div>
 </div>
 
+<!-- 新規イベント登録 / 編集用 カスタムHTMLモーダル -->
+<div id="calendar-event-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl p-6 w-11/12 max-w-md shadow-2xl">
+        <h3 class="text-lg font-black text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fa-regular fa-calendar-plus text-blue-500"></i>
+            <span id="calendar-modal-date-label">----/--/--</span> のイベント設定
+        </h3>
+        <div class="flex flex-col gap-3">
+            <div>
+                <label class="text-xs font-black text-gray-500">タイトル (カレンダーに表示されます)</label>
+                <input type="text" id="input-cal-title" placeholder="イベントタイトル" class="w-full p-2.5 border border-gray-300 rounded-xl text-sm font-bold bg-gray-50 focus:bg-white" />
+            </div>
+            <div>
+                <label class="text-xs font-black text-gray-500">詳細・本文</label>
+                <textarea id="input-cal-body" placeholder="詳細な内容を記載..." rows="3" class="w-full p-2.5 border border-gray-300 rounded-xl text-sm font-bold bg-gray-50 focus:bg-white resize-none"></textarea>
+            </div>
+        </div>
+        <div class="flex justify-between mt-5 gap-2">
+            <button class="btn btn-danger text-sm py-2 px-4" id="btn-cal-delete" onclick="deleteCalendarEvent()">削除</button>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary text-sm py-2 px-4" onclick="closeCalendarModal()">閉じる</button>
+                <button class="btn btn-primary text-sm py-2 px-4" onclick="saveCalendarEvent()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- アラーム鳴動モーダル (指定時刻アラーム・タイマーのタイムアップ時に表示) -->
+<div id="alarm-ring-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl p-8 w-11/12 max-w-md shadow-2xl border-4 border-orange-500 text-center animate-bounce">
+        <div class="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-500">
+            <i class="fa-solid fa-bell text-4xl animate-pulse"></i>
+        </div>
+        <h2 class="text-2xl font-black text-orange-600 mb-2">時間になりました！</h2>
+        <div class="bg-gray-100 p-4 rounded-xl text-lg font-black text-gray-800 mb-6" id="lbl-ring-alarm-text">
+            設定されたテキストがここに表示されます
+        </div>
+        <button class="btn btn-danger py-4 px-8 text-lg w-full font-black rounded-xl" onclick="stopRingingAlarm()">アラームを止める</button>
+    </div>
+</div>
+
 <script>
     // システムステート
     var memos = [];
+    var calendarEvents = {}; // カレンダー個別イベントデータ
     var selectedMemoId = null;
     var currentViewId = 'view-dash';
 
-    // iOS/iPadOS 向け Web Audio API 解放用のオーディオコンテキスト
+    // カレンダー表示月ステート
+    var calendarYear = 2026;
+    var calendarMonth = 5; // 0-indexed
+    var selectedCalendarDateStr = null;
+
+    // アラーム機能ステート
+    var alarmTimeStr = null;
+    var alarmMessage = "";   
+    var alarmTimerId = null; 
+    var isAlarmRinging = false;
+
+    // iOS/iPadOS 向け Web Audio API 解放用
     var audioCtx = null;
 
-    // iPadOSのセキュリティ制限を完全に回避するための初期化関数
     function initAudioContext() {
         try {
             if (!audioCtx) {
@@ -728,7 +1116,6 @@
             console.log("AudioContext init error: ", e);
         }
     }
-    // 画面のどこを触っても確実にロック解除が走るようイベントを登録
     window.addEventListener('touchstart', initAudioContext, { passive: true });
     window.addEventListener('click', initAudioContext);
 
@@ -789,8 +1176,12 @@
         try {
             var saved = localStorage.getItem('dashboard_memos');
             if (saved) { memos = JSON.parse(saved); }
+            
+            var savedCal = localStorage.getItem('dashboard_calendar_events');
+            if (savedCal) { calendarEvents = JSON.parse(savedCal); }
         } catch(e) {
             memos = [];
+            calendarEvents = {};
         }
         
         if (!memos || memos.length === 0) {
@@ -801,7 +1192,20 @@
             saveData();
         }
 
+        var now = new Date();
+        calendarYear = now.getFullYear();
+        calendarMonth = now.getMonth();
+
+        // 80個の液晶目盛りバーをマウント
+        buildVisualBarSegments();
+
+        // 初期描画
+        syncTodayCalendarEventToMemo();
         renderMemoList();
+        renderCalendar();
+        setupCalendarSwipeGestures();
+        setupTimerDialDrag();
+        
         updateClock();
         setInterval(updateClock, 1000);
         sweepMemos();
@@ -864,9 +1268,20 @@
         });
     }
 
+    // ビュー表示切り替え（トグル対応）
     function switchView(action) {
-        var targetViewId = 'view-' + action; 
+        var activeBtn = document.getElementById('tool-btn-' + action);
         
+        // 【新トグル機能】すでに選択中のボタンを押した場合はクリアしてカレンダー表示へ
+        if (activeBtn && activeBtn.classList.contains('active')) {
+            clearInput();
+            if (action !== 'dash') {
+                switchView('dash');
+            }
+            return;
+        }
+
+        var targetViewId = 'view-' + action; 
         document.querySelectorAll('.view-panel').forEach(function(p) {
             p.classList.remove('active');
             p.style.display = 'none';
@@ -882,7 +1297,6 @@
         document.querySelectorAll('.sidebar-tool-btn').forEach(function(btn) {
             btn.classList.remove('active');
         });
-        var activeBtn = document.getElementById('tool-btn-' + action);
         if (activeBtn) { activeBtn.classList.add('active'); }
     }
 
@@ -918,6 +1332,10 @@
         var m = memos.find(function(item) { return item.id === id; });
         if (!m) return;
         
+        // メモプレビューに切り替え
+        document.getElementById('calendar-view-container').classList.add('hidden');
+        document.getElementById('memo-viewer').classList.remove('hidden');
+
         var viewerTitle = document.getElementById('view-title');
         var viewerBody = document.getElementById('view-body');
         
@@ -955,9 +1373,12 @@
         if (saveBtn) { saveBtn.innerHTML = '<i class="fa-solid fa-file-pen"></i>メモを上書き保存'; }
         
         var clearBtn = document.getElementById('btn-input-clear');
-        if (clearBtn) { clearBtn.innerText = '選択を解除'; }
+        if (clearBtn) { clearBtn.innerText = '選択を解除 (カレンダーに戻る)'; }
         
-        switchView('dash');
+        // メモ帳ビューが閉じられていたら開く
+        if (currentViewId !== 'view-dash') {
+            switchView('dash');
+        }
         renderMemoList();
     }
 
@@ -981,18 +1402,23 @@
         var inputArea = document.getElementById('txt-memo-input');
         if (inputArea) { inputArea.value = ''; }
         
-        if (selectedMemoId) {
-            selectedMemoId = null;
-            var saveBtn = document.getElementById('btn-input-save');
-            if (saveBtn) { saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i>覚書メモとして保存'; }
-            var clearBtn = document.getElementById('btn-input-clear');
-            if (clearBtn) { clearBtn.innerText = 'クリア'; }
-            var viewerTitle = document.getElementById('view-title');
-            if (viewerTitle) { viewerTitle.innerHTML = '<i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>選択されていません'; }
-            var viewerBody = document.getElementById('view-body');
-            if (viewerBody) { viewerBody.innerText = '左側のリストからメモを選んでください。選択すると、ここで編集や上書きができます。'; }
-            renderMemoList();
-        }
+        selectedMemoId = null;
+        var saveBtn = document.getElementById('btn-input-save');
+        if (saveBtn) { saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i>覚書メモとして保存'; }
+        var clearBtn = document.getElementById('btn-input-clear');
+        if (clearBtn) { clearBtn.innerText = 'クリア'; }
+        
+        // カレンダー表示を復旧
+        document.getElementById('calendar-view-container').classList.remove('hidden');
+        document.getElementById('memo-viewer').classList.add('hidden');
+
+        var viewerTitle = document.getElementById('view-title');
+        if (viewerTitle) { viewerTitle.innerHTML = '<i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>選択されていません'; }
+        var viewerBody = document.getElementById('view-body');
+        if (viewerBody) { viewerBody.innerText = '左側のリストからメモを選んでください。選択すると、ここで編集や上書きができます。'; }
+        
+        renderMemoList();
+        renderCalendar();
     }
 
     function deleteMemo(id) {
@@ -1025,6 +1451,269 @@
         renderMemoList();
     }
 
+    // ============================================
+    // カレンダー一ヶ月表示ロジック
+    // ============================================
+    function renderCalendar() {
+        var container = document.getElementById('calendar-dates-box');
+        if (!container) return;
+        container.innerHTML = '';
+
+        document.getElementById('calendar-month-title').innerText = calendarYear + '年 ' + (calendarMonth + 1) + '月';
+
+        var weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+        weekdays.forEach(function(day) {
+            var cell = document.createElement('div');
+            cell.className = 'calendar-weekday';
+            cell.innerText = day;
+            container.appendChild(cell);
+        });
+
+        var firstDate = new Date(calendarYear, calendarMonth, 1);
+        var lastDate = new Date(calendarYear, calendarMonth + 1, 0);
+        
+        var startDay = firstDate.getDay(); 
+        var totalDays = lastDate.getDate();
+
+        var prevMonthLastDate = new Date(calendarYear, calendarMonth, 0).getDate();
+        var gridCount = 42; 
+        
+        for (var i = 0; i < gridCount; i++) {
+            var cell = document.createElement('div');
+            var dayNum;
+            var currentCellDateStr = "";
+
+            if (i < startDay) {
+                dayNum = prevMonthLastDate - (startDay - i - 1);
+                cell.className = 'calendar-day-cell other-month';
+                
+                var prevM = calendarMonth - 1;
+                var prevY = calendarYear;
+                if (prevM < 0) { prevM = 11; prevY--; }
+                currentCellDateStr = prevY + '-' + String(prevM + 1).padStart(2, '0') + '-' + String(dayNum).padStart(2, '0');
+            } else if (i >= startDay + totalDays) {
+                dayNum = i - (startDay + totalDays) + 1;
+                cell.className = 'calendar-day-cell other-month';
+
+                var nextM = calendarMonth + 1;
+                var nextY = calendarYear;
+                if (nextM > 11) { nextM = 0; nextY++; }
+                currentCellDateStr = nextY + '-' + String(nextM + 1).padStart(2, '0') + '-' + String(dayNum).padStart(2, '0');
+            } else {
+                dayNum = i - startDay + 1;
+                cell.className = 'calendar-day-cell';
+                
+                var today = new Date();
+                if (today.getFullYear() === calendarYear && today.getMonth() === calendarMonth && today.getDate() === dayNum) {
+                    cell.classList.add('today-cell');
+                }
+                currentCellDateStr = calendarYear + '-' + String(calendarMonth + 1).padStart(2, '0') + '-' + String(dayNum).padStart(2, '0');
+            }
+
+            cell.innerHTML = '<div class="day-number">' + dayNum + '</div>';
+
+            if (calendarEvents[currentCellDateStr]) {
+                var eventTag = document.createElement('div');
+                eventTag.className = 'calendar-event-tag';
+                eventTag.innerText = calendarEvents[currentCellDateStr].title || 'イベント';
+                cell.appendChild(eventTag);
+            }
+
+            (function(dateStr) {
+                cell.addEventListener('click', function() {
+                    openCalendarModal(dateStr);
+                });
+            })(currentCellDateStr);
+
+            container.appendChild(cell);
+        }
+    }
+
+    function shiftMonth(offset) {
+        calendarMonth += offset;
+        if (calendarMonth < 0) {
+            calendarMonth = 11;
+            calendarYear--;
+        } else if (calendarMonth > 11) {
+            calendarMonth = 0;
+            calendarYear++;
+        }
+        renderCalendar();
+    }
+
+    function setupCalendarSwipeGestures() {
+        var startX = 0;
+        var startY = 0;
+        var calendarArea = document.getElementById('calendar-view-container');
+        if (!calendarArea) return;
+
+        calendarArea.addEventListener('touchstart', function(e) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+
+        calendarArea.addEventListener('touchend', function(e) {
+            var diffX = e.changedTouches[0].clientX - startX;
+            var diffY = e.changedTouches[0].clientY - startY;
+
+            if (Math.abs(diffX) > 60 && Math.abs(diffY) < 40) {
+                if (diffX > 0) {
+                    shiftMonth(-1);
+                } else {
+                    shiftMonth(1);
+                }
+            }
+        }, { passive: true });
+    }
+
+    function openCalendarModal(dateStr) {
+        selectedCalendarDateStr = dateStr;
+        
+        var dateFormatted = dateStr.replace(/-/g, '/');
+        document.getElementById('calendar-modal-date-label').innerText = dateFormatted;
+
+        var inputTitle = document.getElementById('input-cal-title');
+        var inputBody = document.getElementById('input-cal-body');
+        var deleteBtn = document.getElementById('btn-cal-delete');
+
+        if (calendarEvents[dateStr]) {
+            inputTitle.value = calendarEvents[dateStr].title || '';
+            inputBody.value = calendarEvents[dateStr].body || '';
+            deleteBtn.style.display = 'block';
+        } else {
+            inputTitle.value = '';
+            inputBody.value = '';
+            deleteBtn.style.display = 'none';
+        }
+
+        document.getElementById('calendar-event-modal').classList.remove('hidden');
+    }
+
+    function closeCalendarModal() {
+        document.getElementById('calendar-event-modal').classList.add('hidden');
+    }
+
+    function saveCalendarEvent() {
+        var title = document.getElementById('input-cal-title').value.trim();
+        var body = document.getElementById('input-cal-body').value.trim();
+
+        if (!title) {
+            alert('タイトルを入力してください。');
+            return;
+        }
+
+        calendarEvents[selectedCalendarDateStr] = {
+            title: title,
+            body: body
+        };
+
+        try {
+            localStorage.setItem('dashboard_calendar_events', JSON.stringify(calendarEvents));
+        } catch(e) {}
+
+        syncTodayCalendarEventToMemo();
+        closeCalendarModal();
+        renderCalendar();
+    }
+
+    function deleteCalendarEvent() {
+        if (calendarEvents[selectedCalendarDateStr]) {
+            var syncMemoId = 'cal_sync_' + selectedCalendarDateStr;
+            memos = memos.filter(function(item) { return item.id !== syncMemoId; });
+            saveData();
+
+            delete calendarEvents[selectedCalendarDateStr];
+            try {
+                localStorage.setItem('dashboard_calendar_events', JSON.stringify(calendarEvents));
+            } catch(e) {}
+        }
+        closeCalendarModal();
+        renderCalendar();
+    }
+
+    function syncTodayCalendarEventToMemo() {
+        var today = new Date();
+        var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+        
+        if (calendarEvents[todayStr]) {
+            var ev = calendarEvents[todayStr];
+            var syncMemoId = 'cal_sync_' + todayStr;
+            var alreadyExists = memos.some(function(item) { return item.id === syncMemoId; });
+
+            if (!alreadyExists) {
+                var newMemo = {
+                    id: syncMemoId,
+                    text: '[本日カレンダー同期] ' + ev.title + '\n\n' + ev.body,
+                    time: Date.now(),
+                    checked: false,
+                    checkedTime: null
+                };
+                memos.unshift(newMemo);
+                saveData();
+            }
+        }
+    }
+
+    // ============================================
+    // 指定時刻アラームセット機能
+    // ============================================
+    function setSpecifiedTimeAlarm() {
+        var timeInput = document.getElementById('input-alarm-time').value.trim();
+        var textInput = document.getElementById('input-alarm-text').value.trim();
+
+        var timePattern = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        if (!timePattern.test(timeInput)) {
+            alert('有効な24時間時刻「18:30」などの形式で指定してください。');
+            return;
+        }
+
+        var parts = timeInput.split(':');
+        alarmTimeStr = parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+        alarmMessage = textInput || "指定時刻のアラームです";
+
+        document.getElementById('lbl-active-alarm-time').innerText = alarmTimeStr;
+        document.getElementById('lbl-active-alarm-text').innerText = alarmMessage;
+        document.getElementById('alarm-status-bar').classList.remove('hidden');
+
+        initAudioContext();
+        alert('アラームを ' + alarmTimeStr + ' にセットしました。');
+    }
+
+    function cancelAlarm() {
+        alarmTimeStr = null;
+        alarmMessage = "";
+        document.getElementById('alarm-status-bar').classList.add('hidden');
+    }
+
+    function triggerAlarm() {
+        isAlarmRinging = true;
+        
+        document.getElementById('lbl-ring-alarm-text').innerText = alarmMessage;
+        document.getElementById('alarm-ring-modal').classList.remove('hidden');
+
+        // 【新機能】タイマーの液晶ドットバー全体を音波イコライザー化して激しく躍動させる
+        document.getElementById('visual-bar-track').classList.add('ringing-active');
+
+        if (alarmTimerId) clearInterval(alarmTimerId);
+        playAlarmSound();
+        alarmTimerId = setInterval(function() {
+            playAlarmSound();
+        }, 1800);
+    }
+
+    function stopRingingAlarm() {
+        isAlarmRinging = false;
+        if (alarmTimerId) {
+            clearInterval(alarmTimerId);
+            alarmTimerId = null;
+        }
+        
+        document.getElementById('alarm-ring-modal').classList.add('hidden');
+        document.getElementById('visual-bar-track').classList.remove('ringing-active');
+
+        cancelAlarm();
+    }
+
     function updateClock() {
         var d = new Date();
         var month = d.getMonth() + 1;
@@ -1047,22 +1736,54 @@
         
         var secLbl = document.getElementById('lbl-sec');
         if(secLbl) secLbl.innerText = secStr;
+
+        if (alarmTimeStr && !isAlarmRinging) {
+            if (timeStr === alarmTimeStr && secs === 0) {
+                triggerAlarm();
+            }
+        }
     }
 
     // ============================================
-    // タイマーツール
+    // タイマーツール (VBT20-BK風 ビジュアルバー)
     // ============================================
     var timerSeconds = 0;
+    var timerTotalSeconds = 0; 
     var timerInterval = null;
+
+    function buildVisualBarSegments() {
+        var barTrack = document.getElementById('visual-bar-track');
+        if (!barTrack) return;
+        barTrack.innerHTML = '';
+
+        // 80個のドットセグメントをマウント
+        for (var i = 0; i < 80; i++) {
+            var seg = document.createElement('div');
+            seg.className = 'segment-block';
+            seg.id = 'bar-seg-' + i;
+            
+            // うねるような波形に見せるために周期的なイコライザー遅延をあらかじめ埋め込む
+            var delay = (Math.sin(i * 0.25) + 1) * 0.22;
+            seg.style.animationDelay = delay.toFixed(2) + 's';
+            
+            barTrack.appendChild(seg);
+        }
+    }
 
     function setTimerPreset(mins) {
         timerSeconds = mins * 60;
+        timerTotalSeconds = timerSeconds;
         updateTimerDisplay();
+        updateVisualBarDisplay();
     }
 
     function adjustTimer(change) {
         timerSeconds = Math.max(0, timerSeconds + change);
+        if (timerSeconds > timerTotalSeconds) {
+            timerTotalSeconds = timerSeconds;
+        }
         updateTimerDisplay();
+        updateVisualBarDisplay();
     }
 
     function applyCustomTimer() {
@@ -1070,7 +1791,9 @@
         var secInput = parseInt(document.getElementById('input-timer-sec').value) || 0;
         
         timerSeconds = (minInput * 60) + secInput;
+        timerTotalSeconds = timerSeconds;
         updateTimerDisplay();
+        updateVisualBarDisplay();
     }
 
     function updateTimerDisplay() {
@@ -1084,13 +1807,46 @@
                          
         var timerText = document.getElementById('timer-text');
         if (timerText) timerText.innerText = displayStr;
+
+        document.getElementById('dial-num-curr').innerText = mins + '分';
+        document.getElementById('dial-num-prev2').innerText = (mins - 2 < 0 ? '--' : (mins - 2) + '分');
+        document.getElementById('dial-num-prev1').innerText = (mins - 1 < 0 ? '--' : (mins - 1) + '分');
+        document.getElementById('dial-num-next1').innerText = (mins + 1) + '分';
+        document.getElementById('dial-num-next2').innerText = (mins + 2) + '分';
+    }
+
+    // キングジム VBT20-BK液晶を模した4色ゾーン点灯ロジック
+    function updateVisualBarDisplay() {
+        var ratio = timerTotalSeconds > 0 ? (timerSeconds / timerTotalSeconds) : 0;
+        var percent = Math.round(ratio * 100);
+        document.getElementById('lbl-bar-percentage').innerText = percent + '% REMAINING';
+
+        var litCount = Math.ceil(ratio * 80);
+        for (var i = 0; i < 80; i++) {
+            var seg = document.getElementById('bar-seg-' + i);
+            if (seg) {
+                // クラスをクリアして再割り振り
+                seg.className = 'segment-block';
+                if (i < litCount) {
+                    // 位置に応じて目盛りのカラーを自動決定
+                    if (i < 20) {
+                        seg.classList.add('lit-red');      // 0〜25%エリア
+                    } else if (i < 40) {
+                        seg.classList.add('lit-orange');   // 25%〜50%エリア
+                    } else if (i < 60) {
+                        seg.classList.add('lit-yellow');   // 50%〜75%エリア
+                    } else {
+                        seg.classList.add('lit-green');    // 75%〜100%エリア
+                    }
+                }
+            }
+        }
     }
 
     function toggleTimer() {
         var startBtn = document.getElementById('btn-timer-start');
         if (!startBtn) return;
         
-        // スタートボタンを押した際にもAudioContextを確実にアクティブ化する
         initAudioContext();
         
         if (timerInterval) {
@@ -1107,12 +1863,21 @@
                 if (timerSeconds > 0) {
                     timerSeconds--;
                     updateTimerDisplay();
+                    updateVisualBarDisplay();
                 } else {
                     clearInterval(timerInterval);
                     timerInterval = null;
                     startBtn.innerText = 'スタート';
                     startBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
+                    
+                    // 【新仕様】タイマー終了時に液晶ドット目盛り自体を激しく伸縮
+                    document.getElementById('visual-bar-track').classList.add('ringing-active');
                     playAlarmSound(); 
+                    
+                    // アラームが鳴り止む（5秒後）に伸縮アニメーションをOFFにする
+                    setTimeout(function() {
+                        document.getElementById('visual-bar-track').classList.remove('ringing-active');
+                    }, 5000);
                 }
             }, 1000);
         }
@@ -1122,7 +1887,9 @@
         clearInterval(timerInterval);
         timerInterval = null;
         timerSeconds = 0;
+        timerTotalSeconds = 0;
         updateTimerDisplay();
+        updateVisualBarDisplay();
         var startBtn = document.getElementById('btn-timer-start');
         if (startBtn) {
             startBtn.innerText = 'スタート';
@@ -1130,6 +1897,7 @@
         }
         document.getElementById('input-timer-min').value = 0;
         document.getElementById('input-timer-sec').value = 0;
+        document.getElementById('visual-bar-track').classList.remove('ringing-active');
     }
 
     // ============================================
@@ -1141,7 +1909,6 @@
         }
         
         try {
-            // オーディオの再生成と強制アクティブ化
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
@@ -1167,7 +1934,6 @@
                 gain.connect(audioCtx.destination);
                 
                 osc.start(startTime);
-                // 古いブラウザ（一部の旧iOS）の挙動対策としてstopとnoteOffの両方を安全にケア
                 if (osc.stop) {
                     osc.stop(startTime + duration);
                 } else if (osc.noteOff) {
@@ -1175,7 +1941,7 @@
                 }
             }
 
-            // 1.5秒間にわたるリズム発音トリガー
+            // 電子アラーム音（ピピッ、ピピッ、ピピピピッ）
             pulse(now + 0.0, 0.15);
             pulse(now + 0.25, 0.15);
             
@@ -1189,6 +1955,60 @@
         } catch(e) {
             console.log("Audio presentation failed: ", e);
         }
+    }
+
+    // ============================================
+    // 上下ドラッグによる分単位調整ダイヤル
+    // ============================================
+    function setupTimerDialDrag() {
+        var dial = document.getElementById('timer-dial-viewport');
+        var track = document.getElementById('timer-dial-track');
+        if (!dial || !track) return;
+
+        var startY = 0;
+        var isDragging = false;
+        var accumulatedDelta = 0;
+
+        var handleStart = function(e) {
+            startY = e.touches ? e.touches[0].clientY : e.clientY;
+            isDragging = true;
+            accumulatedDelta = 0;
+            initAudioContext();
+        };
+
+        var handleMove = function(e) {
+            if (!isDragging) return;
+            var currentY = e.touches ? e.touches[0].clientY : e.clientY;
+            var deltaY = startY - currentY; 
+            startY = currentY;
+
+            accumulatedDelta += deltaY;
+
+            // 16px動くごとに1分増減
+            if (Math.abs(accumulatedDelta) >= 16) {
+                var changeMins = accumulatedDelta > 0 ? 1 : -1;
+                adjustTimer(changeMins * 60);
+
+                track.style.transform = 'translateY(' + (changeMins * -8) + 'px)';
+                setTimeout(function() {
+                    track.style.transform = 'translateY(0px)';
+                }, 80);
+
+                accumulatedDelta = 0;
+            }
+        };
+
+        var handleEnd = function() {
+            isDragging = false;
+        };
+
+        dial.addEventListener('touchstart', handleStart, { passive: true });
+        dial.addEventListener('touchmove', handleMove, { passive: true });
+        dial.addEventListener('touchend', handleEnd, { passive: true });
+
+        dial.addEventListener('mousedown', handleStart);
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
     }
 
     // ============================================
