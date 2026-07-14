@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kindle E-Ink Dashboard</title>
+    <style>
+        /* E-ink用に最適化された超高コントラスト・モノクロスタイル */
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --border-color: #000000;
+            --card-bg: #ffffff;
+        }
+
+        /* ダークモード（反転モード） */
+        body.dark-mode {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --border-color: #ffffff;
+            --card-bg: #000000;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+            -webkit-font-smoothing: none; /* E-inkでの視認性を上げるためボールド感を強調 */
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* ヘッダーエリア */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .date-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #date {
+            font-size: 1.5rem;
+            font-weight: 900;
+        }
+
+        #day {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* 設定ボタンなど */
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background: var(--bg-color);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            padding: 5px 10px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .btn:active {
+            background: var(--text-color);
+            color: var(--bg-color);
+        }
+
+        /* メインコンテンツ（2カラムレイアウト） */
+        main {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            min-height: 0; /* スクロール防止 */
+        }
+
+        .left-col {
+            flex: 1.3;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .right-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 特大の時計エリア */
+        .clock-card {
+            border: 4px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--card-bg);
+            flex: 1;
+            min-height: 180px;
+        }
+
+        #time {
+            font-size: 5.5rem;
+            font-weight: 900;
+            letter-spacing: -2px;
+            line-height: 1;
+        }
+
+        /* 天気カード */
+        .weather-card {
+            border: 4px solid var(--border-color);
+            padding: 15px;
+            background-color: var(--card-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .weather-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .weather-current {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            margin-bottom: 15px;
+        }
+
+        .weather-icon-large {
+            width: 64px;
+            height: 64px;
+            fill: var(--text-color);
+        }
+
+        .weather-info-main {
+            text-align: right;
+        }
+
+        .temp-now {
+            font-size: 2.5rem;
+            font-weight: 900;
+        }
+
+        .weather-desc {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        /* 3日間予報 */
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            border-top: 2px dashed var(--border-color);
+            padding-top: 10px;
+        }
+
+        .forecast-day {
+            text-align: center;
+            font-size: 0.85rem;
+        }
+
+        .forecast-date {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .forecast-icon {
+            width: 24px;
+            height: 24px;
+            fill: var(--text-color);
+            margin: 5px auto;
+        }
+
+        .forecast-temp {
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        /* ToDo / メモカード */
+        .memo-card {
+            border: 4px solid var(--border-color);
+            padding: 15px;
+            background-color: var(--card-bg);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .memo-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        #memo-area {
+            width: 100%;
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: var(--text-color);
+            font-size: 1.1rem;
+            resize: none;
+            outline: none;
+            line-height: 1.5;
+        }
+
+        /* 全画面リフレッシュ用フラッシュアニメーション（焼き付き防止） */
+        .flash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000000;
+            z-index: 9999;
+            display: none;
+        }
+
+        @keyframes pulse-flash {
+            0% { background-color: #000000; }
+            50% { background-color: #ffffff; }
+            100% { background-color: transparent; }
+        }
+
+        /* ステータスバー */
+        footer {
+            margin-top: 15px;
+            font-size: 0.8rem;
+            text-align: center;
+            opacity: 0.7;
+            border-top: 1px solid var(--border-color);
+            padding-top: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* モーダルダイアログ (設定用) */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 4px solid var(--border-color);
+            background: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            z-index: 1000;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.4);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 焼き付き防止用のフラッシュオーバーレイ -->
+    <div id="flash-overlay" class="flash-overlay"></div>
+
+    <!-- ヘッダー -->
+    <header>
+        <div class="date-container">
+            <span id="date">2026年07月14日</span>
+            <span id="day">火曜日</span>
+        </div>
+        <div class="controls">
+            <button class="btn" onclick="toggleDarkMode()">反転</button>
+            <button class="btn" onclick="openSettings()">設定</button>
+            <button class="btn" onclick="triggerAntiGhosting()">更新</button>
+        </div>
+    </header>
+
+    <!-- メイン -->
+    <main>
+        <!-- 左カラム：時計と天気 -->
+        <div class="left-col">
+            <!-- 時計 -->
+            <div class="clock-card">
+                <div id="time">12:34</div>
+            </div>
+
+            <!-- 天気予報 -->
+            <div class="weather-card">
+                <div class="weather-title">
+                    <span id="location-name">天気予報 (東京)</span>
+                    <span style="font-size: 0.8rem; font-weight: normal;" id="weather-update-time">--:-- 更新</span>
+                </div>
+                <div class="weather-current">
+                    <div id="weather-icon-container">
+                        <!-- デフォルト：晴れSVG -->
+                        <svg class="weather-icon-large" viewBox="0 0 24 24" id="current-weather-icon">
+                            <path d="M12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,2A1,1 0 0,1 13,3V5A1,1 0 0,1 12,6A1,1 0 0,1 11,5V3A1,1 0 0,1 12,2M12,18A1,1 0 0,1 13,19V21A1,1 0 0,1 12,22A1,1 0 0,1 11,21V19A1,1 0 0,1 12,18M20,13H22A1,1 0 0,1 23,14A1,1 0 0,1 22,15H20A1,1 0 0,1 19,14A1,1 0 0,1 20,13M2,14H4A1,1 0 0,1 5,15A1,1 0 0,1 4,16H2A1,1 0 0,1 1,15A1,1 0 0,1 2,14M19.07,4.93L20.49,6.34A1,1 0 0,1 20.49,7.76L19.07,9.17A1,1 0 0,1 17.66,9.17L16.24,7.76A1,1 0 0,1 16.24,6.34L17.66,4.93A1,1 0 0,1 19.07,4.93M4.93,19.07L6.34,17.66A1,1 0 0,1 7.76,17.66L9.17,19.07A1,1 0 0,1 9.17,20.49L7.76,21.91A1,1 0 0,1 6.34,21.91L4.93,20.49A1,1 0 0,1 4.93,19.07M16.24,16.24L17.66,17.66A1,1 0 0,1 17.66,19.07L16.24,20.49A1,1 0 0,1 14.83,20.49L13.41,19.07A1,1 0 0,1 13.41,17.66L14.83,16.24A1,1 0 0,1 16.24,16.24M7.76,6.34L9.17,4.93A1,1 0 0,1 10.59,4.93L12,6.34A1,1 0 0,1 12,7.76L10.59,9.17A1,1 0 0,1 9.17,9.17L7.76,7.76A1,1 0 0,1 7.76,6.34Z" />
+                        </svg>
+                    </div>
+                    <div class="weather-info-main">
+                        <div class="temp-now" id="temp-now">--°C</div>
+                        <div class="weather-desc" id="weather-desc">読込中...</div>
+                    </div>
+                </div>
+
+                <!-- 3日間予報 -->
+                <div class="forecast-grid" id="forecast-grid">
+                    <div class="forecast-day">
+                        <div class="forecast-date">明日</div>
+                        <div class="forecast-temp">--°C</div>
+                    </div>
+                    <div class="forecast-day">
+                        <div class="forecast-date">明後日</div>
+                        <div class="forecast-temp">--°C</div>
+                    </div>
+                    <div class="forecast-day">
+                        <div class="forecast-date">3日後</div>
+                        <div class="forecast-temp">--°C</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右カラム：ToDoメモ -->
+        <div class="right-col">
+            <div class="memo-card">
+                <div class="memo-title">ToDo / 今日のメモ</div>
+                <textarea id="memo-area" placeholder="ここにタスクやメモを入力（自動保存されます）..."></textarea>
+            </div>
+        </div>
+    </main>
+
+    <!-- フッター -->
+    <footer>
+        <span id="battery-status">E-Ink Optimized Dashboard</span>
+        <span>自動反転リフレッシュ: 毎正時</span>
+    </footer>
+
+    <!-- 設定モーダル -->
+    <div class="overlay" id="overlay" onclick="closeSettings()"></div>
+    <div class="modal" id="settings-modal">
+        <div class="modal-title">ダッシュボード設定</div>
+        <div class="form-group">
+            <label for="input-lat">緯度 (Latitude):</label>
+            <input type="number" id="input-lat" class="form-control" step="0.0001" value="35.6895">
+        </div>
+        <div class="form-group">
+            <label for="input-lon">経度 (Longitude):</label>
+            <input type="number" id="input-lon" class="form-control" step="0.0001" value="139.6917">
+            <small style="display: block; margin-top: 4px; opacity: 0.8;">※初期値は東京。お住まいの地域の数値を入力してください。</small>
+        </div>
+        <div class="form-group">
+            <label for="input-name">地域名表示:</label>
+            <input type="text" id="input-name" class="form-control" value="東京">
+        </div>
+        <div class="modal-buttons">
+            <button class="btn" onclick="closeSettings()">キャンセル</button>
+            <button class="btn" onclick="saveSettings()">保存</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 状態管理 ---
+        let config = {
+            lat: 35.6895,
+            lon: 139.6917,
+            name: "東京",
+            darkMode: false
+        };
+
+        // 天気アイコン（SVG Pathデータ）
+        const SVG_PATHS = {
+            sunny: "M12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,2A1,1 0 0,1 13,3V5A1,1 0 0,1 12,6A1,1 0 0,1 11,5V3A1,1 0 0,1 12,2M12,18A1,1 0 0,1 13,19V21A1,1 0 0,1 12,22A1,1 0 0,1 11,21V19A1,1 0 0,1 12,18M20,13H22A1,1 0 0,1 23,14A1,1 0 0,1 22,15H20A1,1 0 0,1 19,14A1,1 0 0,1 20,13M2,14H4A1,1 0 0,1 5,15A1,1 0 0,1 4,16H2A1,1 0 0,1 1,15A1,1 0 0,1 2,14M19.07,4.93L20.49,6.34A1,1 0 0,1 20.49,7.76L19.07,9.17A1,1 0 0,1 17.66,9.17L16.24,7.76A1,1 0 0,1 16.24,6.34L17.66,4.93A1,1 0 0,1 19.07,4.93M4.93,19.07L6.34,17.66A1,1 0 0,1 7.76,17.66L9.17,19.07A1,1 0 0,1 9.17,20.49L7.76,21.91A1,1 0 0,1 6.34,21.91L4.93,20.49A1,1 0 0,1 4.93,19.07M16.24,16.24L17.66,17.66A1,1 0 0,1 17.66,19.07L16.24,20.49A1,1 0 0,1 14.83,20.49L13.41,19.07A1,1 0 0,1 13.41,17.66L14.83,16.24A1,1 0 0,1 16.24,16.24M7.76,6.34L9.17,4.93A1,1 0 0,1 10.59,4.93L12,6.34A1,1 0 0,1 12,7.76L10.59,9.17A1,1 0 0,1 9.17,9.17L7.76,7.76A1,1 0 0,1 7.76,6.34Z",
+            cloudy: "M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03M19,18H6A4,4 0 0,1 2,14C2,11.79 3.79,10 6,10C6.71,10 7.37,10.18 7.96,10.5C8.5,8.45 10.08,7 12,7C14.47,7 16.5,8.79 16.92,11.16C17.56,10.74 18.3,10.5 19,10.5A3,3 0 0,1 22,13.5A3,3 0 0,1 19,18Z",
+            rainy: "M9,20A1,1 0 0,1 8,19V17A1,1 0 0,1 9,16A1,1 0 0,1 10,17V19A1,1 0 0,1 9,20M13,22A1,1 0 0,1 12,21V19A1,1 0 0,1 13,18A1,1 0 0,1 14,19V21A1,1 0 0,1 13,22M5,18A1,1 0 0,1 4,17V15A1,1 0 0,1 5,14A1,1 0 0,1 6,15V17A1,1 0 0,1 5,18M17,18A1,1 0 0,1 16,17V15A1,1 0 0,1 17,14A1,1 0 0,1 18,15V17A1,1 0 0,1 17,18M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03M19,18H6A4,4 0 0,1 2,14C2,11.79 3.79,10 6,10C6.71,10 7.37,10.18 7.96,10.5C8.5,8.45 10.08,7 12,7C14.47,7 16.5,8.79 16.92,11.16C17.56,10.74 18.3,10.5 19,10.5A3,3 0 0,1 22,13.5A3,3 0 0,1 19,18Z",
+            snowy: "M19,13H15.82L18.41,15.59L17,17L13,13V15.5L14.5,17H11.5L13,15.5V13L9,17L7.59,15.59L10.18,13H7V11H10.18L7.59,8.41L9,7L13,11V8.5L11.5,7H14.5L13,8.5V11L17,7L18.41,8.41L15.82,11H19V13Z",
+            thunderstorm: "M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H10V22H13V20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03M14.5,13L11,18H13V21L16.5,16H14.5V13Z"
+        };
+
+        const WEATHER_CODE_MAP = {
+            0: { desc: "晴れ", icon: "sunny" },
+            1: { desc: "ほぼ晴れ", icon: "sunny" },
+            2: { desc: "晴れ時々曇り", icon: "cloudy" },
+            3: { desc: "曇り", icon: "cloudy" },
+            45: { desc: "霧", icon: "cloudy" },
+            48: { desc: "霧", icon: "cloudy" },
+            51: { desc: "小雨", icon: "rainy" },
+            53: { desc: "小雨", icon: "rainy" },
+            55: { desc: "小雨", icon: "rainy" },
+            61: { desc: "雨", icon: "rainy" },
+            63: { desc: "雨", icon: "rainy" },
+            65: { desc: "大雨", icon: "rainy" },
+            71: { desc: "小雪", icon: "snowy" },
+            73: { desc: "雪", icon: "snowy" },
+            75: { desc: "大雪", icon: "snowy" },
+            77: { desc: "あられ", icon: "snowy" },
+            80: { desc: "にわか雨", icon: "rainy" },
+            81: { desc: "にわか雨", icon: "rainy" },
+            82: { desc: "激しいにわか雨", icon: "rainy" },
+            85: { desc: "にわか雪", icon: "snowy" },
+            86: { desc: "にわか雪", icon: "snowy" },
+            95: { desc: "雷雨", icon: "thunderstorm" },
+            96: { desc: "雷雨", icon: "thunderstorm" },
+            99: { desc: "雷雨", icon: "thunderstorm" }
+        };
+
+        // --- 初期化 ---
+        window.onload = function() {
+            loadConfig();
+            initClock();
+            initMemo();
+            fetchWeather();
+            
+            // 30分毎に天気を自動更新
+            setInterval(fetchWeather, 30 * 60 * 1000);
+        };
+
+        // --- 設定保存と読み込み ---
+        function loadConfig() {
+            const saved = localStorage.getItem('kindle_dash_config');
+            if (saved) {
+                try {
+                    config = JSON.parse(saved);
+                    if (config.darkMode) {
+                        document.body.classList.add('dark-mode');
+                    }
+                } catch(e) {
+                    console.error("設定読み込み失敗", e);
+                }
+            }
+            document.getElementById('location-name').textContent = `天気予報 (${config.name})`;
+        }
+
+        function saveSettings() {
+            config.lat = parseFloat(document.getElementById('input-lat').value) || 35.6895;
+            config.lon = parseFloat(document.getElementById('input-lon').value) || 139.6917;
+            config.name = document.getElementById('input-name').value || "登録地";
+            
+            localStorage.setItem('kindle_dash_config', JSON.stringify(config));
+            closeSettings();
+            
+            document.getElementById('location-name').textContent = `天気予報 (${config.name})`;
+            fetchWeather();
+        }
+
+        function openSettings() {
+            document.getElementById('input-lat').value = config.lat;
+            document.getElementById('input-lon').value = config.lon;
+            document.getElementById('input-name').value = config.name;
+            
+            document.getElementById('settings-modal').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        // --- 時計 & 日付 ---
+        function initClock() {
+            const days = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"];
+            
+            function update() {
+                const now = new Date();
+                
+                // 時間
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                document.getElementById('time').textContent = `${hours}:${minutes}`;
+                
+                // 日付
+                const yyyy = now.getFullYear();
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                document.getElementById('date').textContent = `${yyyy}年${mm}月${dd}日`;
+                
+                // 曜日
+                document.getElementById('day').textContent = days[now.getDay()];
+
+                // 毎正時(00分)にアンチゴーストの画面リフレッシュを自動実行
+                if (minutes === "00") {
+                    triggerAntiGhosting();
+                }
+            }
+            
+            update();
+            setInterval(update, 1000); // 1秒ごとに現在時刻をチェック
+        }
+
+        // --- ToDoメモ ---
+        function initMemo() {
+            const memoArea = document.getElementById('memo-area');
+            const savedMemo = localStorage.getItem('kindle_dash_memo');
+            if (savedMemo) {
+                memoArea.value = savedMemo;
+            }
+            
+            // 入力毎に自動保存
+            memoArea.addEventListener('input', function() {
+                localStorage.setItem('kindle_dash_memo', memoArea.value);
+            });
+        }
+
+        // --- 天気情報の取得 (Open-Meteo API) ---
+        function fetchWeather() {
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${config.lat}&longitude=${config.lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FTokyo`;
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            updateWeatherData(data);
+                        } catch(e) {
+                            document.getElementById('weather-desc').textContent = "データ解析エラー";
+                        }
+                    } else {
+                        document.getElementById('weather-desc').textContent = "通信エラー";
+                    }
+                }
+            };
+            xhr.send();
+        }
+
+        function updateWeatherData(data) {
+            // 現時点の天気
+            const current = data.current_weather;
+            const currentCode = current.weathercode;
+            const currentTemp = Math.round(current.temperature);
+            
+            const weatherInfo = WEATHER_CODE_MAP[currentCode] || { desc: "不明", icon: "sunny" };
+            
+            document.getElementById('temp-now').textContent = `${currentTemp}°C`;
+            document.getElementById('weather-desc').textContent = weatherInfo.desc;
+            
+            // アイコン変更
+            const iconSvg = document.getElementById('current-weather-icon');
+            const pathData = SVG_PATHS[weatherInfo.icon] || SVG_PATHS.sunny;
+            iconSvg.innerHTML = `<path d="${pathData}" />`;
+
+            // 更新時刻
+            const now = new Date();
+            const timeStr = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('weather-update-time').textContent = `${timeStr} 更新`;
+
+            // 3日間予報の描画
+            const daily = data.daily;
+            const forecastGrid = document.getElementById('forecast-grid');
+            forecastGrid.innerHTML = ''; // クリア
+
+            // 明日、明後日、3日後のループ
+            for (let i = 1; i <= 3; i++) {
+                const dateObj = new Date(daily.time[i]);
+                const dayLabels = ["日", "月", "火", "水", "木", "金", "土"];
+                const label = `${dateObj.getMonth() + 1}/${dateObj.getDate()}(${dayLabels[dateObj.getDay()]})`;
+                
+                const code = daily.weathercode[i];
+                const info = WEATHER_CODE_MAP[code] || { desc: "不明", icon: "sunny" };
+                const pData = SVG_PATHS[info.icon] || SVG_PATHS.sunny;
+                
+                const minTemp = Math.round(daily.temperature_2m_min[i]);
+                const maxTemp = Math.round(daily.temperature_2m_max[i]);
+
+                const forecastHtml = `
+                    <div class="forecast-day">
+                        <div class="forecast-date">${label}</div>
+                        <svg class="forecast-icon" viewBox="0 0 24 24">
+                            <path d="${pData}" />
+                        </svg>
+                        <div class="forecast-temp">${maxTemp}/${minTemp}°C</div>
+                    </div>
+                `;
+                forecastGrid.insertAdjacentHTML('beforeend', forecastHtml);
+            }
+        }
+
+        // --- 残像クリア機能 (Anti-Ghosting) ---
+        function triggerAntiGhosting() {
+            const overlay = document.getElementById('flash-overlay');
+            overlay.style.display = 'block';
+            overlay.style.animation = 'pulse-flash 0.8s ease-in-out 3'; // 黒白を数回繰り返す
+            
+            setTimeout(function() {
+                overlay.style.display = 'none';
+                overlay.style.animation = '';
+            }, 2400);
+        }
+
+        // --- 白黒反転モードトグル ---
+        function toggleDarkMode() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            config.darkMode = isDark;
+            localStorage.setItem('kindle_dash_config', JSON.stringify(config));
+        }
+    </script>
+</body>
+</html>
