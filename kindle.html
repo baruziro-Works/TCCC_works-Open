@@ -473,7 +473,7 @@
 
         // スリープ回避用リロード管理用変数
         let lastReloadTime = Date.now();
-        const RELOAD_INTERVAL_MS = 3 * 60 * 1000; // 3分に短縮（スリープに入る前に高頻度で刺激を与える）
+        const RELOAD_INTERVAL_MS = 50 * 60 * 1000; // 3分に短縮（スリープに入る前に高頻度で刺激を与える）
         let isMemoFocused = false; // メモ入力中かどうかのフラグ
 
         // 【E-ink超最適化デザイン】細い線や傾斜描画による歪みを防ぐための極太・シンプルSVGパス
