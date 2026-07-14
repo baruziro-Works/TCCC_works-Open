@@ -1,0 +1,2233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ダッシュボードアプリ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Hiragino Kaku Gothic ProN, "ヒラギノ角ゴ ProN W3", Arial, sans-serif;
+            
+            /* iPadにおけるダブルタップ時の画面ズームやガタつきを防止 */
+            touch-action: manipulation;
+            
+            /* ボタン連打時の文字選択（青い網掛け）を防止 */
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            
+            /* タップ時のグレーのハイライトを透明化してチラつきを防止 */
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+            outline: none !important;
+        }
+        
+        /* ユーザーが快適に入力できるように、テキスト入力エリアなどはタッチ操作を通常解放 */
+        textarea, input[type="text"], input[type="number"] {
+            -webkit-user-select: text !important;
+            user-select: text !important;
+            touch-action: auto !important;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f0f2f5;
+            overflow: hidden;
+            color: #333;
+            position: fixed; /* 画面全体の引っ張りバウンスを完全に防止 */
+        }
+
+        #safe-wrapper {
+            width: 100%;
+            height: 100%;
+            padding: 12px; 
+            background-color: #f0f2f5;
+        }
+
+        #container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        /* 左カラム（時計＋垂直ツールバー＋メモ一覧） */
+        #left-col {
+            width: 380px; 
+            border-right: 1px solid #e5e5ea;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+            flex-shrink: 0;
+        }
+
+        /* 右カラム */
+        #right-col {
+            flex: 1;
+            background-color: #f7f9fa;
+            height: 100%;
+            position: relative;
+        }
+
+        /* 時計表示エリア */
+        .header-area {
+            padding: 14px 18px;
+            border-bottom: 1px solid #e5e5ea;
+            background: linear-gradient(135deg, #ffffff 0%, #f9f9fb 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 85px;
+            flex-shrink: 0;
+        }
+
+        .clock-date {
+            font-size: 24px;
+            color: #1c1c1e;
+            font-weight: 850;
+            letter-spacing: -0.5px;
+        }
+
+        .clock-time {
+            font-weight: 900;
+            color: #007aff;
+            display: flex;
+            align-items: baseline;
+        }
+
+        #lbl-time {
+            font-size: 44px;
+            line-height: 1;
+            letter-spacing: -1.5px;
+        }
+
+        .clock-sec {
+            font-size: 24px;
+            color: #8e8e93;
+            margin-left: 4px;
+            font-weight: 700;
+        }
+
+        .sidebar-main-content {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        /* 垂直ツールバー */
+        .tools-sidebar {
+            width: 85px;
+            background-color: #f5f5f7;
+            border-right: 1px solid #e5e5ea;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+            gap: 14px;
+            height: 100%;
+            flex-shrink: 0;
+        }
+
+        /* メモ一覧エリア */
+        .memos-sidebar {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            background-color: #ffffff;
+            height: 100%;
+        }
+
+        .sidebar-tool-btn, .sidebar-tool-btn-link {
+            width: 68px;
+            height: 74px;
+            background-color: #ffffff;
+            border: 1.5px solid #d1d1d6;
+            border-radius: 14px;
+            font-size: 11px;
+            font-weight: 800;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            text-decoration: none !important;
+            transition: all 0.1s ease;
+        }
+
+        .sidebar-tool-btn:active, .sidebar-tool-btn-link:active {
+            background-color: #e5e5ea;
+            transform: scale(0.95);
+        }
+
+        .sidebar-tool-btn.active {
+            background-color: #007aff;
+            color: white !important;
+            border-color: #0051a8;
+            box-shadow: 0 4px 10px rgba(0,122,255,0.3);
+        }
+
+        .sidebar-tool-btn.active i {
+            color: white !important;
+        }
+
+        .sidebar-tool-btn i, .sidebar-tool-btn-link i {
+            font-size: 22px;
+            color: #007aff;
+        }
+
+        .sidebar-tool-btn-link i {
+            color: #34c759;
+        }
+
+        /* メモ項目のデザイン */
+        .memo-item-wrapper {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            border-bottom: 1px solid #f2f2f7;
+            height: 85px;
+            transition: background-color 0.1s ease;
+        }
+
+        .memo-clickable-cell {
+            flex: 1;
+            height: 100%;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .memo-clickable-cell.selected {
+            background-color: #e3f2fd;
+        }
+
+        .memo-clickable-cell.checked-style {
+            opacity: 0.55;
+        }
+
+        .memo-title-text {
+            font-size: 17px;
+            font-weight: 800;
+            color: #1c1c1e;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .memo-meta-text {
+            font-size: 12px;
+            color: #8e8e93;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .memo-delete-btn {
+            width: 50px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ff3b30;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.1s ease;
+        }
+
+        .memo-delete-btn:active {
+            background-color: #ffe5e5;
+        }
+
+        .memo-delete-btn i {
+            font-size: 18px;
+        }
+
+        /* ビューパネル */
+        .view-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            display: none;
+            background-color: #f7f9fa;
+            overflow: hidden; /* 全体スクロールバウンスを防ぐ */
+        }
+
+        .view-panel.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .split-view {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .memo-display-box {
+            flex: 1;
+            background-color: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #e5e5ea;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .memo-display-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1c1c1e;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f2f2f7;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+
+        .memo-display-body {
+            font-size: 17px;
+            line-height: 1.6;
+            color: #2c2c2e;
+            flex: 1;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* メモ書き込みコンテナ */
+        .memo-input-container {
+            background-color: #ffffff;
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid #e5e5ea;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-shrink: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .memo-textarea {
+            width: 100%;
+            height: 95px;
+            border: 1px solid #d1d1d6;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 16px;
+            resize: none;
+            background-color: #fafafa;
+            transition: all 0.2s ease;
+        }
+
+        .memo-textarea:focus {
+            background-color: #ffffff;
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
+        }
+
+        .memo-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: 800;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            border: none;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background-color: #007aff;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,122,255,0.2);
+        }
+
+        .btn-primary:active {
+            background-color: #0051a8;
+        }
+
+        .btn-secondary {
+            background-color: #e5e5ea;
+            color: #3a3a3c;
+        }
+
+        .btn-secondary:active {
+            background-color: #d1d1d6;
+        }
+
+        .btn-danger {
+            background-color: #ff3b30;
+            color: white;
+            box-shadow: 0 4px 10px rgba(255,59,48,0.2);
+        }
+
+        .btn-danger:active {
+            background-color: #c9241a;
+        }
+
+        /* ============================================
+           カレンダー（一ヶ月表示・スワイプ対応）
+           ============================================ */
+        .calendar-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e5e5ea;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            overflow: hidden;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #f9f9fb 100%);
+            border-bottom: 1px solid #e5e5ea;
+            flex-shrink: 0;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            flex: 1;
+            background-color: #e5e5ea;
+            gap: 1px;
+            height: 100%;
+        }
+
+        .calendar-weekday {
+            background-color: #f5f5f7;
+            text-align: center;
+            font-weight: 800;
+            font-size: 13px;
+            padding: 8px 2px;
+            color: #8e8e93;
+        }
+
+        .calendar-day-cell {
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            padding: 6px;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: background-color 0.1s ease;
+        }
+
+        .calendar-day-cell:active {
+            background-color: #e3f2fd;
+        }
+
+        .calendar-day-cell.other-month {
+            background-color: #fafafa;
+            color: #c7c7cc;
+        }
+
+        .calendar-day-cell.today-cell {
+            background-color: #f2f9ff;
+        }
+
+        .calendar-day-cell.today-cell .day-number {
+            background-color: #007aff;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 950;
+        }
+
+        .day-number {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1c1c1e;
+            margin-bottom: 4px;
+        }
+
+        .calendar-event-tag {
+            font-size: 10px;
+            line-height: 1.2;
+            padding: 2px 4px;
+            border-radius: 4px;
+            background-color: #e1f5fe;
+            color: #0288d1;
+            border-left: 3px solid #0288d1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+            font-weight: 800;
+        }
+
+        /* ============================================
+           アラーム機能（指定時刻設定モーダル・表示）
+           ============================================ */
+        .alarm-indicator {
+            background-color: #fff3e0;
+            border: 1px solid #ffe0b2;
+            color: #e65100;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+
+        /* ============================================
+           キングジム風 ビジュアルバータイマー (VBT20-BK風)
+           ============================================ */
+        .visual-bar-container {
+            width: 100%;
+            background-color: #1c1c1e;
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+
+        .visual-segments-track {
+            display: flex;
+            gap: 2px;
+            width: 100%;
+            height: 28px;
+            background-color: #2c2c2e;
+            border-radius: 6px;
+            padding: 4px;
+            overflow: hidden;
+            align-items: flex-end;
+            transition: all 0.3s ease;
+        }
+
+        .visual-segments-track.ringing-active {
+            height: 50px; 
+            align-items: center;
+            background-color: #1a0f0f;
+            border: 1px solid #ff453a;
+        }
+
+        .segment-block {
+            flex: 1;
+            height: 100%;
+            background-color: #3a3a3c;
+            border-radius: 1.5px;
+            transition: background-color 0.15s ease, transform 0.1s ease-in-out;
+        }
+
+        .segment-block.lit-green {
+            background: linear-gradient(180deg, #30d158 0%, #24b045 100%);
+            box-shadow: 0 0 5px rgba(48, 209, 88, 0.6);
+        }
+        .segment-block.lit-yellow {
+            background: linear-gradient(180deg, #ffd60a 0%, #e6be00 100%);
+            box-shadow: 0 0 5px rgba(255, 214, 10, 0.6);
+        }
+        .segment-block.lit-orange {
+            background: linear-gradient(180deg, #ff9f0a 0%, #e08200 100%);
+            box-shadow: 0 0 5px rgba(255, 159, 10, 0.6);
+        }
+        .segment-block.lit-red {
+            background: linear-gradient(180deg, #ff453a 0%, #dd2a20 100%);
+            box-shadow: 0 0 5px rgba(255, 69, 58, 0.7);
+        }
+
+        @keyframes segEqualizer {
+            0% { transform: scaleY(0.1); opacity: 0.2; }
+            100% { transform: scaleY(1.3); opacity: 1; }
+        }
+
+        .visual-segments-track.ringing-active .segment-block {
+            animation: segEqualizer 0.45s ease-in-out infinite alternate;
+            background: linear-gradient(180deg, #ff453a 0%, #ff3b30 100%) !important;
+            box-shadow: 0 0 8px rgba(255, 59, 48, 0.8) !important;
+        }
+
+        /* ============================================
+           タイマー用物理風「回転スワイプダイヤル」
+           ============================================ */
+        .dial-viewport {
+            width: 76px;
+            height: 110px;
+            background-color: #1c1c1e;
+            border: 3px solid #3a3a3c;
+            border-radius: 14px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.8), 0 2px 5px rgba(0,0,0,0.3);
+            cursor: ns-resize;
+            flex-shrink: 0;
+        }
+
+        .dial-track {
+            position: absolute;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            transition: transform 0.1s ease-out;
+        }
+
+        .dial-number {
+            font-size: 18px;
+            font-weight: 900;
+            color: #8e8e93;
+            font-family: monospace, sans-serif;
+            opacity: 0.3;
+            transition: all 0.15s ease;
+        }
+
+        .dial-number.active-num {
+            color: #007aff;
+            font-size: 24px;
+            opacity: 1;
+            text-shadow: 0 0 6px rgba(0,122,255,0.6);
+        }
+
+        .dial-center-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 34px;
+            border-top: 1px solid rgba(0, 122, 255, 0.4);
+            border-bottom: 1px solid rgba(0, 122, 255, 0.4);
+            background: linear-gradient(180deg, rgba(0,122,255,0.05) 0%, rgba(0,122,255,0.15) 50%, rgba(0,122,255,0.05) 100%);
+            pointer-events: none;
+        }
+
+        .timer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .timer-preset-btn {
+            background-color: #ffffff;
+            border: 1.5px solid #d1d1d6;
+            border-radius: 12px;
+            padding: 10px 4px;
+            font-size: 16px;
+            font-weight: 800;
+            color: #1c1c1e;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            cursor: pointer;
+        }
+
+        .timer-preset-btn:active {
+            background-color: #f2f2f7;
+            transform: scale(0.95);
+        }
+
+        /* タイマー画面の表示ブロック */
+        .timer-display-box, .stopwatch-display-box {
+            background-color: #ffffff;
+            border: 1px solid #e5e5ea;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            margin-bottom: 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .timer-numbers {
+            font-size: 58px;
+            font-weight: 900;
+            font-family: monospace, sans-serif;
+            color: #1c1c1e;
+            line-height: 1;
+            letter-spacing: -1.5px;
+        }
+
+        .stopwatch-numbers {
+            font-size: 70px;
+            font-weight: 900;
+            font-family: monospace, sans-serif;
+            color: #1c1c1e;
+            line-height: 1;
+            margin-bottom: 16px;
+        }
+
+        .lap-list {
+            width: 100%;
+            max-height: 110px;
+            overflow-y: auto;
+            border-top: 1px solid #e5e5ea;
+            padding-top: 8px;
+        }
+
+        .lap-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 12px;
+            font-size: 15px;
+            border-bottom: 1px solid #f2f2f7;
+        }
+
+        /* 電卓デザイン */
+        .calc-wrapper {
+            background-color: #1c1c1e;
+            border-radius: 24px;
+            padding: 16px;
+            max-width: 340px; 
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            width: 100%;
+        }
+
+        .calc-display {
+            width: 100%;
+            height: 70px;
+            background-color: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 42px;
+            text-align: right;
+            padding: 8px;
+            margin-bottom: 12px;
+            font-family: monospace, sans-serif;
+        }
+
+        .calc-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .calc-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50% !important;
+            font-size: 22px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+            margin: 0 auto;
+            transition: all 0.1s ease;
+            -webkit-appearance: none; 
+        }
+
+        .calc-btn:active {
+            filter: brightness(1.3);
+            transform: scale(0.92);
+        }
+
+        .calc-btn-double {
+            grid-column: span 2; 
+            width: 140px; 
+            height: 64px;
+            border-radius: 32px !important; 
+            padding-left: 22px; 
+            justify-content: flex-start; 
+        }
+
+        .calc-btn-gray { background-color: #a5a5a5; color: #000000; }
+        .calc-btn-dark { background-color: #333333; color: #ffffff; }
+        .calc-btn-orange { background-color: #ff9f0a; color: #ffffff; }
+    </style>
+</head>
+<body>
+
+<div id="safe-wrapper">
+    <div id="container">
+        <!-- 左カラム -->
+        <div id="left-col">
+            <!-- 時計表示エリア -->
+            <div class="header-area">
+                <div class="clock-date" id="lbl-date">--月--日 (ー)</div>
+                <div class="clock-time">
+                    <span id="lbl-time">00:00</span>
+                    <span class="clock-sec" id="lbl-sec">00</span>
+                </div>
+            </div>
+            
+            <!-- 下部メインエリア -->
+            <div class="sidebar-main-content">
+                <!-- 垂直固定ツールバー -->
+                <div class="tools-sidebar">
+                    <button class="sidebar-tool-btn active" id="tool-btn-dash" onclick="switchView('dash')">
+                        <i class="fa-solid fa-house"></i><span>メモ帳</span>
+                    </button>
+                    <button class="sidebar-tool-btn" id="tool-btn-timer" onclick="switchView('timer')">
+                        <i class="fa-solid fa-hourglass-half"></i><span>タイマー</span>
+                    </button>
+                    <button class="sidebar-tool-btn" id="tool-btn-stopwatch" onclick="switchView('stopwatch')">
+                        <i class="fa-solid fa-stopwatch"></i><span>計測器</span>
+                    </button>
+                    <button class="sidebar-tool-btn" id="tool-btn-calc" onclick="switchView('calc')">
+                        <i class="fa-solid fa-calculator"></i><span>電卓</span>
+                    </button>
+                    <!-- 聖書アプリ起動ショートカット -->
+                    <a href="shortcuts://run-shortcut?name=聖書" class="sidebar-tool-btn-link" target="_blank">
+                        <i class="fa-solid fa-book-bible"></i><span>聖書</span>
+                    </a>
+                </div>
+
+                <!-- メモ一覧スクロールエリア -->
+                <div class="memos-sidebar" id="list-memos">
+                    <!-- 動的に追加 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右カラム -->
+        <div id="right-col">
+            
+            <!-- VIEW 0: メモ表示 & 編集 または カレンダー一ヶ月表示 -->
+            <div id="view-dash" class="view-panel active">
+                <div class="split-view h-full" style="position: relative;">
+                    
+                    <!-- アラームセット中の簡易ステータス表示 -->
+                    <div id="alarm-status-bar" class="alarm-indicator" style="display: none; height: 45px;">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-bell animate-bounce"></i>
+                            <span>アラームセット中: <strong id="lbl-active-alarm-time">00:00</strong> (<span id="lbl-active-alarm-text">メッセージなし</span>)</span>
+                        </div>
+                        <button class="bg-red-500 text-white font-extrabold px-3 py-1 rounded-lg text-xs active:scale-95" onclick="cancelAlarm()">解除</button>
+                    </div>
+
+                    <!-- 上部メモ表示エリア または カレンダー -->
+                    <div id="dash-upper-dynamic-region" style="position: absolute; top: 0; left: 0; right: 0; bottom: 60px; overflow: hidden;">
+                        
+                        <!-- カレンダー表示コンテナ -->
+                        <div id="calendar-view-container" class="calendar-wrapper flex flex-col h-full">
+                            <div class="calendar-header">
+                                <button class="btn btn-secondary py-2 px-4 text-sm" onclick="shiftMonth(-1)">
+                                    <i class="fa-solid fa-chevron-left"></i> 前月
+                                </button>
+                                <span class="font-black text-xl text-gray-800" id="calendar-month-title">--年 --月</span>
+                                <button class="btn btn-secondary py-2 px-4 text-sm" onclick="shiftMonth(1)">
+                                    次月 <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            <div class="calendar-grid flex-1" id="calendar-dates-box" style="grid-template-rows: auto repeat(6, 1fr);">
+                                <!-- 動的に曜日と日付セルをマウントします -->
+                            </div>
+                        </div>
+
+                        <!-- 通常のメモビューアー -->
+                        <div class="memo-display-box h-full" id="memo-viewer" style="display: none;">
+                            <div class="memo-display-title" id="view-title">
+                                <i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>選択されていません
+                            </div>
+                            <div class="memo-display-body" id="view-body">左側のリストからメモを選んでください。選択すると、ここで編集や上書きができます。</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 下部メモ作成・編集エリア -->
+                    <div class="flex flex-col gap-2 flex-shrink-0" id="dash-lower-input-wrapper" style="position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;">
+                        <!-- カレンダー時にのみ出現する入力トグルボタン -->
+                        <div id="calendar-input-toggle-row" class="flex justify-center px-1" style="height: 48px;">
+                            <button class="bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 font-extrabold rounded-xl py-2 w-full text-sm flex items-center justify-center gap-1 active:scale-95 transition-all shadow-sm" id="btn-toggle-input" onclick="toggleInputArea()">
+                                <i class="fa-solid fa-pen-to-square"></i> <span id="lbl-toggle-input">＋ 新しいメモを書く（入力欄を開く）</span>
+                            </button>
+                        </div>
+
+                        <div class="memo-input-container" id="memo-input-drawer" style="display: none; height: 190px;">
+                            <div class="flex justify-between items-center px-1">
+                                <span class="text-xs font-bold text-gray-400">メモ作成 &amp; 編集エリア</span>
+                                <button class="text-xs text-blue-500 font-bold flex items-center gap-1 active:scale-95" id="btn-speech">
+                                    <i class="fa-solid fa-microphone"></i>音声入力を開始
+                                </button>
+                            </div>
+                            <textarea class="memo-textarea" id="txt-memo-input" placeholder="ここに入力するか、マイクボタンを押して声で入力してください..."></textarea>
+                            <div class="memo-actions">
+                                <button class="btn btn-secondary py-2 px-4 text-sm" id="btn-input-clear" onclick="clearInput()">クリア (カレンダーに戻る)</button>
+                                <button class="btn btn-primary py-2 px-4 text-sm" id="btn-input-save" onclick="addOrModifyMemo()">
+                                    <i class="fa-solid fa-floppy-disk"></i>覚書メモとして保存
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 1: タイマーツール & 指定時刻アラーム設定 -->
+            <div id="view-timer" class="view-panel">
+                <div class="text-xl font-extrabold text-gray-800 mb-2 flex items-center gap-2 flex-shrink-0">
+                    <i class="fa-solid fa-hourglass-half text-blue-500"></i>タイマー &amp; アラーム設定
+                </div>
+                
+                <!-- キングジム VBT20-BK 風液晶バー (4色セグメント) -->
+                <div class="visual-bar-container">
+                    <div class="flex justify-between text-[10px] font-bold text-gray-400 px-1">
+                        <span>VISUAL BAR TRACKER</span>
+                        <span id="lbl-bar-percentage">100% REMAINING</span>
+                    </div>
+                    <div class="visual-segments-track" id="visual-bar-track">
+                        <!-- 80個の極細セグメント -->
+                    </div>
+                </div>
+
+                <!-- プリセット簡易ボタン (1分〜30分) -->
+                <div class="timer-grid">
+                    <div class="timer-preset-btn" onclick="setTimerPreset(1)">1分</div>
+                    <div class="timer-preset-btn" onclick="setTimerPreset(3)">3分</div>
+                    <div class="timer-preset-btn" onclick="setTimerPreset(5)">5分</div>
+                    <div class="timer-preset-btn" onclick="setTimerPreset(10)">10分</div>
+                    <div class="timer-preset-btn" onclick="setTimerPreset(15)">15分</div>
+                    <div class="timer-preset-btn" onclick="setTimerPreset(30)">30分</div>
+                    <div class="timer-preset-btn font-black text-blue-500" onclick="adjustTimer(60)">+1分</div>
+                    <div class="timer-preset-btn font-black text-red-500" onclick="adjustTimer(-60)">-1分</div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 flex-shrink-0">
+                    <!-- 秒加算・詳細タイマー入力（拡大版） -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-xl p-3.5 flex flex-col justify-center">
+                        <span class="text-xs font-black text-blue-800 mb-2 block"><i class="fa-solid fa-sliders mr-1"></i>タイマー細設定：</span>
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="input-timer-min" min="0" max="99" class="w-16 h-12 text-center font-bold border-2 border-blue-200 rounded-xl text-lg bg-white focus:border-blue-500" value="0">
+                            <span class="text-xs font-bold text-gray-600">分</span>
+                            <input type="number" id="input-timer-sec" min="0" max="59" class="w-16 h-12 text-center font-bold border-2 border-blue-200 rounded-xl text-lg bg-white focus:border-blue-500" value="0">
+                            <span class="text-xs font-bold text-gray-600">秒</span>
+                            <button class="bg-blue-600 text-white h-12 px-4 text-sm font-black rounded-xl ml-1 active:scale-95" onclick="applyCustomTimer()">適用</button>
+                            
+                            <button class="bg-gray-200 text-gray-800 h-12 px-3 text-xs font-extrabold rounded-xl ml-1 active:scale-95" onclick="adjustTimer(10)">+10秒</button>
+                            <button class="bg-gray-200 text-gray-800 h-12 px-3 text-xs font-extrabold rounded-xl active:scale-95" onclick="adjustTimer(5)">+5秒</button>
+                        </div>
+                    </div>
+
+                    <!-- 指定時刻アラーム（拡大版） -->
+                    <div class="bg-orange-50 border border-orange-100 rounded-xl p-3.5 flex flex-col justify-center">
+                        <span class="text-xs font-black text-orange-800 mb-2 block"><i class="fa-solid fa-bell mr-1"></i>指定時刻アラーム (HH:MM)：</span>
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="input-alarm-time" placeholder="18:30" class="w-24 h-12 text-center font-bold border-2 border-orange-200 rounded-xl text-base bg-white focus:border-orange-500" />
+                            <input type="text" id="input-alarm-text" placeholder="アラームメモ（例: 薬を飲む時間）" class="flex-1 h-12 px-3 font-bold border-2 border-orange-200 rounded-xl text-sm bg-white focus:border-orange-500" />
+                            <button class="bg-orange-500 text-white font-extrabold text-sm h-12 px-4 rounded-xl active:scale-95" onclick="setSpecifiedTimeAlarm()">セット</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- カウンター＆スワイプダイヤル (100%崩れないテーブル構造で横並び固定) -->
+                <div class="timer-display-box flex-1">
+                    <table class="w-full border-none mb-2" style="table-layout: fixed; border-collapse: collapse;">
+                        <tr>
+                            <td class="text-left" style="vertical-align: middle; width: 68%;">
+                                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                                    <i class="fa-solid fa-clock animate-pulse"></i> TIMER COUNTER
+                                </span>
+                                <div class="timer-numbers" id="timer-text">00:00:00</div>
+                            </td>
+                            <td class="text-right" style="vertical-align: middle; width: 32%;">
+                                <div class="inline-flex flex-col items-center bg-gray-50 p-2 rounded-2xl border border-gray-200">
+                                    <div class="dial-viewport" id="timer-dial-viewport">
+                                        <div class="dial-center-line"></div>
+                                        <div class="dial-track" id="timer-dial-track">
+                                            <div class="dial-number" id="dial-num-prev2">-2</div>
+                                            <div class="dial-number" id="dial-num-prev1">-1</div>
+                                            <div class="dial-number active-num" id="dial-num-curr">0分</div>
+                                            <div class="dial-number" id="dial-num-next1">+1</div>
+                                            <div class="dial-number" id="dial-num-next2">+2</div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[8px] font-black text-gray-400 mt-1">上下スワイプ</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                    
+                    <!-- コントロールボタン -->
+                    <div class="flex gap-4 w-full max-w-xs mt-3">
+                        <button class="btn btn-primary flex-1 py-3 text-base" id="btn-timer-start" onclick="toggleTimer()">スタート</button>
+                        <button class="btn btn-secondary py-3 text-base w-16" id="btn-timer-reset" onclick="resetTimer()">C</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: ストップウォッチ -->
+            <div id="view-stopwatch" class="view-panel">
+                <div class="text-xl font-extrabold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-stopwatch text-green-500"></i>ストップウォッチ
+                </div>
+                <div class="stopwatch-display-box">
+                    <div class="stopwatch-numbers" id="stopwatch-text">00:00.00</div>
+                    <div class="flex gap-4 w-full max-w-sm mb-4">
+                        <button class="btn btn-primary flex-1 py-4 text-lg" id="btn-sw-start" onclick="toggleStopwatch()">スタート</button>
+                        <button class="btn btn-secondary py-4 text-lg" id="btn-sw-lap" onclick="lapStopwatch()">ラップ</button>
+                        <button class="btn btn-secondary py-4 text-lg w-16" id="btn-sw-reset" onclick="resetStopwatch()">C</button>
+                    </div>
+                    <div class="lap-list" id="sw-lap-container"></div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: 電卓ツール -->
+            <div id="view-calc" class="view-panel justify-center items-center">
+                <div class="calc-wrapper">
+                    <input type="text" class="calc-display" id="calc-screen" readonly value="0">
+                    <div class="calc-grid">
+                        <button class="calc-btn calc-btn-gray" onclick="pressCalc('C')">C</button>
+                        <button class="calc-btn calc-btn-gray" onclick="pressCalc('+/-')">+/-</button>
+                        <button class="calc-btn calc-btn-gray" onclick="pressCalc('%')">%</button>
+                        <button class="calc-btn calc-btn-orange" onclick="pressCalc('/')">÷</button>
+                        
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('7')">7</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('8')">8</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('9')">9</button>
+                        <button class="calc-btn calc-btn-orange" onclick="pressCalc('*')">×</button>
+                        
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('4')">4</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('5')">5</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('6')">6</button>
+                        <button class="calc-btn calc-btn-orange" onclick="pressCalc('-')">-</button>
+                        
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('1')">1</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('2')">2</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('3')">3</button>
+                        <button class="calc-btn calc-btn-orange" onclick="pressCalc('+')">+</button>
+                        
+                        <button class="calc-btn calc-btn-dark calc-btn-double" onclick="pressCalc('0')">0</button>
+                        <button class="calc-btn calc-btn-dark" onclick="pressCalc('.')">.</button>
+                        <button class="calc-btn calc-btn-orange" onclick="pressCalc('=')">=</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- 新規イベント登録 / 編集用 カスタムHTMLモーダル -->
+<div id="calendar-event-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl p-6 w-11/12 max-w-md shadow-2xl">
+        <h3 class="text-lg font-black text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fa-regular fa-calendar-plus text-blue-500"></i>
+            <span id="calendar-modal-date-label">----/--/--</span> のイベント設定
+        </h3>
+        <div class="flex flex-col gap-3">
+            <div>
+                <label class="text-xs font-black text-gray-500">タイトル (カレンダーに表示されます)</label>
+                <input type="text" id="input-cal-title" placeholder="イベントタイトル" class="w-full p-2.5 border border-gray-300 rounded-xl text-sm font-bold bg-gray-50 focus:bg-white" />
+            </div>
+            <div>
+                <label class="text-xs font-black text-gray-500">詳細・本文</label>
+                <textarea id="input-cal-body" placeholder="詳細な内容を記載..." rows="3" class="w-full p-2.5 border border-gray-300 rounded-xl text-sm font-bold bg-gray-50 focus:bg-white resize-none"></textarea>
+            </div>
+        </div>
+        <div class="flex justify-between mt-5 gap-2">
+            <button class="btn btn-danger text-sm py-2 px-4" id="btn-cal-delete" onclick="deleteCalendarEvent()">削除</button>
+            <div class="flex gap-2">
+                <button class="btn btn-secondary text-sm py-2 px-4" onclick="closeCalendarModal()">閉じる</button>
+                <button class="btn btn-primary text-sm py-2 px-4" onclick="saveCalendarEvent()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="alarm-ring-modal" class="fixed inset-0 bg-black bg-opacity-75 z-[9999] flex items-center justify-center hidden cursor-pointer">
+    <div class="bg-white rounded-2xl p-8 w-11/12 max-w-md shadow-2xl border-4 border-orange-500 text-center animate-bounce cursor-default" onclick="event.stopPropagation()">
+        <div class="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-500">
+            <i class="fa-solid fa-bell text-4xl animate-pulse"></i>
+        </div>
+        <h2 class="text-2xl font-black text-orange-600 mb-2">時間になりました！</h2>
+        <div class="bg-gray-100 p-4 rounded-xl text-lg font-black text-gray-800 mb-4" id="lbl-ring-alarm-text">
+            設定されたテキストがここに表示されます
+        </div>
+        <p class="text-xs text-gray-400 mb-4">※ 画面のどこをタップしてもアラームは止まります</p>
+        <button id="btn-alarm-stop" class="btn btn-danger py-4 px-8 text-lg w-full font-black rounded-xl shadow-lg active:scale-95 cursor-pointer">アラームを止める</button>
+    </div>
+</div>
+
+<script>
+    var memos = [];
+    var calendarEvents = {};
+    var selectedMemoId = null;
+    var currentViewId = 'view-dash';
+
+    var calendarYear = 2026;
+    var calendarMonth = 5; 
+    var selectedCalendarDateStr = null;
+
+    var alarmTimeStr = null;
+    var alarmMessage = "";   
+    var alarmTimerId = null; 
+    var isAlarmRinging = false;
+
+    // iOS/iPadOS 向け Web Audio API 解放用
+    var audioCtx = null;
+
+    function initAudioContext() {
+        try {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        } catch(e) {
+            console.log("AudioContext init error: ", e);
+        }
+    }
+    window.addEventListener('touchstart', initAudioContext, { passive: true });
+    window.addEventListener('click', initAudioContext);
+
+    // 音声認識セットアップ
+    var recognition = null;
+    try {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            var SpeechReq = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechReq();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.lang = 'ja-JP';
+
+            recognition.onresult = function(event) {
+                var resultText = event.results[event.results.length - 1][0].transcript;
+                var inputArea = document.getElementById('txt-memo-input');
+                inputArea.value = inputArea.value + (inputArea.value ? '\n' : '') + resultText;
+            };
+
+            recognition.onerror = function() {
+                var btn = document.getElementById('btn-speech');
+                if(btn) {
+                    btn.innerHTML = '<i class="fa-solid fa-microphone"></i>音声入力を開始';
+                    btn.classList.remove('text-red-500');
+                }
+            };
+
+            recognition.onend = function() {
+                var btn = document.getElementById('btn-speech');
+                if(btn) {
+                    btn.innerHTML = '<i class="fa-solid fa-microphone"></i>音声入力を開始';
+                    btn.classList.remove('text-red-500');
+                }
+            };
+        }
+    } catch(e) {
+        console.log("Speech recognition not supported.");
+    }
+
+    var speechBtn = document.getElementById('btn-speech');
+    if (speechBtn) {
+        speechBtn.addEventListener('click', function() {
+            if (!recognition) {
+                alert('お使いの環境はマイク音声入力に対応していません。');
+                return;
+            }
+            if (speechBtn.classList.contains('text-red-500')) {
+                recognition.stop();
+            } else {
+                speechBtn.innerHTML = '<i class="fa-solid fa-microphone-lines animate-pulse"></i>認識中...（停止）';
+                speechBtn.classList.add('text-red-500');
+                recognition.start();
+            }
+        });
+    }
+
+    window.onload = function() {
+        try {
+            var saved = localStorage.getItem('dashboard_memos');
+            if (saved) { memos = JSON.parse(saved); }
+            
+            var savedCal = localStorage.getItem('dashboard_calendar_events');
+            if (savedCal) { calendarEvents = JSON.parse(savedCal); }
+        } catch(e) {
+            memos = [];
+            calendarEvents = {};
+        }
+        
+        if (!memos || memos.length === 0) {
+            memos = [
+                { id: 'm1', text: 'ダッシュボードへようこそ！\n左側のマイクボタンでいつでも音声入力ができます。', time: Date.now(), checked: false },
+                { id: 'm2', text: 'タイマーやストップウォッチ、電卓は左側の切り替えボタンから一瞬で開けます。', time: Date.now() - 60000, checked: false }
+            ];
+            saveData();
+        }
+
+        var now = new Date();
+        calendarYear = now.getFullYear();
+        calendarMonth = now.getMonth();
+
+        buildVisualBarSegments();
+
+        syncTodayCalendarEventToMemo();
+        renderMemoList();
+        renderCalendar();
+        setupCalendarSwipeGestures();
+        setupTimerDialDrag();
+        
+        // 【重要】アラーム鳴動時、レガシーiPadOSでも画面タップで100%鳴り止むマルチタッチリスナーを強力に固定
+        setupAlarmStopListeners();
+
+        updateClock();
+        setInterval(updateClock, 1000);
+        sweepMemos();
+        updateTimerDisplay(); 
+        adjustDashLayout();
+    };
+
+    function setupAlarmStopListeners() {
+        var ringModal = document.getElementById('alarm-ring-modal');
+        var stopBtn = document.getElementById('btn-alarm-stop');
+
+        if (ringModal) {
+            // モーダル全体のどこをタップ・クリックしても停止
+            ringModal.addEventListener('click', function(e) {
+                stopRingingAlarm();
+            });
+            ringModal.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                stopRingingAlarm();
+            }, { passive: false });
+        }
+
+        if (stopBtn) {
+            // 停止ボタンを直接狙ってタップした場合
+            stopBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                stopRingingAlarm();
+            });
+            stopBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                stopRingingAlarm();
+            }, { passive: false });
+        }
+    }
+
+    function renderMemoList() {
+        var container = document.getElementById('list-memos');
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (!memos || memos.length === 0) {
+            container.innerHTML = '<div class="text-gray-300 italic text-sm p-4 text-center">メモがありません</div>';
+            return;
+        }
+
+        memos.forEach(function(m) {
+            var itemWrapper = document.createElement('div');
+            itemWrapper.className = 'memo-item-wrapper';
+
+            var clickCell = document.createElement('div');
+            clickCell.className = 'memo-clickable-cell';
+            if (selectedMemoId === m.id) { clickCell.classList.add('selected'); }
+            if (m.checked) { clickCell.classList.add('checked-style'); }
+
+            var titleStr = m.text.split('\n')[0] || '無題のメモ';
+            var dateFormatted = new Date(m.time).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit' }) + ' ' +
+                            new Date(m.time).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+
+            clickCell.innerHTML = 
+                '<div class="memo-title-text">' + (m.checked ? '☑ ' : '') + titleStr + '</div>' +
+                '<div class="memo-meta-text"><i class="fa-regular fa-clock"></i>' + dateFormatted + '</div>';
+
+            var handleSelect = function(e) {
+                e.preventDefault();
+                selectMemo(m.id);
+            };
+            clickCell.addEventListener('touchstart', handleSelect, {passive: false});
+            clickCell.addEventListener('click', selectMemo.bind(null, m.id));
+
+            itemWrapper.appendChild(clickCell);
+
+            var deleteBtn = document.createElement('button');
+            deleteBtn.className = 'memo-delete-btn';
+            deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+            
+            var handleDelete = function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                deleteMemo(m.id);
+            };
+            deleteBtn.addEventListener('touchstart', handleDelete, {passive: false});
+            deleteBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                deleteMemo(m.id);
+            });
+
+            itemWrapper.appendChild(deleteBtn);
+            container.appendChild(itemWrapper);
+        });
+    }
+
+    function switchView(action) {
+        var activeBtn = document.getElementById('tool-btn-' + action);
+        
+        if (activeBtn && activeBtn.classList.contains('active')) {
+            clearInput();
+            if (action !== 'dash') {
+                switchView('dash');
+            }
+            return;
+        }
+
+        var targetViewId = 'view-' + action; 
+        document.querySelectorAll('.view-panel').forEach(function(p) {
+            p.classList.remove('active');
+            p.style.display = 'none';
+        });
+        
+        var targetPanel = document.getElementById(targetViewId);
+        if (targetPanel) {
+            targetPanel.classList.add('active');
+            targetPanel.style.display = 'flex';
+            currentViewId = targetViewId;
+        }
+        
+        document.querySelectorAll('.sidebar-tool-btn').forEach(function(btn) {
+            btn.classList.remove('active');
+        });
+        if (activeBtn) { activeBtn.classList.add('active'); }
+    }
+
+    function addOrModifyMemo() {
+        var text = document.getElementById('txt-memo-input').value.trim();
+        if (!text) return;
+        
+        if (selectedMemoId) {
+            var index = memos.findIndex(function(item) { return item.id === selectedMemoId; });
+            if (index !== -1) {
+                memos[index].text = text;
+                memos[index].time = Date.now();
+                saveData();
+                selectMemo(selectedMemoId);
+            }
+        } else {
+            var newMemo = {
+                id: 'memo_' + Date.now(),
+                text: text,
+                time: Date.now(),
+                checked: false,
+                checkedTime: null
+            };
+            memos.unshift(newMemo);
+            saveData();
+            document.getElementById('txt-memo-input').value = '';
+            
+            var drawer = document.getElementById('memo-input-drawer');
+            if (drawer) {
+                drawer.style.display = 'none';
+                document.getElementById('btn-toggle-input').style.display = 'flex';
+            }
+            
+            selectMemo(newMemo.id);
+        }
+    }
+
+    function toggleInputArea() {
+        var drawer = document.getElementById('memo-input-drawer');
+        var toggleBtn = document.getElementById('btn-toggle-input');
+        if (!drawer) return;
+
+        if (drawer.style.display === 'none' || !drawer.style.display) {
+            drawer.style.display = 'flex';
+            toggleBtn.style.display = 'none';
+            document.getElementById('txt-memo-input').focus();
+        } else {
+            drawer.style.display = 'none';
+            toggleBtn.style.display = 'flex';
+        }
+        adjustDashLayout();
+    }
+
+    function adjustDashLayout() {
+        var upperRegion = document.getElementById('dash-upper-dynamic-region');
+        var alarmBar = document.getElementById('alarm-status-bar');
+        var drawer = document.getElementById('memo-input-drawer');
+        var toggleRow = document.getElementById('calendar-input-toggle-row');
+        
+        if (!upperRegion) return;
+        
+        var isAlarmVisible = (alarmBar && alarmBar.style.display === 'flex');
+        var topPx = isAlarmVisible ? '55px' : '0px';
+        upperRegion.style.top = topPx;
+        
+        var bottomPx = '60px'; 
+        
+        if (selectedMemoId !== null) {
+            bottomPx = '200px'; 
+            if (drawer) drawer.style.display = 'flex';
+            if (toggleRow) toggleRow.style.display = 'none';
+        } else {
+            var isDrawerOpen = (drawer && drawer.style.display === 'flex');
+            if (isDrawerOpen) {
+                bottomPx = '200px';
+                if (toggleRow) toggleRow.style.display = 'none';
+            } else {
+                bottomPx = '60px';
+                if (toggleRow) toggleRow.style.display = 'flex';
+            }
+        }
+        
+        upperRegion.style.bottom = bottomPx;
+    }
+
+    function selectMemo(id) {
+        selectedMemoId = id;
+        var m = memos.find(function(item) { return item.id === id; });
+        if (!m) return;
+        
+        document.getElementById('calendar-view-container').style.display = 'none';
+        
+        var memoViewer = document.getElementById('memo-viewer');
+        memoViewer.classList.remove('hidden');
+        memoViewer.style.display = 'flex';
+
+        adjustDashLayout();
+
+        var viewerTitle = document.getElementById('view-title');
+        var viewerBody = document.getElementById('view-body');
+        
+        if (viewerTitle && viewerBody) {
+            viewerTitle.innerHTML = '';
+            
+            var chk = document.createElement('input');
+            chk.type = 'checkbox';
+            chk.style.transform = 'scale(1.8)';
+            chk.style.marginRight = '18px';
+            chk.style.cursor = 'pointer';
+            chk.checked = m.checked;
+            chk.addEventListener('change', function() {
+                toggleCheckMemo(m.id, chk.checked);
+            });
+            
+            var titleSpan = document.createElement('span');
+            titleSpan.style.verticalAlign = 'middle';
+            titleSpan.className = 'font-extrabold';
+            titleSpan.innerText = m.text.split('\n')[0] || '無題のメモ';
+            
+            viewerTitle.appendChild(chk);
+            viewerTitle.appendChild(titleSpan);
+            
+            viewerBody.innerHTML = '';
+            var bodySpan = document.createElement('span');
+            bodySpan.innerText = m.text;
+            viewerBody.appendChild(bodySpan);
+        }
+        
+        var inputArea = document.getElementById('txt-memo-input');
+        if (inputArea) { inputArea.value = m.text; }
+        
+        var saveBtn = document.getElementById('btn-input-save');
+        if (saveBtn) { saveBtn.innerHTML = '<i class="fa-solid fa-file-pen"></i>メモを上書き保存'; }
+        
+        var clearBtn = document.getElementById('btn-input-clear');
+        if (clearBtn) { clearBtn.innerText = '選択を解除 (カレンダーに戻る)'; }
+        
+        if (currentViewId !== 'view-dash') {
+            switchView('dash');
+        }
+        renderMemoList();
+    }
+
+    function toggleCheckMemo(id, isChecked) {
+        var index = memos.findIndex(function(item) { return item.id === id; });
+        if (index === -1) return;
+        
+        memos[index].checked = isChecked;
+        memos[index].checkedTime = isChecked ? Date.now() : null;
+        
+        var activeItems = memos.filter(function(item) { return !item.checked; });
+        var checkedItems = memos.filter(function(item) { return item.checked; });
+        checkedItems.sort(function(a, b) { return b.checkedTime - a.checkedTime; });
+        
+        memos = activeItems.concat(checkedItems);
+        saveData();
+        selectMemo(id);
+    }
+
+    function clearInput() {
+        var inputArea = document.getElementById('txt-memo-input');
+        if (inputArea) { inputArea.value = ''; }
+        
+        selectedMemoId = null;
+        var saveBtn = document.getElementById('btn-input-save');
+        if (saveBtn) { saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i>覚書メモとして保存'; }
+        var clearBtn = document.getElementById('btn-input-clear');
+        if (clearBtn) { clearBtn.innerText = 'クリア'; }
+        
+        var memoViewer = document.getElementById('memo-viewer');
+        memoViewer.classList.add('hidden');
+        memoViewer.style.display = 'none';
+
+        var calContainer = document.getElementById('calendar-view-container');
+        calContainer.classList.remove('hidden');
+        calContainer.style.display = 'flex';
+
+        var drawer = document.getElementById('memo-input-drawer');
+        if (drawer) drawer.style.display = 'none';
+        
+        adjustDashLayout();
+
+        var viewerTitle = document.getElementById('view-title');
+        if (viewerTitle) { viewerTitle.innerHTML = '<i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>選択されていません'; }
+        var viewerBody = document.getElementById('view-body');
+        if (viewerBody) { viewerBody.innerText = '左側のリストからメモを選んでください。選択すると、ここで編集や上書きができます。'; }
+        
+        renderMemoList();
+        renderCalendar();
+    }
+
+    function deleteMemo(id) {
+        memos = memos.filter(function(item) { return item.id !== id; });
+        if (selectedMemoId === id) { clearInput(); }
+        saveData();
+    }
+
+    function sweepMemos() {
+        var now = Date.now();
+        var cutoffTime = 26 * 60 * 60 * 1000;
+        var originalLength = memos.length;
+        
+        memos = memos.filter(function(m) {
+            if (m.checked && m.checkedTime) {
+                var elapsed = now - m.checkedTime;
+                var hour = new Date().getHours();
+                if (elapsed >= cutoffTime && hour === 0) { return false; }
+            }
+            return true;
+        });
+        
+        if (memos.length !== originalLength) { saveData(); }
+    }
+
+    function saveData() {
+        try {
+            localStorage.setItem('dashboard_memos', JSON.stringify(memos));
+        } catch(e) {}
+        renderMemoList();
+    }
+
+    function renderCalendar() {
+        var container = document.getElementById('calendar-dates-box');
+        if (!container) return;
+        container.innerHTML = '';
+
+        document.getElementById('calendar-month-title').innerText = calendarYear + '年 ' + (calendarMonth + 1) + '月';
+
+        var weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+        weekdays.forEach(function(day) {
+            var cell = document.createElement('div');
+            cell.className = 'calendar-weekday';
+            cell.innerText = day;
+            container.appendChild(cell);
+        });
+
+        var firstDate = new Date(calendarYear, calendarMonth, 1);
+        var lastDate = new Date(calendarYear, calendarMonth + 1, 0);
+        
+        var startDay = firstDate.getDay(); 
+        var totalDays = lastDate.getDate();
+
+        var prevMonthLastDate = new Date(calendarYear, calendarMonth, 0).getDate();
+        var gridCount = 42; 
+        
+        for (var i = 0; i < gridCount; i++) {
+            var cell = document.createElement('div');
+            var dayNum;
+            var currentCellDateStr = "";
+
+            if (i < startDay) {
+                dayNum = prevMonthLastDate - (startDay - i - 1);
+                cell.className = 'calendar-day-cell other-month';
+                
+                var prevM = calendarMonth - 1;
+                var prevY = calendarYear;
+                if (prevM < 0) { prevM = 11; prevY--; }
+                currentCellDateStr = prevY + '-' + String(prevM + 1).padStart(2, '0') + '-' + String(dayNum).padStart(2, '0');
+            } else if (i >= startDay + totalDays) {
+                dayNum = i - (startDay + totalDays) + 1;
+                cell.className = 'calendar-day-cell other-month';
+
+                var nextM = calendarMonth + 1;
+                var nextY = calendarYear;
+                if (nextM > 11) { nextM = 0; nextY++; }
+                currentCellDateStr = nextY + '-' + String(nextM + 1).padStart(2, '0') + '-' + String(dayNum).padStart(2, '0');
+            } else {
+                dayNum = i - startDay + 1;
+                cell.className = 'calendar-day-cell';
+                
+                var today = new Date();
+                if (today.getFullYear() === calendarYear && today.getMonth() === calendarMonth && today.getDate() === dayNum) {
+                    cell.classList.add('today-cell');
+                }
+                currentCellDateStr = calendarYear + '-' + String(calendarMonth + 1).padStart(2, '0') + '-' + String(dayNum).padStart(2, '0');
+            }
+
+            cell.innerHTML = '<div class="day-number">' + dayNum + '</div>';
+
+            if (calendarEvents[currentCellDateStr]) {
+                var eventTag = document.createElement('div');
+                eventTag.className = 'calendar-event-tag';
+                eventTag.innerText = calendarEvents[currentCellDateStr].title || 'イベント';
+                cell.appendChild(eventTag);
+            }
+
+            (function(dateStr) {
+                var handleCellTap = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openCalendarModal(dateStr);
+                };
+                cell.addEventListener('touchstart', handleCellTap, {passive: false});
+                cell.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    openCalendarModal(dateStr);
+                });
+            })(currentCellDateStr);
+
+            container.appendChild(cell);
+        }
+    }
+
+    function shiftMonth(offset) {
+        calendarMonth += offset;
+        if (calendarMonth < 0) {
+            calendarMonth = 11;
+            calendarYear--;
+        } else if (calendarMonth > 11) {
+            calendarMonth = 0;
+            calendarYear++;
+        }
+        renderCalendar();
+    }
+
+    function setupCalendarSwipeGestures() {
+        var startX = 0;
+        var startY = 0;
+        var calendarArea = document.getElementById('calendar-view-container');
+        if (!calendarArea) return;
+
+        calendarArea.addEventListener('touchstart', function(e) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+
+        calendarArea.addEventListener('touchend', function(e) {
+            var diffX = e.changedTouches[0].clientX - startX;
+            var diffY = e.changedTouches[0].clientY - startY;
+
+            if (Math.abs(diffX) > 60 && Math.abs(diffY) < 40) {
+                if (diffX > 0) {
+                    shiftMonth(-1);
+                } else {
+                    shiftMonth(1);
+                }
+            }
+        }, { passive: true });
+    }
+
+    function openCalendarModal(dateStr) {
+        selectedCalendarDateStr = dateStr;
+        
+        var dateFormatted = dateStr.replace(/-/g, '/');
+        document.getElementById('calendar-modal-date-label').innerText = dateFormatted;
+
+        var inputTitle = document.getElementById('input-cal-title');
+        var inputBody = document.getElementById('input-cal-body');
+        var deleteBtn = document.getElementById('btn-cal-delete');
+
+        if (calendarEvents[dateStr]) {
+            inputTitle.value = calendarEvents[dateStr].title || '';
+            inputBody.value = calendarEvents[dateStr].body || '';
+            deleteBtn.style.display = 'block';
+        } else {
+            inputTitle.value = '';
+            inputBody.value = '';
+            deleteBtn.style.display = 'none';
+        }
+
+        document.getElementById('calendar-event-modal').classList.remove('hidden');
+    }
+
+    function closeCalendarModal() {
+        document.getElementById('calendar-event-modal').classList.add('hidden');
+    }
+
+    function deleteCalendarEvent() {
+        if (calendarEvents[selectedCalendarDateStr]) {
+            var syncMemoId = 'cal_sync_' + selectedCalendarDateStr;
+            memos = memos.filter(function(item) { return item.id !== syncMemoId; });
+            saveData();
+
+            delete calendarEvents[selectedCalendarDateStr];
+            try {
+                localStorage.setItem('dashboard_calendar_events', JSON.stringify(calendarEvents));
+            } catch(e) {}
+        }
+        closeCalendarModal();
+        renderCalendar();
+    }
+
+    function saveCalendarEvent() {
+        var title = document.getElementById('input-cal-title').value.trim();
+        var body = document.getElementById('input-cal-body').value.trim();
+
+        if (!title) {
+            alert('タイトルを入力してください。');
+            return;
+        }
+
+        calendarEvents[selectedCalendarDateStr] = {
+            title: title,
+            body: body
+        };
+
+        try {
+            localStorage.setItem('dashboard_calendar_events', JSON.stringify(calendarEvents));
+        } catch(e) {}
+
+        syncTodayCalendarEventToMemo();
+        closeCalendarModal();
+        renderCalendar();
+    }
+
+    function syncTodayCalendarEventToMemo() {
+        var today = new Date();
+        var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+        
+        if (calendarEvents[todayStr]) {
+            var ev = calendarEvents[todayStr];
+            var syncMemoId = 'cal_sync_' + todayStr;
+            var alreadyExists = memos.some(function(item) { return item.id === syncMemoId; });
+
+            if (!alreadyExists) {
+                var newMemo = {
+                    id: syncMemoId,
+                    text: '[本日カレンダー同期] ' + ev.title + '\n\n' + ev.body,
+                    time: Date.now(),
+                    checked: false,
+                    checkedTime: null
+                };
+                memos.unshift(newMemo);
+                saveData();
+            }
+        }
+    }
+
+    function setSpecifiedTimeAlarm() {
+        var timeInput = document.getElementById('input-alarm-time').value.trim();
+        var textInput = document.getElementById('input-alarm-text').value.trim();
+
+        var timePattern = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        if (!timePattern.test(timeInput)) {
+            alert('有効な24時間時刻「18:30」などの形式で指定してください。');
+            return;
+        }
+
+        var parts = timeInput.split(':');
+        alarmTimeStr = parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+        alarmMessage = textInput || "指定時刻のアラームです";
+
+        document.getElementById('lbl-active-alarm-time').innerText = alarmTimeStr;
+        document.getElementById('lbl-active-alarm-text').innerText = alarmMessage;
+        
+        var bar = document.getElementById('alarm-status-bar');
+        bar.style.display = 'flex';
+        bar.classList.remove('hidden');
+
+        adjustDashLayout();
+        initAudioContext();
+        alert('アラームを ' + alarmTimeStr + ' にセットしました。');
+    }
+
+    function cancelAlarm() {
+        alarmTimeStr = null;
+        alarmMessage = "";
+        var bar = document.getElementById('alarm-status-bar');
+        bar.style.display = 'none';
+        bar.classList.add('hidden');
+        adjustDashLayout();
+    }
+
+    function triggerAlarm() {
+        isAlarmRinging = true;
+        
+        document.getElementById('lbl-ring-alarm-text').innerText = alarmMessage;
+        document.getElementById('alarm-ring-modal').classList.remove('hidden');
+
+        document.getElementById('visual-bar-track').classList.add('ringing-active');
+
+        if (alarmTimerId) clearInterval(alarmTimerId);
+        playAlarmSound();
+        alarmTimerId = setInterval(function() {
+            playAlarmSound();
+        }, 1800);
+    }
+
+    function stopRingingAlarm() {
+        isAlarmRinging = false;
+        if (alarmTimerId) {
+            clearInterval(alarmTimerId);
+            alarmTimerId = null;
+        }
+        
+        document.getElementById('alarm-ring-modal').classList.add('hidden');
+        document.getElementById('visual-bar-track').classList.remove('ringing-active');
+
+        cancelAlarm();
+    }
+
+    function updateClock() {
+        var d = new Date();
+        var month = d.getMonth() + 1;
+        var date = d.getDate();
+        var dayList = ['日', '月', '火', '水', '木', '金', '土'];
+        var dayName = dayList[d.getDay()];
+        
+        var dateLbl = document.getElementById('lbl-date');
+        if(dateLbl) { dateLbl.innerText = month + '月' + date + '日 (' + dayName + ')'; }
+        
+        var hrs = d.getHours();
+        var mins = d.getMinutes();
+        var secs = d.getSeconds();
+        
+        var timeStr = (hrs < 10 ? '0' : '') + hrs + ':' + (mins < 10 ? '0' : '') + mins;
+        var secStr = (secs < 10 ? '0' : '') + secs;
+        
+        var timeLbl = document.getElementById('lbl-time');
+        if(timeLbl) timeLbl.innerText = timeStr;
+        
+        var secLbl = document.getElementById('lbl-sec');
+        if(secLbl) secLbl.innerText = secStr;
+
+        if (alarmTimeStr && !isAlarmRinging) {
+            if (timeStr === alarmTimeStr && secs === 0) {
+                triggerAlarm();
+            }
+        }
+    }
+
+    // ============================================
+    // タイマーツール (VBT20-BK風 ビジュアルバー)
+    // ============================================
+    var timerSeconds = 0;
+    var timerTotalSeconds = 0; 
+    var timerInterval = null;
+
+    function buildVisualBarSegments() {
+        var barTrack = document.getElementById('visual-bar-track');
+        if (!barTrack) return;
+        barTrack.innerHTML = '';
+
+        for (var i = 0; i < 80; i++) {
+            var seg = document.createElement('div');
+            seg.className = 'segment-block';
+            seg.id = 'bar-seg-' + i;
+            
+            var delay = (Math.sin(i * 0.25) + 1) * 0.22;
+            seg.style.animationDelay = delay.toFixed(2) + 's';
+            
+            barTrack.appendChild(seg);
+        }
+    }
+
+    function setTimerPreset(mins) {
+        timerSeconds = mins * 60;
+        timerTotalSeconds = timerSeconds;
+        updateTimerDisplay();
+        updateVisualBarDisplay();
+    }
+
+    function adjustTimer(change) {
+        timerSeconds = Math.max(0, timerSeconds + change);
+        if (timerSeconds > timerTotalSeconds) {
+            timerTotalSeconds = timerSeconds;
+        }
+        updateTimerDisplay();
+        updateVisualBarDisplay();
+    }
+
+    function applyCustomTimer() {
+        var minInput = parseInt(document.getElementById('input-timer-min').value) || 0;
+        var secInput = parseInt(document.getElementById('input-timer-sec').value) || 0;
+        
+        timerSeconds = (minInput * 60) + secInput;
+        timerTotalSeconds = timerSeconds;
+        updateTimerDisplay();
+        updateVisualBarDisplay();
+    }
+
+    function updateTimerDisplay() {
+        var hrs = Math.floor(timerSeconds / 3600);
+        var mins = Math.floor((timerSeconds % 3600) / 60);
+        var secs = timerSeconds % 60;
+        
+        var displayStr = (hrs < 10 ? '0' : '') + hrs + ':' + 
+                         (mins < 10 ? '0' : '') + mins + ':' + 
+                         (secs < 10 ? '0' : '') + secs;
+                         
+        var timerText = document.getElementById('timer-text');
+        if (timerText) timerText.innerText = displayStr;
+
+        document.getElementById('dial-num-curr').innerText = mins + '分';
+        document.getElementById('dial-num-prev2').innerText = (mins - 2 < 0 ? '--' : (mins - 2) + '分');
+        document.getElementById('dial-num-prev1').innerText = (mins - 1 < 0 ? '--' : (mins - 1) + '分');
+        document.getElementById('dial-num-next1').innerText = (mins + 1) + '分';
+        document.getElementById('dial-num-next2').innerText = (mins + 2) + '分';
+    }
+
+    function updateVisualBarDisplay() {
+        var ratio = timerTotalSeconds > 0 ? (timerSeconds / timerTotalSeconds) : 0;
+        var percent = Math.round(ratio * 100);
+        document.getElementById('lbl-bar-percentage').innerText = percent + '% REMAINING';
+
+        var litCount = Math.ceil(ratio * 80);
+        for (var i = 0; i < 80; i++) {
+            var seg = document.getElementById('bar-seg-' + i);
+            if (seg) {
+                seg.className = 'segment-block';
+                if (i < litCount) {
+                    if (i < 20) {
+                        seg.classList.add('lit-red');
+                    } else if (i < 40) {
+                        seg.classList.add('lit-orange');
+                    } else if (i < 60) {
+                        seg.classList.add('lit-yellow');
+                    } else {
+                        seg.classList.add('lit-green');
+                    }
+                }
+            }
+        }
+    }
+
+    function toggleTimer() {
+        var startBtn = document.getElementById('btn-timer-start');
+        if (!startBtn) return;
+        
+        initAudioContext();
+        
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            startBtn.innerText = 'スタート';
+            startBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
+        } else {
+            if (timerSeconds <= 0) return;
+            startBtn.innerText = '一時停止';
+            startBtn.className = 'btn btn-danger flex-1 py-4 text-lg';
+            
+            timerInterval = setInterval(function() {
+                if (timerSeconds > 0) {
+                    timerSeconds--;
+                    updateTimerDisplay();
+                    updateVisualBarDisplay();
+                } else {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    startBtn.innerText = 'スタート';
+                    startBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
+                    
+                    document.getElementById('visual-bar-track').classList.add('ringing-active');
+                    playAlarmSound(); 
+                    
+                    setTimeout(function() {
+                        document.getElementById('visual-bar-track').classList.remove('ringing-active');
+                    }, 5000);
+                }
+            }, 1000);
+        }
+    }
+
+    function resetTimer() {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timerSeconds = 0;
+        timerTotalSeconds = 0;
+        updateTimerDisplay();
+        updateVisualBarDisplay();
+        var startBtn = document.getElementById('btn-timer-start');
+        if (startBtn) {
+            startBtn.innerText = 'スタート';
+            startBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
+        }
+        document.getElementById('input-timer-min').value = 0;
+        document.getElementById('input-timer-sec').value = 0;
+        document.getElementById('visual-bar-track').classList.remove('ringing-active');
+    }
+
+    // ============================================
+    // Web Audio APIによる100%オフライン電子ブザー音
+    // ============================================
+    function playAlarmSound() {
+        if ('vibrate' in navigator) {
+            navigator.vibrate([100, 50, 100, 50, 200]);
+        }
+        
+        try {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            var now = audioCtx.currentTime;
+            
+            function pulse(startTime, duration) {
+                var osc = audioCtx.createOscillator();
+                var gain = audioCtx.createGain();
+                
+                osc.type = 'sine'; 
+                osc.frequency.setValueAtTime(880, startTime); 
+                
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(0.4, startTime + 0.02);
+                gain.gain.setValueAtTime(0.4, startTime + duration - 0.02);
+                gain.gain.linearRampToValueAtTime(0, startTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start(startTime);
+                if (osc.stop) {
+                    osc.stop(startTime + duration);
+                } else if (osc.noteOff) {
+                    osc.noteOff(startTime + duration);
+                }
+            }
+
+            pulse(now + 0.0, 0.15);
+            pulse(now + 0.25, 0.15);
+            
+            pulse(now + 0.55, 0.15);
+            pulse(now + 0.80, 0.15);
+            
+            pulse(now + 1.10, 0.12);
+            pulse(now + 1.25, 0.12);
+            pulse(now + 1.40, 0.25);
+
+        } catch(e) {
+            console.log("Audio presentation failed: ", e);
+        }
+    }
+
+    // ============================================
+    // 上下ドラッグによる分単位調整ダイヤル
+    // ============================================
+    function setupTimerDialDrag() {
+        var dial = document.getElementById('timer-dial-viewport');
+        var track = document.getElementById('timer-dial-track');
+        if (!dial || !track) return;
+
+        var startY = 0;
+        var isDragging = false;
+        var accumulatedDelta = 0;
+
+        var handleStart = function(e) {
+            startY = e.touches ? e.touches[0].clientY : e.clientY;
+            isDragging = true;
+            accumulatedDelta = 0;
+            initAudioContext();
+        };
+
+        var handleMove = function(e) {
+            if (!isDragging) return;
+            var currentY = e.touches ? e.touches[0].clientY : e.clientY;
+            var deltaY = startY - currentY; 
+            startY = currentY;
+
+            accumulatedDelta += deltaY;
+
+            if (Math.abs(accumulatedDelta) >= 16) {
+                var changeMins = accumulatedDelta > 0 ? 1 : -1;
+                adjustTimer(changeMins * 60);
+
+                track.style.transform = 'translateY(' + (changeMins * -8) + 'px)';
+                setTimeout(function() {
+                    track.style.transform = 'translateY(0px)';
+                }, 80);
+
+                accumulatedDelta = 0;
+            }
+        };
+
+        var handleEnd = function() {
+            isDragging = false;
+        };
+
+        dial.addEventListener('touchstart', handleStart, { passive: true });
+        dial.addEventListener('touchmove', handleMove, { passive: true });
+        dial.addEventListener('touchend', handleEnd, { passive: true });
+
+        dial.addEventListener('mousedown', handleStart);
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+    }
+
+    var swStartTime = 0;
+    var swElapsedMs = 0;
+    var swInterval = null;
+    var swLaps = [];
+
+    function toggleStopwatch() {
+        var sBtn = document.getElementById('btn-sw-start');
+        if (!sBtn) return;
+        
+        if (swInterval) {
+            clearInterval(swInterval);
+            swInterval = null;
+            swElapsedMs += Date.now() - swStartTime;
+            sBtn.innerText = 'スタート';
+            sBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
+        } else {
+            swStartTime = Date.now();
+            sBtn.innerText = '一時停止';
+            sBtn.className = 'btn btn-danger flex-1 py-4 text-lg';
+            swInterval = setInterval(function() {
+                var currentMs = swElapsedMs + (Date.now() - swStartTime);
+                updateSwDisplay(currentMs);
+            }, 10);
+        }
+    }
+
+    function updateSwDisplay(totalMs) {
+        var ms = Math.floor((totalMs % 1000) / 10);
+        var secs = Math.floor((totalMs / 1000) % 60);
+        var mins = Math.floor(totalMs / 60000);
+        
+        var dStr = (mins < 10 ? '0' : '') + mins + ':' +
+                   (secs < 10 ? '0' : '') + secs + '.' +
+                   (ms < 10 ? '0' : '') + ms;
+        
+        var swText = document.getElementById('stopwatch-text');
+        if (swText) swText.innerText = dStr;
+    }
+
+    function lapStopwatch() {
+        if (!swInterval) return;
+        var currentMs = swElapsedMs + (Date.now() - swStartTime);
+        swLaps.unshift(currentMs);
+        
+        var container = document.getElementById('sw-lap-container');
+        if (!container) return;
+        container.innerHTML = '';
+        swLaps.forEach(function(lap, index) {
+            var ms = Math.floor((lap % 1000) / 10);
+            var secs = Math.floor((lap / 1000) % 60);
+            var mins = Math.floor(lap / 60000);
+            var dStr = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs + '.' + (ms < 10 ? '0' : '') + ms;
+            
+            var div = document.createElement('div');
+            div.className = 'lap-item';
+            div.innerHTML = '<span class="text-gray-400">ラップ ' + (swLaps.length - index) + '</span><span class="font-bold text-gray-800">' + dStr + '</span>';
+            container.appendChild(div);
+        });
+    }
+
+    function resetStopwatch() {
+        clearInterval(swInterval);
+        swInterval = null;
+        swElapsedMs = 0;
+        swLaps = [];
+        updateSwDisplay(0);
+        var container = document.getElementById('sw-lap-container');
+        if (container) container.innerHTML = '';
+        
+        var sBtn = document.getElementById('btn-sw-start');
+        if (sBtn) {
+            sBtn.innerText = 'スタート';
+            sBtn.className = 'btn btn-primary flex-1 py-4 text-lg';
+        }
+    }
+
+    var calcInput = '0';
+    var calcOp = null;
+    var calcValue = null;
+
+    function pressCalc(key) {
+        var screen = document.getElementById('calc-screen');
+        if (!screen) return;
+        
+        if (key === 'C') {
+            calcInput = '0';
+            calcOp = null;
+            calcValue = null;
+        } else if (key === '+/-') {
+            calcInput = (parseFloat(calcInput) * -1).toString();
+        } else if (key === '%') {
+            calcInput = (parseFloat(calcInput) / 100).toString();
+        } else if (['+', '-', '*', '/'].indexOf(key) !== -1) {
+            calcValue = parseFloat(calcInput);
+            calcOp = key;
+            calcInput = '0';
+        } else if (key === '=') {
+            if (calcOp && calcValue !== null) {
+                var current = parseFloat(calcInput);
+                var result = 0;
+                if (calcOp === '+') result = calcValue + current;
+                else if (calcOp === '-') result = calcValue - current;
+                else if (calcOp === '*') result = calcValue * current;
+                else if (calcOp === '/') result = current !== 0 ? calcValue / current : 'エラー';
+                
+                calcInput = result.toString();
+                calcOp = null;
+                calcValue = null;
+            }
+        } else {
+            if (calcInput === '0') calcInput = key;
+            else calcInput += key;
+        }
+        
+        screen.value = calcInput;
+    }
+</script>
+
+</body>
+</html>
