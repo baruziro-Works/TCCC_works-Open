@@ -9,6 +9,10 @@ church_schedule_app.html
 教会スケジュール作成
 https://baruziro-works.github.io/TCCC_works-Open/church_schedule_app.html
 
+dashboard.html
+Ipadminiでダッシュボード
+https://baruziro-works.github.io/TCCC_works-Open/dashboard.html
+
 ふりがなツール.html
 https://baruziro-works.github.io/TCCC_works-Open/ふりがなツール.html
 
