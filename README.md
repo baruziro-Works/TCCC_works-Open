@@ -42,6 +42,10 @@ index5.html
 月間予定表作成
 https://baruziro-works.github.io/TCCC_works-Open/index5.html
 
+kindle.html
+Kindleでダッシュボード
+https://baruziro-works.github.io/TCCC_works-Open/kindle.html
+
 tts_app.html
 テキスト読み上げ
 https://baruziro-works.github.io/TCCC_works-Open/tts_app.html
