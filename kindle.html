@@ -41,7 +41,7 @@
             transition: background-color 0.1s, color 0.1s;
         }
 
-        /* 【新機能】強制90度回転モード時のCSS */
+        /* 強制90度回転モード時のCSS */
         body.rotate-screen {
             width: 100vh !important;
             height: 100vw !important;
@@ -433,7 +433,7 @@
 
     <!-- フッター -->
     <footer>
-        <span id="battery-status">E-Ink Optimized Dashboard</span>
+        <span id="auto-reload-status">自動スリープ防止: 有効 (5分リロード)</span>
         <span>自動反転リフレッシュ: 毎正時</span>
     </footer>
 
@@ -463,12 +463,15 @@
     <script>
         // --- 状態管理 ---
         let config = {
-            lat: 34.8247, // 初期値を豊川市に設定
+            lat: 34.8247, // 初期値：豊川市
             lon: 137.3776,
             name: "豊川",
             darkMode: false,
-            rotated: false // 90度回転モードの状態
+            rotated: false
         };
+
+        let autoReloadTimer = null;
+        const RELOAD_INTERVAL_MS = 5 * 60 * 1000; // 5分 (300,000ミリ秒)
 
         // 天気アイコン（SVG Pathデータ）
         const SVG_PATHS = {
@@ -512,8 +515,9 @@
             initClock();
             initMemo();
             fetchWeather();
+            startAutoReloadTimer(); // スリープ防止用の自動リロードを開始
             
-            // 30分毎に天気を自動更新
+            // 30分毎に天気を自動更新（基本はリロードで更新されますがバックアップ用）
             setInterval(fetchWeather, 30 * 60 * 1000);
         };
 
@@ -569,9 +573,9 @@
             function update() {
                 const now = new Date();
                 
-                // 【バグ対策】強制的に日本時間（JST = UTC+9）に補正して取得
+                // 強制的に日本時間（JST = UTC+9）に補正して取得
                 const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-                const jstNow = new Date(utc + 32400000); // 9時間追加
+                const jstNow = new Date(utc + 32400000); 
                 
                 // 時間
                 const hours = String(jstNow.getHours()).padStart(2, '0');
@@ -609,6 +613,33 @@
             memoArea.addEventListener('input', function() {
                 localStorage.setItem('kindle_dash_memo', memoArea.value);
             });
+
+            // 【スリープ防止対応】メモ入力中の挙動制御
+            // フォーカス中は自動リロードを停止させ、外れたらタイマーをリスタートする
+            memoArea.addEventListener('focus', function() {
+                stopAutoReloadTimer();
+                document.getElementById('auto-reload-status').textContent = "自動スリープ防止: 入力中につき一時停止";
+            });
+
+            memoArea.addEventListener('blur', function() {
+                startAutoReloadTimer();
+                document.getElementById('auto-reload-status').textContent = "自動スリープ防止: 有効 (5分リロード)";
+            });
+        }
+
+        // --- 【新機能】自動スリープ回避用リロードタイマー ---
+        function startAutoReloadTimer() {
+            stopAutoReloadTimer(); // 既存のタイマーがあればクリアする
+            autoReloadTimer = setTimeout(function() {
+                window.location.reload();
+            }, RELOAD_INTERVAL_MS);
+        }
+
+        function stopAutoReloadTimer() {
+            if (autoReloadTimer) {
+                clearTimeout(autoReloadTimer);
+                autoReloadTimer = null;
+            }
         }
 
         // --- 天気情報の取得 (Open-Meteo API) ---
@@ -707,7 +738,7 @@
             localStorage.setItem('kindle_dash_config', JSON.stringify(config));
         }
 
-        // --- 【新機能】画面の強制90度回転トグル ---
+        // --- 画面の強制90度回転トグル ---
         function toggleRotation() {
             const isRotated = document.body.classList.toggle('rotate-screen');
             config.rotated = isRotated;
