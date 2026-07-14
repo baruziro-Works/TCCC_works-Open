@@ -26,7 +26,7 @@
             margin: 0;
             padding: 0;
             font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-            -webkit-font-smoothing: none; /* E-inkでの視認性を上げるためボールド感を強調 */
+            -webkit-font-smoothing: none; /* E-inkでのボールド感を強調 */
         }
 
         body {
@@ -37,8 +37,20 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            padding: 20px;
-            transition: background-color 0.3s, color 0.3s;
+            padding: 15px;
+            transition: background-color 0.1s, color 0.1s;
+        }
+
+        /* 【新機能】強制90度回転モード時のCSS */
+        body.rotate-screen {
+            width: 100vh !important;
+            height: 100vw !important;
+            transform: rotate(90deg);
+            transform-origin: top left;
+            position: absolute;
+            top: 0;
+            left: 100vw;
+            overflow: hidden;
         }
 
         /* ヘッダーエリア */
@@ -47,8 +59,8 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 4px solid var(--border-color);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
         }
 
         .date-container {
@@ -57,26 +69,26 @@
         }
 
         #date {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 900;
         }
 
         #day {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
         }
 
-        /* 設定ボタンなど */
+        /* コントロールボタン群 */
         .controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
 
         .btn {
             background: var(--bg-color);
             color: var(--text-color);
             border: 2px solid var(--border-color);
-            padding: 5px 10px;
+            padding: 6px 12px;
             font-size: 0.9rem;
             font-weight: bold;
             cursor: pointer;
@@ -88,12 +100,25 @@
             color: var(--bg-color);
         }
 
-        /* メインコンテンツ（2カラムレイアウト） */
+        /* メインレイアウト（縦・横対応のレスポンシブ） */
         main {
             display: flex;
             flex: 1;
-            gap: 20px;
-            min-height: 0; /* スクロール防止 */
+            gap: 15px;
+            min-height: 0;
+            flex-direction: row; /* デフォルトは横向きに適した2カラム */
+        }
+
+        /* もし縦長画面（Kindleを縦に持っている状態かつ回転機能OFF）の場合は縦並びにする */
+        @media (orientation: portrait) {
+            body:not(.rotate-screen) main {
+                flex-direction: column;
+            }
+            body:not(.rotate-screen) .left-col, 
+            body:not(.rotate-screen) .right-col {
+                flex: 1;
+                width: 100%;
+            }
         }
 
         .left-col {
@@ -101,26 +126,26 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            gap: 20px;
+            gap: 15px;
         }
 
         .right-col {
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
         }
 
         /* 特大の時計エリア */
         .clock-card {
             border: 4px solid var(--border-color);
-            padding: 20px;
+            padding: 15px;
             display: flex;
             justify-content: center;
             align-items: center;
             background-color: var(--card-bg);
-            flex: 1;
-            min-height: 180px;
+            flex: 1.2;
+            min-height: 120px;
         }
 
         #time {
@@ -133,20 +158,20 @@
         /* 天気カード */
         .weather-card {
             border: 4px solid var(--border-color);
-            padding: 15px;
+            padding: 12px;
             background-color: var(--card-bg);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            height: 100%;
+            flex: 1;
         }
 
         .weather-title {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
             border-bottom: 2px solid var(--border-color);
-            padding-bottom: 5px;
-            margin-bottom: 10px;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
         }
@@ -155,12 +180,12 @@
             display: flex;
             align-items: center;
             justify-content: space-around;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .weather-icon-large {
-            width: 64px;
-            height: 64px;
+            width: 56px;
+            height: 56px;
             fill: var(--text-color);
         }
 
@@ -169,12 +194,12 @@
         }
 
         .temp-now {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             font-weight: 900;
         }
 
         .weather-desc {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
         }
 
@@ -182,37 +207,37 @@
         .forecast-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
+            gap: 8px;
             border-top: 2px dashed var(--border-color);
-            padding-top: 10px;
+            padding-top: 8px;
         }
 
         .forecast-day {
             text-align: center;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
 
         .forecast-date {
             font-weight: bold;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
 
         .forecast-icon {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             fill: var(--text-color);
-            margin: 5px auto;
+            margin: 3px auto;
         }
 
         .forecast-temp {
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
         }
 
         /* ToDo / メモカード */
         .memo-card {
             border: 4px solid var(--border-color);
-            padding: 15px;
+            padding: 12px;
             background-color: var(--card-bg);
             flex: 1;
             display: flex;
@@ -220,11 +245,11 @@
         }
 
         .memo-title {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
             border-bottom: 2px solid var(--border-color);
-            padding-bottom: 5px;
-            margin-bottom: 10px;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
         }
 
         #memo-area {
@@ -233,10 +258,10 @@
             border: none;
             background: transparent;
             color: var(--text-color);
-            font-size: 1.1rem;
+            font-size: 1rem;
             resize: none;
             outline: none;
-            line-height: 1.5;
+            line-height: 1.4;
         }
 
         /* 全画面リフレッシュ用フラッシュアニメーション（焼き付き防止） */
@@ -259,17 +284,17 @@
 
         /* ステータスバー */
         footer {
-            margin-top: 15px;
-            font-size: 0.8rem;
+            margin-top: 10px;
+            font-size: 0.75rem;
             text-align: center;
             opacity: 0.7;
             border-top: 1px solid var(--border-color);
-            padding-top: 5px;
+            padding-top: 4px;
             display: flex;
             justify-content: space-between;
         }
 
-        /* モーダルダイアログ (設定用) */
+        /* 設定モーダル */
         .modal {
             display: none;
             position: fixed;
@@ -281,43 +306,44 @@
             color: var(--text-color);
             padding: 20px;
             z-index: 1000;
-            width: 80%;
-            max-width: 400px;
+            width: 85%;
+            max-width: 360px;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
         .modal-title {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             border-bottom: 2px solid var(--border-color);
-            padding-bottom: 5px;
+            padding-bottom: 4px;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .form-group label {
             display: block;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
+            font-size: 0.9rem;
         }
 
         .form-control {
             width: 100%;
-            padding: 8px;
+            padding: 6px;
             border: 2px solid var(--border-color);
             background: var(--bg-color);
             color: var(--text-color);
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
 
         .modal-buttons {
             display: flex;
             justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 8px;
+            margin-top: 15px;
         }
 
         .overlay {
@@ -344,6 +370,7 @@
             <span id="day">火曜日</span>
         </div>
         <div class="controls">
+            <button class="btn" onclick="toggleRotation()">回転</button>
             <button class="btn" onclick="toggleDarkMode()">反転</button>
             <button class="btn" onclick="openSettings()">設定</button>
             <button class="btn" onclick="triggerAntiGhosting()">更新</button>
@@ -356,18 +383,17 @@
         <div class="left-col">
             <!-- 時計 -->
             <div class="clock-card">
-                <div id="time">12:34</div>
+                <div id="time">20:52</div>
             </div>
 
             <!-- 天気予報 -->
             <div class="weather-card">
                 <div class="weather-title">
-                    <span id="location-name">天気予報 (東京)</span>
-                    <span style="font-size: 0.8rem; font-weight: normal;" id="weather-update-time">--:-- 更新</span>
+                    <span id="location-name">天気予報 (豊川)</span>
+                    <span style="font-size: 0.75rem; font-weight: normal;" id="weather-update-time">--:-- 更新</span>
                 </div>
                 <div class="weather-current">
                     <div id="weather-icon-container">
-                        <!-- デフォルト：晴れSVG -->
                         <svg class="weather-icon-large" viewBox="0 0 24 24" id="current-weather-icon">
                             <path d="M12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,2A1,1 0 0,1 13,3V5A1,1 0 0,1 12,6A1,1 0 0,1 11,5V3A1,1 0 0,1 12,2M12,18A1,1 0 0,1 13,19V21A1,1 0 0,1 12,22A1,1 0 0,1 11,21V19A1,1 0 0,1 12,18M20,13H22A1,1 0 0,1 23,14A1,1 0 0,1 22,15H20A1,1 0 0,1 19,14A1,1 0 0,1 20,13M2,14H4A1,1 0 0,1 5,15A1,1 0 0,1 4,16H2A1,1 0 0,1 1,15A1,1 0 0,1 2,14M19.07,4.93L20.49,6.34A1,1 0 0,1 20.49,7.76L19.07,9.17A1,1 0 0,1 17.66,9.17L16.24,7.76A1,1 0 0,1 16.24,6.34L17.66,4.93A1,1 0 0,1 19.07,4.93M4.93,19.07L6.34,17.66A1,1 0 0,1 7.76,17.66L9.17,19.07A1,1 0 0,1 9.17,20.49L7.76,21.91A1,1 0 0,1 6.34,21.91L4.93,20.49A1,1 0 0,1 4.93,19.07M16.24,16.24L17.66,17.66A1,1 0 0,1 17.66,19.07L16.24,20.49A1,1 0 0,1 14.83,20.49L13.41,19.07A1,1 0 0,1 13.41,17.66L14.83,16.24A1,1 0 0,1 16.24,16.24M7.76,6.34L9.17,4.93A1,1 0 0,1 10.59,4.93L12,6.34A1,1 0 0,1 12,7.76L10.59,9.17A1,1 0 0,1 9.17,9.17L7.76,7.76A1,1 0 0,1 7.76,6.34Z" />
                         </svg>
@@ -417,16 +443,16 @@
         <div class="modal-title">ダッシュボード設定</div>
         <div class="form-group">
             <label for="input-lat">緯度 (Latitude):</label>
-            <input type="number" id="input-lat" class="form-control" step="0.0001" value="35.6895">
+            <input type="number" id="input-lat" class="form-control" step="0.0001" value="34.8247">
         </div>
         <div class="form-group">
             <label for="input-lon">経度 (Longitude):</label>
-            <input type="number" id="input-lon" class="form-control" step="0.0001" value="139.6917">
-            <small style="display: block; margin-top: 4px; opacity: 0.8;">※初期値は東京。お住まいの地域の数値を入力してください。</small>
+            <input type="number" id="input-lon" class="form-control" step="0.0001" value="137.3776">
+            <small style="display: block; margin-top: 4px; opacity: 0.8;">※初期値は愛知県豊川市です。</small>
         </div>
         <div class="form-group">
             <label for="input-name">地域名表示:</label>
-            <input type="text" id="input-name" class="form-control" value="東京">
+            <input type="text" id="input-name" class="form-control" value="豊川">
         </div>
         <div class="modal-buttons">
             <button class="btn" onclick="closeSettings()">キャンセル</button>
@@ -437,10 +463,11 @@
     <script>
         // --- 状態管理 ---
         let config = {
-            lat: 35.6895,
-            lon: 139.6917,
-            name: "東京",
-            darkMode: false
+            lat: 34.8247, // 初期値を豊川市に設定
+            lon: 137.3776,
+            name: "豊川",
+            darkMode: false,
+            rotated: false // 90度回転モードの状態
         };
 
         // 天気アイコン（SVG Pathデータ）
@@ -499,6 +526,9 @@
                     if (config.darkMode) {
                         document.body.classList.add('dark-mode');
                     }
+                    if (config.rotated) {
+                        document.body.classList.add('rotate-screen');
+                    }
                 } catch(e) {
                     console.error("設定読み込み失敗", e);
                 }
@@ -507,8 +537,8 @@
         }
 
         function saveSettings() {
-            config.lat = parseFloat(document.getElementById('input-lat').value) || 35.6895;
-            config.lon = parseFloat(document.getElementById('input-lon').value) || 139.6917;
+            config.lat = parseFloat(document.getElementById('input-lat').value) || 34.8247;
+            config.lon = parseFloat(document.getElementById('input-lon').value) || 137.3776;
             config.name = document.getElementById('input-name').value || "登録地";
             
             localStorage.setItem('kindle_dash_config', JSON.stringify(config));
@@ -539,19 +569,23 @@
             function update() {
                 const now = new Date();
                 
+                // 【バグ対策】強制的に日本時間（JST = UTC+9）に補正して取得
+                const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+                const jstNow = new Date(utc + 32400000); // 9時間追加
+                
                 // 時間
-                const hours = String(now.getHours()).padStart(2, '0');
-                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const hours = String(jstNow.getHours()).padStart(2, '0');
+                const minutes = String(jstNow.getMinutes()).padStart(2, '0');
                 document.getElementById('time').textContent = `${hours}:${minutes}`;
                 
                 // 日付
-                const yyyy = now.getFullYear();
-                const mm = String(now.getMonth() + 1).padStart(2, '0');
-                const dd = String(now.getDate()).padStart(2, '0');
+                const yyyy = jstNow.getFullYear();
+                const mm = String(jstNow.getMonth() + 1).padStart(2, '0');
+                const dd = String(jstNow.getDate()).padStart(2, '0');
                 document.getElementById('date').textContent = `${yyyy}年${mm}月${dd}日`;
                 
                 // 曜日
-                document.getElementById('day').textContent = days[now.getDay()];
+                document.getElementById('day').textContent = days[jstNow.getDay()];
 
                 // 毎正時(00分)にアンチゴーストの画面リフレッシュを自動実行
                 if (minutes === "00") {
@@ -616,9 +650,11 @@
             const pathData = SVG_PATHS[weatherInfo.icon] || SVG_PATHS.sunny;
             iconSvg.innerHTML = `<path d="${pathData}" />`;
 
-            // 更新時刻
+            // 更新時刻（日本時間に補正）
             const now = new Date();
-            const timeStr = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const jstNow = new Date(utc + 32400000);
+            const timeStr = String(jstNow.getHours()).padStart(2, '0') + ":" + String(jstNow.getMinutes()).padStart(2, '0');
             document.getElementById('weather-update-time').textContent = `${timeStr} 更新`;
 
             // 3日間予報の描画
@@ -669,6 +705,16 @@
             const isDark = document.body.classList.toggle('dark-mode');
             config.darkMode = isDark;
             localStorage.setItem('kindle_dash_config', JSON.stringify(config));
+        }
+
+        // --- 【新機能】画面の強制90度回転トグル ---
+        function toggleRotation() {
+            const isRotated = document.body.classList.toggle('rotate-screen');
+            config.rotated = isRotated;
+            localStorage.setItem('kindle_dash_config', JSON.stringify(config));
+            
+            // 焼き付き防止リフレッシュを実行して描画を安定させる
+            triggerAntiGhosting();
         }
     </script>
 </body>
