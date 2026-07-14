@@ -264,7 +264,7 @@
             line-height: 1.4;
         }
 
-        /* 全画面リフレッシュ用フラッシュアニメーション（焼き付き防止） */
+        /* 全画面リフレッシュ用フラッシュオーバーレイ（焼き付き防止） */
         .flash-overlay {
             position: fixed;
             top: 0;
@@ -276,6 +276,7 @@
             display: none;
         }
 
+        /* マイルドなリフレッシュ用のアニメーションに改善 */
         @keyframes pulse-flash {
             0% { background-color: #000000; }
             50% { background-color: #ffffff; }
@@ -433,7 +434,7 @@
 
     <!-- フッター -->
     <footer>
-        <span id="auto-reload-status">自動スリープ防止: 有効 (5分リロード)</span>
+        <span id="auto-reload-status">自動スリープ防止: 待機中</span>
         <span>自動反転リフレッシュ: 毎正時</span>
     </footer>
 
@@ -470,20 +471,17 @@
             rotated: false
         };
 
-        let autoReloadTimer = null;
-        const RELOAD_INTERVAL_MS = 5 * 60 * 1000; // 5分 (300,000ミリ秒)
+        // スリープ回避用リロード管理用変数
+        let lastReloadTime = Date.now();
+        const RELOAD_INTERVAL_MS = 3 * 60 * 1000; // 3分に短縮（スリープに入る前に高頻度で刺激を与える）
+        let isMemoFocused = false; // メモ入力中かどうかのフラグ
 
         // 【E-ink超最適化デザイン】細い線や傾斜描画による歪みを防ぐための極太・シンプルSVGパス
         const SVG_PATHS = {
-            // 太陽：中央の大きな円＋周囲を飾る8つの太い円形ドット（直線ゼロ設計なので、古い画面でも100%滑らかに描画されます）
             sunny: "M 12, 7.5 A 4.5,4.5 0 1,1 11.99,7.5 M 12, 1.5 A 1.5,1.5 0 1,1 11.99,1.5 M 12, 21.5 A 1.5,1.5 0 1,1 11.99,21.5 M 2.5, 12 A 1.5,1.5 0 1,1 2.49,12 M 21.5, 12 A 1.5,1.5 0 1,1 21.49,12 M 18.7, 5.3 A 1.5,1.5 0 1,1 18.69,5.3 M 5.3, 5.3 A 1.5,1.5 0 1,1 5.29,5.3 M 18.7, 18.7 A 1.5,1.5 0 1,1 18.69,18.7 M 5.3, 18.7 A 1.5,1.5 0 1,1 5.29,18.7",
-            // 曇り：中空の線を排除し、べた塗りで塗りつぶされた美しい雲のシルエット
             cloudy: "M19.35,10.04C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.04C2.34,8.36 0,10.91 0,14C0,17.31 2.69,20 6,20H19C21.76,20 24,17.76 24,15C24,12.36 21.95,10.22 19.35,10.04Z",
-            // 雨：少し上にあげたもこもこ雲＋下に3つのシンプルな垂直の極太雨粒（斜めのジャギーを防ぎます）
             rainy: "M19.35,8.04C18.67,4.59 15.64,2 12,2C9.11,2 6.6,3.64 5.35,6.04C2.34,6.36 0,8.91 0,12C0,15.31 2.69,18 6,18H19C21.76,18 24,15.76 24,13C24,10.36 21.95,8.22 19.35,8.04Z M 6,20 H 8 V 23 H 6 Z M 11,20 H 13 V 23 H 11 Z M 16,20 H 18 V 23 H 16 Z",
-            // 雪：もこもこ雲＋下に3つの大きくて太いボタン状の雪の塊（細かい結晶パス特有の潰れを100%防止）
             snowy: "M19.35,8.04C18.67,4.59 15.64,2 12,2C9.11,2 6.6,3.64 5.35,6.04C2.34,6.36 0,8.91 0,12C0,15.31 2.69,18 6,18H19C21.76,18 24,15.76 24,13C24,10.36 21.95,8.22 19.35,8.04Z M 7,21.5 A 1.5,1.5 0 1,1 6.99,21.5 M 12,21.5 A 1.5,1.5 0 1,1 11.99,21.5 M 17,21.5 A 1.5,1.5 0 1,1 16.99,21.5",
-            // 雷雨：もこもこ雲＋下にクッキリしたベタ塗り1パスの稲妻
             thunderstorm: "M19.35,8.04C18.67,4.59 15.64,2 12,2C9.11,2 6.6,3.64 5.35,6.04C2.34,6.36 0,8.91 0,12C0,15.31 2.69,18 6,18H19C21.76,18 24,15.76 24,13C24,10.36 21.95,8.22 19.35,8.04Z M 13,17 L 9,21 H 12 L 11,24 L 15,20 H 12 Z"
         };
 
@@ -520,9 +518,8 @@
             initClock();
             initMemo();
             fetchWeather();
-            startAutoReloadTimer(); // スリープ防止用の自動リロードを開始
             
-            // 30分毎に天気を自動更新（基本はリロードで更新されますがバックアップ用）
+            // 30分毎に天気を自動更新（基本は3分ごとのリロードで最新になりますがバックアップ用）
             setInterval(fetchWeather, 30 * 60 * 1000);
         };
 
@@ -571,7 +568,7 @@
             document.getElementById('overlay').style.display = 'none';
         }
 
-        // --- 時計 & 日付 ---
+        // --- 時計 & 日付 & 各種スケジュール監視 ---
         function initClock() {
             const days = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"];
             
@@ -582,28 +579,48 @@
                 const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
                 const jstNow = new Date(utc + 32400000); 
                 
-                // 時間
                 const hours = String(jstNow.getHours()).padStart(2, '0');
                 const minutes = String(jstNow.getMinutes()).padStart(2, '0');
+                const seconds = String(jstNow.getSeconds()).padStart(2, '0');
+                
+                // 時間表示の更新
                 document.getElementById('time').textContent = `${hours}:${minutes}`;
                 
-                // 日付
+                // 日付表示の更新
                 const yyyy = jstNow.getFullYear();
                 const mm = String(jstNow.getMonth() + 1).padStart(2, '0');
                 const dd = String(jstNow.getDate()).padStart(2, '0');
                 document.getElementById('date').textContent = `${yyyy}年${mm}月${dd}日`;
-                
-                // 曜日
                 document.getElementById('day').textContent = days[jstNow.getDay()];
 
-                // 毎正時(00分)にアンチゴーストの画面リフレッシュを自動実行
-                if (minutes === "00") {
+                // --- 【バグ修正点①】毎正時(00分00秒)の瞬間に「完全に1回だけ」マイルドにリフレッシュ ---
+                if (minutes === "00" && seconds === "00") {
                     triggerAntiGhosting();
+                }
+
+                // --- 【バグ修正点②】E-inkブラウザのスリープ回避タイマー（1秒ごとに監視） ---
+                if (!isMemoFocused) {
+                    const elapsed = Date.now() - lastReloadTime;
+                    const remainingSec = Math.max(0, Math.ceil((RELOAD_INTERVAL_MS - elapsed) / 1000));
+                    
+                    document.getElementById('auto-reload-status').textContent = `自動リフレッシュまで: ${remainingSec}秒`;
+
+                    // リロードの5秒前に「画面をダミー操作」してブラウザのアイドル判定を欺く
+                    if (remainingSec === 5) {
+                        simulateUserActivity();
+                    }
+
+                    // 指定時間（3分）経過したら強制リロード
+                    if (elapsed >= RELOAD_INTERVAL_MS) {
+                        window.location.reload();
+                    }
+                } else {
+                    document.getElementById('auto-reload-status').textContent = "メモ入力中：スリープ防止一時停止";
                 }
             }
             
             update();
-            setInterval(update, 1000); // 1秒ごとに現在時刻をチェック
+            setInterval(update, 1000); // 1秒ごとに現在時刻・スリープタイマーを厳密チェック
         }
 
         // --- ToDoメモ ---
@@ -619,31 +636,28 @@
                 localStorage.setItem('kindle_dash_memo', memoArea.value);
             });
 
-            // 【スリープ防止対応】メモ入力中の挙動制御
-            // フォーカス中は自動リロードを停止させ、外れたらタイマーをリスタートする
+            // メモ入力中はリロードさせないフラグを立てる
             memoArea.addEventListener('focus', function() {
-                stopAutoReloadTimer();
-                document.getElementById('auto-reload-status').textContent = "自動スリープ防止: 入力中につき一時停止";
+                isMemoFocused = true;
             });
 
             memoArea.addEventListener('blur', function() {
-                startAutoReloadTimer();
-                document.getElementById('auto-reload-status').textContent = "自動スリープ防止: 有効 (5分リロード)";
+                isMemoFocused = false;
+                lastReloadTime = Date.now(); // フォーカスが外れたらそこから3分タイマーを再始動
             });
         }
 
-        // --- 自動スリープ回避用リロードタイマー ---
-        function startAutoReloadTimer() {
-            stopAutoReloadTimer(); // 既存のタイマーがあればクリアする
-            autoReloadTimer = setTimeout(function() {
-                window.location.reload();
-            }, RELOAD_INTERVAL_MS);
-        }
-
-        function stopAutoReloadTimer() {
-            if (autoReloadTimer) {
-                clearTimeout(autoReloadTimer);
-                autoReloadTimer = null;
+        // --- 【新規】ブラウザへの疑似操作シミュレーション ---
+        // Kindleは画面に操作がないとアイドルとみなしスリープするため、
+        // リロード直前に「1ピクセル画面を動かして元に戻す」ダミー動作を行い、ユーザーが操作したと認識させます。
+        function simulateUserActivity() {
+            try {
+                window.scrollBy(0, 1);
+                setTimeout(function() {
+                    window.scrollBy(0, -1);
+                }, 100);
+            } catch(e) {
+                console.log(e);
             }
         }
 
@@ -724,16 +738,17 @@
             }
         }
 
-        // --- 残像クリア機能 (Anti-Ghosting) ---
+        // --- 【マイルド化】残像クリア機能 (Anti-Ghosting) ---
+        // 激しいチカチカを防止するため、白黒を「1往復だけ」一瞬（0.8秒）実行する仕様に変更
         function triggerAntiGhosting() {
             const overlay = document.getElementById('flash-overlay');
             overlay.style.display = 'block';
-            overlay.style.animation = 'pulse-flash 0.8s ease-in-out 3'; // 黒白を数回繰り返す
+            overlay.style.animation = 'pulse-flash 0.8s ease-in-out 1'; 
             
             setTimeout(function() {
                 overlay.style.display = 'none';
                 overlay.style.animation = '';
-            }, 2400);
+            }, 800);
         }
 
         // --- 白黒反転モードトグル ---
