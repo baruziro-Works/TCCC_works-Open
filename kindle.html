@@ -295,6 +295,25 @@
             justify-content: space-between;
         }
 
+        /* 【新ハック】スリープ防止用：画面右下に1pxの極小ドットを配置し、CSSアニメーションで常に再描画を発生させる */
+        .keep-awake-dot {
+            position: fixed;
+            bottom: 2px;
+            right: 2px;
+            width: 2px;
+            height: 2px;
+            background-color: var(--text-color);
+            border-radius: 50%;
+            animation: keepawake 1s infinite alternate;
+            opacity: 0.1; /* ほとんど目立たないように設定 */
+            z-index: 10000;
+        }
+
+        @keyframes keepawake {
+            0% { transform: scale(1); opacity: 0.1; }
+            100% { transform: scale(1.5); opacity: 0.8; }
+        }
+
         /* 設定モーダル */
         .modal {
             display: none;
@@ -360,6 +379,9 @@
     </style>
 </head>
 <body>
+
+    <!-- スリープ防止用のマイクロ・アニメーション・ドット -->
+    <div class="keep-awake-dot"></div>
 
     <!-- 焼き付き防止用のフラッシュオーバーレイ -->
     <div id="flash-overlay" class="flash-overlay"></div>
@@ -473,7 +495,12 @@
 
         // スリープ回避用リロード管理用変数
         let lastReloadTime = Date.now();
-        const RELOAD_INTERVAL_MS = 50 * 60 * 1000; // 3分に短縮（スリープに入る前に高頻度で刺激を与える）
+        
+        // 【最適化】Kindleのスリープ最大時間（1時間）の恩恵をフルに受けるため、
+        // 余裕をもって「50分（3,000,000ミリ秒）」間隔に設定。
+        // ※3分ごとの目障りなパタパタをなくし、50分に一度だけURL遷移を発生させてスリープを永久に引き伸ばします。
+        const RELOAD_INTERVAL_MS = 50 * 60 * 1000; 
+        
         let isMemoFocused = false; // メモ入力中かどうかのフラグ
 
         // 【E-ink超最適化デザイン】細い線や傾斜描画による歪みを防ぐための極太・シンプルSVGパス
@@ -518,9 +545,6 @@
             initClock();
             initMemo();
             fetchWeather();
-            
-            // 30分毎に天気を自動更新（基本は3分ごとのリロードで最新になりますがバックアップ用）
-            setInterval(fetchWeather, 30 * 60 * 1000);
         };
 
         // --- 設定保存と読み込み ---
@@ -593,26 +617,28 @@
                 document.getElementById('date').textContent = `${yyyy}年${mm}月${dd}日`;
                 document.getElementById('day').textContent = days[jstNow.getDay()];
 
-                // --- 【バグ修正点①】毎正時(00分00秒)の瞬間に「完全に1回だけ」マイルドにリフレッシュ ---
+                // 毎正時(00分00秒)の瞬間に「完全に1回だけ」マイルドにリフレッシュ
                 if (minutes === "00" && seconds === "00") {
                     triggerAntiGhosting();
                 }
 
-                // --- 【バグ修正点②】E-inkブラウザのスリープ回避タイマー（1秒ごとに監視） ---
+                // --- 【新ハック対応】スリープ回避タイマー（1秒ごとに監視） ---
                 if (!isMemoFocused) {
                     const elapsed = Date.now() - lastReloadTime;
                     const remainingSec = Math.max(0, Math.ceil((RELOAD_INTERVAL_MS - elapsed) / 1000));
                     
-                    document.getElementById('auto-reload-status').textContent = `自動リフレッシュまで: ${remainingSec}秒`;
+                    const min = Math.floor(remainingSec / 60);
+                    const sec = remainingSec % 60;
+                    document.getElementById('auto-reload-status').textContent = `スリープ防止まで: ${min}分${sec}秒`;
 
-                    // リロードの5秒前に「画面をダミー操作」してブラウザのアイドル判定を欺く
+                    // 強制遷移の5秒前に「画面をダミー操作」
                     if (remainingSec === 5) {
                         simulateUserActivity();
                     }
 
-                    // 指定時間（3分）経過したら強制リロード
+                    // 指定時間（50分）経過したら強制「新規ページ遷移」
                     if (elapsed >= RELOAD_INTERVAL_MS) {
-                        window.location.reload();
+                        triggerForceNavigation();
                     }
                 } else {
                     document.getElementById('auto-reload-status').textContent = "メモ入力中：スリープ防止一時停止";
@@ -643,13 +669,11 @@
 
             memoArea.addEventListener('blur', function() {
                 isMemoFocused = false;
-                lastReloadTime = Date.now(); // フォーカスが外れたらそこから3分タイマーを再始動
+                lastReloadTime = Date.now(); // フォーカスが外れたらそこから再度カウントダウン
             });
         }
 
         // --- 【新規】ブラウザへの疑似操作シミュレーション ---
-        // Kindleは画面に操作がないとアイドルとみなしスリープするため、
-        // リロード直前に「1ピクセル画面を動かして元に戻す」ダミー動作を行い、ユーザーが操作したと認識させます。
         function simulateUserActivity() {
             try {
                 window.scrollBy(0, 1);
@@ -659,6 +683,17 @@
             } catch(e) {
                 console.log(e);
             }
+        }
+
+        // --- 【新ハック】URLを変更して新規ページとしてアクセスし直す ---
+        function triggerForceNavigation() {
+            // パラメータを取り除いた基本のURLを取得
+            const currentUrl = window.location.href.split('?')[0];
+            // 末尾に毎回必ず異なる「ユニークな数値（時間ミリ秒）」をパラメータとして付与します。
+            // これによりKindleのブラウザは「全く新しいWebサイトを開いた」と認識し、
+            // キャッシュではなく完全な新規通信ログを発生させて、OS側のスリープ判定を確実にリセットします。
+            const uniqueUrl = currentUrl + "?t=" + Date.now();
+            window.location.replace(uniqueUrl);
         }
 
         // --- 天気情報の取得 (Open-Meteo API) ---
@@ -738,8 +773,7 @@
             }
         }
 
-        // --- 【マイルド化】残像クリア機能 (Anti-Ghosting) ---
-        // 激しいチカチカを防止するため、白黒を「1往復だけ」一瞬（0.8秒）実行する仕様に変更
+        // --- 残像クリア機能 (Anti-Ghosting) ---
         function triggerAntiGhosting() {
             const overlay = document.getElementById('flash-overlay');
             overlay.style.display = 'block';
