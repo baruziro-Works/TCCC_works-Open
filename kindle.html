@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kindle E-Ink Dashboard</title>
     <style>
-        /* E-ink用に最適化された超高コントラスト・モノクロスタイル */
         :root {
             --bg-color: #ffffff;
             --text-color: #000000;
@@ -13,7 +12,6 @@
             --card-bg: #ffffff;
         }
 
-        /* ダークモード（反転モード） */
         body.dark-mode {
             --bg-color: #000000;
             --text-color: #ffffff;
@@ -26,7 +24,7 @@
             margin: 0;
             padding: 0;
             font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-            -webkit-font-smoothing: none; /* E-inkでのボールド感を強調 */
+            -webkit-font-smoothing: none;
         }
 
         body {
@@ -41,7 +39,6 @@
             transition: background-color 0.1s, color 0.1s;
         }
 
-        /* 強制90度回転モード時のCSS */
         body.rotate-screen {
             width: 100vh !important;
             height: 100vw !important;
@@ -53,7 +50,6 @@
             overflow: hidden;
         }
 
-        /* ヘッダーエリア */
         header {
             display: flex;
             justify-content: space-between;
@@ -78,7 +74,6 @@
             font-weight: bold;
         }
 
-        /* コントロールボタン群 */
         .controls {
             display: flex;
             gap: 8px;
@@ -100,16 +95,14 @@
             color: var(--bg-color);
         }
 
-        /* メインレイアウト（縦・横対応のレスポンシブ） */
         main {
             display: flex;
             flex: 1;
             gap: 15px;
             min-height: 0;
-            flex-direction: row; /* デフォルトは横向きに適した2カラム */
+            flex-direction: row;
         }
 
-        /* もし縦長画面（Kindleを縦に持っている状態かつ回転機能OFF）の場合は縦並びにする */
         @media (orientation: portrait) {
             body:not(.rotate-screen) main {
                 flex-direction: column;
@@ -136,7 +129,6 @@
             gap: 15px;
         }
 
-        /* 特大の時計エリア */
         .clock-card {
             border: 4px solid var(--border-color);
             padding: 15px;
@@ -155,7 +147,6 @@
             line-height: 1;
         }
 
-        /* 天気カード */
         .weather-card {
             border: 4px solid var(--border-color);
             padding: 12px;
@@ -203,7 +194,6 @@
             font-weight: bold;
         }
 
-        /* 3日間予報 */
         .forecast-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -234,7 +224,6 @@
             font-size: 0.8rem;
         }
 
-        /* ToDo / メモカード */
         .memo-card {
             border: 4px solid var(--border-color);
             padding: 12px;
@@ -264,7 +253,6 @@
             line-height: 1.4;
         }
 
-        /* 全画面リフレッシュ用フラッシュオーバーレイ（焼き付き防止） */
         .flash-overlay {
             position: fixed;
             top: 0;
@@ -276,14 +264,12 @@
             display: none;
         }
 
-        /* マイルドなリフレッシュ用のアニメーションに改善 */
         @keyframes pulse-flash {
             0% { background-color: #000000; }
             50% { background-color: #ffffff; }
             100% { background-color: transparent; }
         }
 
-        /* ステータスバー */
         footer {
             margin-top: 10px;
             font-size: 0.75rem;
@@ -295,26 +281,6 @@
             justify-content: space-between;
         }
 
-        /* 【新ハック】スリープ防止用：画面右下に1pxの極小ドットを配置し、CSSアニメーションで常に再描画を発生させる */
-        .keep-awake-dot {
-            position: fixed;
-            bottom: 2px;
-            right: 2px;
-            width: 2px;
-            height: 2px;
-            background-color: var(--text-color);
-            border-radius: 50%;
-            animation: keepawake 1s infinite alternate;
-            opacity: 0.1; /* ほとんど目立たないように設定 */
-            z-index: 10000;
-        }
-
-        @keyframes keepawake {
-            0% { transform: scale(1); opacity: 0.1; }
-            100% { transform: scale(1.5); opacity: 0.8; }
-        }
-
-        /* 設定モーダル */
         .modal {
             display: none;
             position: fixed;
@@ -380,36 +346,27 @@
 </head>
 <body>
 
-    <!-- スリープ防止用のマイクロ・アニメーション・ドット -->
-    <div class="keep-awake-dot"></div>
-
-    <!-- 焼き付き防止用のフラッシュオーバーレイ -->
     <div id="flash-overlay" class="flash-overlay"></div>
 
-    <!-- ヘッダー -->
     <header>
         <div class="date-container">
-            <span id="date">2026年07月14日</span>
-            <span id="day">火曜日</span>
+            <span id="date">2026年07月17日</span>
+            <span id="day">金曜日</span>
         </div>
         <div class="controls">
             <button class="btn" onclick="toggleRotation()">回転</button>
             <button class="btn" onclick="toggleDarkMode()">反転</button>
             <button class="btn" onclick="openSettings()">設定</button>
-            <button class="btn" onclick="triggerAntiGhosting()">更新</button>
+            <button class="btn" onclick="manualRefresh()">更新</button>
         </div>
     </header>
 
-    <!-- メイン -->
     <main>
-        <!-- 左カラム：時計と天気 -->
         <div class="left-col">
-            <!-- 時計 -->
             <div class="clock-card">
                 <div id="time">20:52</div>
             </div>
 
-            <!-- 天気予報 -->
             <div class="weather-card">
                 <div class="weather-title">
                     <span id="location-name">天気予報 (豊川)</span>
@@ -427,7 +384,6 @@
                     </div>
                 </div>
 
-                <!-- 3日間予報 -->
                 <div class="forecast-grid" id="forecast-grid">
                     <div class="forecast-day">
                         <div class="forecast-date">明日</div>
@@ -445,7 +401,6 @@
             </div>
         </div>
 
-        <!-- 右カラム：ToDoメモ -->
         <div class="right-col">
             <div class="memo-card">
                 <div class="memo-title">ToDo / 今日のメモ</div>
@@ -454,13 +409,11 @@
         </div>
     </main>
 
-    <!-- フッター -->
     <footer>
-        <span id="auto-reload-status">自動スリープ防止: 待機中</span>
+        <span id="status-text">画面タップで復帰します</span>
         <span>自動反転リフレッシュ: 毎正時</span>
     </footer>
 
-    <!-- 設定モーダル -->
     <div class="overlay" id="overlay" onclick="closeSettings()"></div>
     <div class="modal" id="settings-modal">
         <div class="modal-title">ダッシュボード設定</div>
@@ -484,26 +437,25 @@
     </div>
 
     <script>
-        // --- 状態管理 ---
         let config = {
-            lat: 34.8247, // 初期値：豊川市
+            lat: 34.8247,
             lon: 137.3776,
             name: "豊川",
             darkMode: false,
             rotated: false
         };
 
-        // スリープ回避用リロード管理用変数
-        let lastReloadTime = Date.now();
-        
-        // 【最適化】Kindleのスリープ最大時間（1時間）の恩恵をフルに受けるため、
-        // 余裕をもって「50分（3,000,000ミリ秒）」間隔に設定。
-        // ※3分ごとの目障りなパタパタをなくし、50分に一度だけURL遷移を発生させてスリープを永久に引き伸ばします。
-        const RELOAD_INTERVAL_MS = 50 * 60 * 1000; 
-        
-        let isMemoFocused = false; // メモ入力中かどうかのフラグ
+        let isMemoFocused = false;
 
-        // 【E-ink超最適化デザイン】細い線や傾斜描画による歪みを防ぐための極太・シンプルSVGパス
+        // --- スリープ復帰検知まわり ---
+        // この端末の体験版ブラウザは古いWebKitで、visibilitychange (Page Visibility API) が
+        // 使えない可能性があるため、「1秒ごとに呼ばれるはずの時計更新が、実際には何秒空いたか」を
+        // 自己監視する方式でスリープ復帰を検知する。
+        let lastTickTime = Date.now();
+        const WAKE_GAP_THRESHOLD_MS = 5000; // これ以上間隔が空いたら「復帰した」とみなす
+        const WEATHER_REFRESH_MS = 30 * 60 * 1000; // 天気は30分ごとに再取得
+        let lastWeatherFetchTime = 0;
+
         const SVG_PATHS = {
             sunny: "M 12, 7.5 A 4.5,4.5 0 1,1 11.99,7.5 M 12, 1.5 A 1.5,1.5 0 1,1 11.99,1.5 M 12, 21.5 A 1.5,1.5 0 1,1 11.99,21.5 M 2.5, 12 A 1.5,1.5 0 1,1 2.49,12 M 21.5, 12 A 1.5,1.5 0 1,1 21.49,12 M 18.7, 5.3 A 1.5,1.5 0 1,1 18.69,5.3 M 5.3, 5.3 A 1.5,1.5 0 1,1 5.29,5.3 M 18.7, 18.7 A 1.5,1.5 0 1,1 18.69,18.7 M 5.3, 18.7 A 1.5,1.5 0 1,1 5.29,18.7",
             cloudy: "M19.35,10.04C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.04C2.34,8.36 0,10.91 0,14C0,17.31 2.69,20 6,20H19C21.76,20 24,17.76 24,15C24,12.36 21.95,10.22 19.35,10.04Z",
@@ -539,15 +491,23 @@
             99: { desc: "雷雨", icon: "thunderstorm" }
         };
 
-        // --- 初期化 ---
         window.onload = function() {
             loadConfig();
             initClock();
             initMemo();
-            fetchWeather();
+            maybeRefreshWeather(true);
+
+            // 古いWebKitでも動く範囲でのフォールバック。
+            // 対応していれば効くし、対応していなくてもエラーにはならない。
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    handleWakeUp();
+                }
+            });
+            window.addEventListener('focus', handleWakeUp);
+            window.addEventListener('pageshow', handleWakeUp);
         };
 
-        // --- 設定保存と読み込み ---
         function loadConfig() {
             const saved = localStorage.getItem('kindle_dash_config');
             if (saved) {
@@ -575,7 +535,7 @@
             closeSettings();
             
             document.getElementById('location-name').textContent = `天気予報 (${config.name})`;
-            fetchWeather();
+            maybeRefreshWeather(true);
         }
 
         function openSettings() {
@@ -592,64 +552,67 @@
             document.getElementById('overlay').style.display = 'none';
         }
 
-        // --- 時計 & 日付 & 各種スケジュール監視 ---
         function initClock() {
-            const days = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"];
-            
-            function update() {
-                const now = new Date();
-                
-                // 強制的に日本時間（JST = UTC+9）に補正して取得
-                const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-                const jstNow = new Date(utc + 32400000); 
-                
-                const hours = String(jstNow.getHours()).padStart(2, '0');
-                const minutes = String(jstNow.getMinutes()).padStart(2, '0');
-                const seconds = String(jstNow.getSeconds()).padStart(2, '0');
-                
-                // 時間表示の更新
-                document.getElementById('time').textContent = `${hours}:${minutes}`;
-                
-                // 日付表示の更新
-                const yyyy = jstNow.getFullYear();
-                const mm = String(jstNow.getMonth() + 1).padStart(2, '0');
-                const dd = String(jstNow.getDate()).padStart(2, '0');
-                document.getElementById('date').textContent = `${yyyy}年${mm}月${dd}日`;
-                document.getElementById('day').textContent = days[jstNow.getDay()];
-
-                // 毎正時(00分00秒)の瞬間に「完全に1回だけ」マイルドにリフレッシュ
-                if (minutes === "00" && seconds === "00") {
-                    triggerAntiGhosting();
-                }
-
-                // --- 【新ハック対応】スリープ回避タイマー（1秒ごとに監視） ---
-                if (!isMemoFocused) {
-                    const elapsed = Date.now() - lastReloadTime;
-                    const remainingSec = Math.max(0, Math.ceil((RELOAD_INTERVAL_MS - elapsed) / 1000));
-                    
-                    const min = Math.floor(remainingSec / 60);
-                    const sec = remainingSec % 60;
-                    document.getElementById('auto-reload-status').textContent = `スリープ防止まで: ${min}分${sec}秒`;
-
-                    // 強制遷移の5秒前に「画面をダミー操作」
-                    if (remainingSec === 5) {
-                        simulateUserActivity();
-                    }
-
-                    // 指定時間（50分）経過したら強制「新規ページ遷移」
-                    if (elapsed >= RELOAD_INTERVAL_MS) {
-                        triggerForceNavigation();
-                    }
-                } else {
-                    document.getElementById('auto-reload-status').textContent = "メモ入力中：スリープ防止一時停止";
-                }
-            }
-            
             update();
-            setInterval(update, 1000); // 1秒ごとに現在時刻・スリープタイマーを厳密チェック
+            setInterval(update, 1000);
         }
 
-        // --- ToDoメモ ---
+        function update() {
+            const nowTick = Date.now();
+            const gap = nowTick - lastTickTime;
+            lastTickTime = nowTick;
+
+            // 本来1秒おきに呼ばれるはずが、それより大きく間隔が空いた
+            // = スリープ等でJSの実行が止まっていた = 今まさに復帰した、とみなす
+            if (gap > WAKE_GAP_THRESHOLD_MS) {
+                handleWakeUp();
+            }
+
+            renderClock();
+
+            if (!isMemoFocused) {
+                document.getElementById('status-text').textContent = "画面タップで復帰します";
+            } else {
+                document.getElementById('status-text').textContent = "メモ入力中";
+            }
+        }
+
+        function renderClock() {
+            const days = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"];
+            const now = new Date();
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const jstNow = new Date(utc + 32400000);
+
+            const hours = String(jstNow.getHours()).padStart(2, '0');
+            const minutes = String(jstNow.getMinutes()).padStart(2, '0');
+            const seconds = String(jstNow.getSeconds()).padStart(2, '0');
+
+            document.getElementById('time').textContent = `${hours}:${minutes}`;
+
+            const yyyy = jstNow.getFullYear();
+            const mm = String(jstNow.getMonth() + 1).padStart(2, '0');
+            const dd = String(jstNow.getDate()).padStart(2, '0');
+            document.getElementById('date').textContent = `${yyyy}年${mm}月${dd}日`;
+            document.getElementById('day').textContent = days[jstNow.getDay()];
+
+            if (minutes === "00" && seconds === "00") {
+                triggerAntiGhosting();
+            }
+        }
+
+        function handleWakeUp() {
+            // スリープ復帰の瞬間、時計・天気を即座に最新化し、
+            // 「今、目が覚めた」感を出すために軽く画面を反転させる
+            renderClock();
+            maybeRefreshWeather(false);
+            triggerAntiGhosting();
+        }
+
+        function manualRefresh() {
+            maybeRefreshWeather(true);
+            triggerAntiGhosting();
+        }
+
         function initMemo() {
             const memoArea = document.getElementById('memo-area');
             const savedMemo = localStorage.getItem('kindle_dash_memo');
@@ -657,47 +620,28 @@
                 memoArea.value = savedMemo;
             }
             
-            // 入力毎に自動保存
             memoArea.addEventListener('input', function() {
                 localStorage.setItem('kindle_dash_memo', memoArea.value);
             });
 
-            // メモ入力中はリロードさせないフラグを立てる
             memoArea.addEventListener('focus', function() {
                 isMemoFocused = true;
             });
 
             memoArea.addEventListener('blur', function() {
                 isMemoFocused = false;
-                lastReloadTime = Date.now(); // フォーカスが外れたらそこから再度カウントダウン
             });
         }
 
-        // --- 【新規】ブラウザへの疑似操作シミュレーション ---
-        function simulateUserActivity() {
-            try {
-                window.scrollBy(0, 1);
-                setTimeout(function() {
-                    window.scrollBy(0, -1);
-                }, 100);
-            } catch(e) {
-                console.log(e);
+        function maybeRefreshWeather(force) {
+            const now = Date.now();
+            if (force || lastWeatherFetchTime === 0 || (now - lastWeatherFetchTime) >= WEATHER_REFRESH_MS) {
+                fetchWeather();
             }
         }
 
-        // --- 【新ハック】URLを変更して新規ページとしてアクセスし直す ---
-        function triggerForceNavigation() {
-            // パラメータを取り除いた基本のURLを取得
-            const currentUrl = window.location.href.split('?')[0];
-            // 末尾に毎回必ず異なる「ユニークな数値（時間ミリ秒）」をパラメータとして付与します。
-            // これによりKindleのブラウザは「全く新しいWebサイトを開いた」と認識し、
-            // キャッシュではなく完全な新規通信ログを発生させて、OS側のスリープ判定を確実にリセットします。
-            const uniqueUrl = currentUrl + "?t=" + Date.now();
-            window.location.replace(uniqueUrl);
-        }
-
-        // --- 天気情報の取得 (Open-Meteo API) ---
         function fetchWeather() {
+            lastWeatherFetchTime = Date.now();
             const url = `https://api.open-meteo.com/v1/forecast?latitude=${config.lat}&longitude=${config.lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FTokyo`;
             
             const xhr = new XMLHttpRequest();
@@ -720,7 +664,6 @@
         }
 
         function updateWeatherData(data) {
-            // 現時点の天気
             const current = data.current_weather;
             const currentCode = current.weathercode;
             const currentTemp = Math.round(current.temperature);
@@ -730,24 +673,20 @@
             document.getElementById('temp-now').textContent = `${currentTemp}°C`;
             document.getElementById('weather-desc').textContent = weatherInfo.desc;
             
-            // アイコン変更
             const iconSvg = document.getElementById('current-weather-icon');
             const pathData = SVG_PATHS[weatherInfo.icon] || SVG_PATHS.sunny;
             iconSvg.innerHTML = `<path d="${pathData}" />`;
 
-            // 更新時刻（日本時間に補正）
             const now = new Date();
             const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
             const jstNow = new Date(utc + 32400000);
             const timeStr = String(jstNow.getHours()).padStart(2, '0') + ":" + String(jstNow.getMinutes()).padStart(2, '0');
             document.getElementById('weather-update-time').textContent = `${timeStr} 更新`;
 
-            // 3日間予報の描画
             const daily = data.daily;
             const forecastGrid = document.getElementById('forecast-grid');
-            forecastGrid.innerHTML = ''; // クリア
+            forecastGrid.innerHTML = '';
 
-            // 明日、明後日、3日後のループ
             for (let i = 1; i <= 3; i++) {
                 const dateObj = new Date(daily.time[i]);
                 const dayLabels = ["日", "月", "火", "水", "木", "金", "土"];
@@ -773,7 +712,6 @@
             }
         }
 
-        // --- 残像クリア機能 (Anti-Ghosting) ---
         function triggerAntiGhosting() {
             const overlay = document.getElementById('flash-overlay');
             overlay.style.display = 'block';
@@ -785,20 +723,16 @@
             }, 800);
         }
 
-        // --- 白黒反転モードトグル ---
         function toggleDarkMode() {
             const isDark = document.body.classList.toggle('dark-mode');
             config.darkMode = isDark;
             localStorage.setItem('kindle_dash_config', JSON.stringify(config));
         }
 
-        // --- 画面の強制90度回転トグル ---
         function toggleRotation() {
             const isRotated = document.body.classList.toggle('rotate-screen');
             config.rotated = isRotated;
             localStorage.setItem('kindle_dash_config', JSON.stringify(config));
-            
-            // 焼き付き防止リフレッシュを実行して描画を安定させる
             triggerAntiGhosting();
         }
     </script>
