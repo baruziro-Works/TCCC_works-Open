@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超最速マークダウン見出しチェンジャー</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 24px;
+        }
+        .description {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        .box {
+            display: flex;
+            flex-direction: column;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .label-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        label {
+            font-weight: bold;
+            color: #444;
+        }
+        .sub-btn {
+            padding: 5px 12px;
+            font-size: 12px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .sub-btn:hover {
+            background-color: #5a6268;
+        }
+        .sub-btn.clear {
+            background-color: #dc3545;
+        }
+        .sub-btn.clear:hover {
+            background-color: #bd2130;
+        }
+        textarea {
+            width: 100%;
+            height: 350px;
+            padding: 12px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+            background-color: #fafafa;
+        }
+        
+        /* コントロールエリア（トグルと数字ボタン） */
+        .control-panel {
+            margin-top: 20px;
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .panel-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        /* ＋/− トグルボタンのスタイル */
+        .toggle-container {
+            display: flex;
+            background: #ced4da;
+            padding: 4px;
+            border-radius: 6px;
+        }
+        .toggle-btn {
+            padding: 8px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: #495057;
+        }
+        .toggle-btn.active {
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        .toggle-btn.active.minus {
+            background-color: #dc3545; /* マイナス時は赤にする */
+        }
+
+        /* 数字ボタンのスタイル */
+        .number-container {
+            display: flex;
+            gap: 10px;
+        }
+        .num-btn {
+            width: 50px;
+            height: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            background-color: #fff;
+            color: #333;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.1s;
+        }
+        .num-btn:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-1px);
+        }
+        .num-btn:active {
+            transform: translateY(1px);
+            box-shadow: none;
+        }
+
+        /* トースト通知 */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1000;
+        }
+        .toast.show {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>超最速マークダウン見出しチェンジャー</h1>
+    <p class="description">テキストを貼り付け、数字を押すだけで自動変換＆クリップボードにコピーされます。</p>
+
+    <div class="box">
+        <div class="label-container">
+            <label for="inputText">マークダウンテキストを入力:</label>
+            <div>
+                <button class="sub-btn" onclick="pasteText()">クリップボードからペースト</button>
+                <button class="sub-btn clear" onclick="clearInput()">クリア</button>
+            </div>
+        </div>
+        <textarea id="inputText" placeholder="# 見出し1&#10;## 見出し2&#10;&#10;ここにテキストを貼り付けてください..."></textarea>
+    </div>
+
+    <div class="control-panel">
+        <div class="panel-title">設定して数字を押すと実行＆コピー</div>
+        
+        <div class="toggle-container">
+            <button id="btnPlus" class="toggle-btn active" onclick="setDirection('plus')">＋ (増やす)</button>
+            <button id="btnMinus" class="toggle-btn minus" onclick="setDirection('minus')">− (減らす)</button>
+        </div>
+
+        <div class="number-container">
+            <button class="num-btn" onclick="quickProcess(1)">1</button>
+            <button class="num-btn" onclick="quickProcess(2)">2</button>
+            <button class="num-btn" onclick="quickProcess(3)">3</button>
+            <button class="num-btn" onclick="quickProcess(4)">4</button>
+            <button class="num-btn" onclick="quickProcess(5)">5</button>
+        </div>
+    </div>
+
+    <div id="toastMessage" class="toast">処理が完了し、クリップボードにコピーしました！</div>
+
+    <script>
+        // 現在の状態を管理（初期値はプラス）
+        let currentDirection = 'plus';
+
+        // ＋/− のトグル切り替え関数
+        function setDirection(direction) {
+            currentDirection = direction;
+            const btnPlus = document.getElementById('btnPlus');
+            const btnMinus = document.getElementById('btnMinus');
+
+            if (direction === 'plus') {
+                btnPlus.classList.add('active');
+                btnMinus.classList.remove('active');
+            } else {
+                btnPlus.classList.remove('active');
+                btnMinus.classList.add('active');
+            }
+        }
+
+        // 【メイン】数字ボタンが押された時の高速処理
+        async function quickProcess(levelCount) {
+            const input = document.getElementById('inputText').value.trim();
+            
+            // 入力が空の場合は処理しない
+            if (!input) {
+                alert('テキストが入力されていません。マークダウンを貼り付けてから数字を押してください。');
+                return;
+            }
+
+            const lines = input.split('\n');
+            
+            const processedLines = lines.map(line => {
+                // 行頭の「#」の塊、その後のスペース、そしてコンテンツを抽出
+                const headingMatch = line.match(/^(#+)( +)(.*)/);
+                
+                if (headingMatch) {
+                    const hashes = headingMatch[1];
+                    const spaces = headingMatch[2];
+                    const content = headingMatch[3];
+                    
+                    if (currentDirection === 'plus') {
+                        // 【増やす】指定された数だけ「#」を先頭に足す
+                        return '#'.repeat(levelCount) + hashes + spaces + content;
+                    } else {
+                        // 【減らす】指定された数だけ「#」を削る
+                        if (hashes.length > levelCount) {
+                            return hashes.slice(levelCount) + spaces + content;
+                        } else {
+                            // 指定された数より元の「#」が少ない、または同じ場合は「#」をすべて無くして通常のテキストにする
+                            // （例：## に対执行で「3減らす」とした場合、ただのテキストにする）
+                            return content;
+                        }
+                    }
+                }
+                // 見出しではない行はそのまま
+                return line;
+            });
+            
+            // 変換後のテキストを作成
+            const resultText = processedLines.join('\n');
+
+            // 🌟 自動的にクリップボードへコピー
+            try {
+                await navigator.clipboard.writeText(resultText);
+                showToast(`見出しを ${currentDirection === 'plus' ? '＋' : '−'}${levelCount} してコピーしました！`);
+            } catch (err) {
+                alert('クリップボードへの自動コピーに失敗しました。ブラウザの権限を確認してください。');
+            }
+        }
+
+        // 画面下部にふわっと通知を出す関数
+        function showToast(message) {
+            const toast = document.getElementById('toastMessage');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // クリア機能
+        function clearInput() {
+            document.getElementById('inputText').value = '';
+        }
+
+        // ペースト機能
+        async function pasteText() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('inputText').value = text;
+            } catch (err) {
+                alert('ペーストに失敗しました。ブラウザの許可を確認してください。');
+            }
+        }
+    </script>
+
+</body>
+</html>
