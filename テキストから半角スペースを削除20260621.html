@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpaceEraser - ドラッグ選択でスペース自動削除コピー</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts (Noto Sans JP) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+    }
+    /* カスタムスクールバー */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    /* アニメーション */
+    @keyframes slideInUp {
+      from {
+        transform: translateY(1rem);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    .animate-slide-up {
+      animation: slideInUp 0.2s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- ヘッダー -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="p-2 bg-indigo-600 text-white rounded-xl shadow-md">
+          <i data-lucide="scissors" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-slate-900 tracking-tight">SpaceEraser</h1>
+          <p class="text-xs text-slate-500">ドラッグ選択でスペースを自動削除＆コピー</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+        <button id="btn-help" class="text-slate-500 hover:text-slate-800 p-2 rounded-lg hover:bg-slate-100 transition-colors" title="使い方を見る">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+    
+    <!-- 使い方説明パネル（初期表示） -->
+    <div id="help-panel" class="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 relative overflow-hidden shadow-sm">
+      <button id="close-help" class="absolute top-4 right-4 text-indigo-400 hover:text-indigo-700 p-1 rounded-full hover:bg-indigo-100 transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <div class="flex items-start space-x-4">
+        <div class="p-3 bg-indigo-600 text-white rounded-xl hidden sm:block">
+          <i data-lucide="sparkles" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-indigo-900 mb-2">💡 簡単な使い方</h2>
+          <ol class="list-decimal list-inside text-sm text-indigo-800 space-y-1.5 leading-relaxed">
+            <li>下の「テキスト入力」エリアに、対象の文章を貼り付けるか入力します。</li>
+            <li>すぐ下の「ドラッグエリア（表示用）」に同じテキストが綺麗に表示されます。</li>
+            <li>「ドラッグエリア」の文字をマウスで<span class="font-bold underline decoration-indigo-400 decoration-2">ドラッグして選択</span>します。</li>
+            <li>選択が終わると（マウスを離すと）、選択範囲の「半角スペース」が<b>自動的に削除され、自動でクリップボードにコピー</b>されます！</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <!-- メイングリッドレイアウト -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- 左カラム: テキスト入力とドラッグエリア (8/12) -->
+      <div class="lg:col-span-8 space-y-6">
+        
+        <!-- エディタ部 -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+              <i data-lucide="edit-3" class="w-5 h-5 text-indigo-600"></i>
+              1. テキスト入力・貼り付け
+            </h3>
+            <div class="flex items-center gap-2">
+              <button id="btn-use-sample" class="text-xs font-medium text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-all">
+                サンプルを入力
+              </button>
+              <button id="btn-clear" class="text-xs font-medium text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> クリア
+              </button>
+            </div>
+          </div>
+          <textarea id="source-input" class="w-full h-40 p-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-700 placeholder-slate-400 leading-relaxed transition-all resize-y" placeholder="ここにスペースを含んだテキストを貼り付けてください...&#10;(例: Hello World ! This is a test . )"></textarea>
+          <div class="flex justify-between text-xs text-slate-400 px-1">
+            <span id="char-count">文字数: 0文字</span>
+            <span>※ ここで直接ドラッグ選択しても自動処理されます</span>
+          </div>
+        </div>
+
+        <!-- ドラッグ専用エリア -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+              <i data-lucide="mouse-pointer-click" class="w-5 h-5 text-emerald-600"></i>
+              2. ドラッグエリア（ここで文字を選択してください）
+            </h3>
+            <span class="text-xs bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full font-medium">ドラッグ選択可能</span>
+          </div>
+          
+          <div id="drag-container" class="relative group">
+            <!-- プレビューテキスト表示 -->
+            <div id="drag-preview" class="w-full min-h-[160px] p-5 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-700 leading-loose text-lg select-all break-all cursor-text whitespace-pre-wrap" placeholder="上のエディタにテキストを入力すると、ここにドラッグしやすいサイズで表示されます。">上のエディタにテキストを入力すると、ここにドラッグしやすいサイズで表示されます。</div>
+            
+            <!-- ガイドオーバーレイ -->
+            <div id="drag-guide" class="absolute inset-0 bg-slate-50/90 rounded-xl flex flex-col items-center justify-center border border-dashed border-slate-300 pointer-events-none transition-opacity duration-300">
+              <i data-lucide="mouse-pointer" class="w-10 h-10 text-slate-400 mb-2 animate-bounce"></i>
+              <p class="text-sm font-medium text-slate-500">テキストを入力すると、ここにドラッグエリアが表示されます</p>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-400 text-right">※ ドラッグして指やマウスを離した時点で、自動的に半角スペースが消去されコピーされます。</p>
+        </div>
+
+      </div>
+
+      <!-- 右カラム: オプション & 結果表示 (4/12) -->
+      <div class="lg:col-span-4 space-y-6">
+        
+        <!-- オプション設定 -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+          <h3 class="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <i data-lucide="sliders" class="w-5 h-5 text-indigo-600"></i>
+            除去オプション
+          </h3>
+          
+          <div class="space-y-4">
+            <!-- 半角スペース（必須・主目的） -->
+            <div class="flex items-center justify-between p-2.5 hover:bg-slate-50 rounded-xl transition-colors">
+              <div class="flex flex-col">
+                <span class="text-sm font-medium text-slate-700">半角スペースの削除</span>
+                <span class="text-xs text-slate-400">例:「a b c」→「abc」</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="opt-half-space" class="sr-only peer" checked disabled>
+                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+
+            <!-- 全角スペース -->
+            <div class="flex items-center justify-between p-2.5 hover:bg-slate-50 rounded-xl transition-colors">
+              <div class="flex flex-col">
+                <span class="text-sm font-medium text-slate-700">全角スペースの削除</span>
+                <span class="text-xs text-slate-400">例:「あ　い」→「あい」</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="opt-full-space" class="sr-only peer">
+                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+
+            <!-- 改行 -->
+            <div class="flex items-center justify-between p-2.5 hover:bg-slate-50 rounded-xl transition-colors">
+              <div class="flex flex-col">
+                <span class="text-sm font-medium text-slate-700">改行の削除</span>
+                <span class="text-xs text-slate-400">1行にまとめます</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="opt-newline" class="sr-only peer">
+                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+
+            <!-- タブ -->
+            <div class="flex items-center justify-between p-2.5 hover:bg-slate-50 rounded-xl transition-colors">
+              <div class="flex flex-col">
+                <span class="text-sm font-medium text-slate-700">タブの削除</span>
+                <span class="text-xs text-slate-400">タブインデントを消去</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="opt-tab" class="sr-only peer" checked>
+                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+
+            <hr class="border-slate-100 my-2">
+
+            <!-- 自動コピーのON/OFF -->
+            <div class="flex items-center justify-between p-2.5 hover:bg-slate-50 rounded-xl transition-colors">
+              <div class="flex flex-col">
+                <span class="text-sm font-semibold text-slate-700">選択時に自動コピー</span>
+                <span class="text-xs text-indigo-600 font-medium">ドラッグ完了と同時にコピーします</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="opt-auto-copy" class="sr-only peer" checked>
+                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 変換＆コピー結果表示 -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+              <i data-lucide="clipboard-check" class="w-5 h-5 text-emerald-600"></i>
+              3. 変換＆コピー結果
+            </h3>
+            <span id="result-status" class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">待機中</span>
+          </div>
+
+          <!-- 選択元テキスト情報 -->
+          <div class="text-xs text-slate-400 bg-slate-50 p-2 rounded-lg space-y-1">
+            <div class="flex justify-between">
+              <span>元の文字数:</span>
+              <span id="source-len" class="font-semibold text-slate-600">0 文字</span>
+            </div>
+            <div class="flex justify-between">
+              <span>変換後の文字数:</span>
+              <span id="result-len" class="font-semibold text-indigo-600">0 文字</span>
+            </div>
+          </div>
+
+          <!-- 結果表示エリア -->
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-500">コピーされた内容:</label>
+            <textarea id="result-output" readonly class="w-full h-32 p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-sm leading-relaxed focus:outline-none resize-none" placeholder="テキストをドラッグするとここに変換後のテキストが入り、自動コピーされます。"></textarea>
+          </div>
+
+          <!-- 手動コピーボタン (自動コピーが失敗、あるいは手動で行いたい場合) -->
+          <button id="btn-manual-copy" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+            <i data-lucide="copy" class="w-4 h-4"></i>
+            結果をクリップボードにコピー
+          </button>
+        </div>
+
+        <!-- 履歴エリア -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2 text-sm">
+              <i data-lucide="history" class="w-4 h-4 text-slate-500"></i>
+              コピー履歴 (直近5件)
+            </h3>
+            <button id="btn-clear-history" class="text-xs text-slate-400 hover:text-rose-600 transition-colors">すべてクリア</button>
+          </div>
+          <div id="history-list" class="space-y-2 max-h-48 overflow-y-auto pr-1 text-xs text-slate-500">
+            <div class="text-center py-4 text-slate-400" id="history-empty">履歴はまだありません</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- トースト通知用のコンテナ -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <!-- フッター -->
+  <footer class="bg-white border-t border-slate-200 py-6 mt-12">
+    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
+      <p>SpaceEraser - 安全かつ高速。ブラウザ内でのみ処理されるため、入力したテキストがサーバーに送信されることはありません。</p>
+    </div>
+  </footer>
+
+  <script>
+    // --- 初期化 & DOM要素取得 ---
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      initApp();
+    });
+
+    function initApp() {
+      const sourceInput = document.getElementById('source-input');
+      const dragPreview = document.getElementById('drag-preview');
+      const dragGuide = document.getElementById('drag-guide');
+      const charCount = document.getElementById('char-count');
+      
+      const optFullSpace = document.getElementById('opt-full-space');
+      const optNewline = document.getElementById('opt-newline');
+      const optTab = document.getElementById('opt-tab');
+      const optAutoCopy = document.getElementById('opt-auto-copy');
+      
+      const resultStatus = document.getElementById('result-status');
+      const sourceLen = document.getElementById('source-len');
+      const resultLen = document.getElementById('result-len');
+      const resultOutput = document.getElementById('result-output');
+      const btnManualCopy = document.getElementById('btn-manual-copy');
+      
+      const btnUseSample = document.getElementById('btn-use-sample');
+      const btnClear = document.getElementById('btn-clear');
+      const btnHelp = document.getElementById('btn-help');
+      const closeHelp = document.getElementById('close-help');
+      const helpPanel = document.getElementById('help-panel');
+      
+      const historyList = document.getElementById('history-list');
+      const historyEmpty = document.getElementById('history-empty');
+      const btnClearHistory = document.getElementById('btn-clear-history');
+
+      let currentSelection = '';
+      let historyData = [];
+
+      // サンプルテキスト
+      const sampleText = "J a v a S c r i p t   は  ウェブ  開発  に  欠かせない  言語  です。\n\n" +
+                         "こ の   テ キ ス ト   を   ド ラ ッ グ   す る と 、\n" +
+                         "半 角 ス ペ ー ス が   消 え て   自 動 的 に   コ ピ ー   さ れ ま す 。\n\n" +
+                         "【英語の例】\n" +
+                         "S p a c e     E r a s e r     i s     v e r y     u s e f u l !";
+
+      // --- イベントハンドラー ---
+
+      // 入力時の処理
+      sourceInput.addEventListener('input', updatePreview);
+
+      // サンプルテキスト適用
+      btnUseSample.addEventListener('click', () => {
+        sourceInput.value = sampleText;
+        updatePreview();
+        showToast('サンプルテキストを入力しました。ドラッグエリアでお試しください！');
+      });
+
+      // クリア
+      btnClear.addEventListener('click', () => {
+        sourceInput.value = '';
+        updatePreview();
+        resultOutput.value = '';
+        sourceLen.textContent = '0 文字';
+        resultLen.textContent = '0 文字';
+        resultStatus.textContent = '待機中';
+        resultStatus.className = 'text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium';
+        showToast('テキストをクリアしました。');
+      });
+
+      // 使い方ヘルプ開閉
+      btnHelp.addEventListener('click', () => {
+        helpPanel.classList.toggle('hidden');
+      });
+      closeHelp.addEventListener('click', () => {
+        helpPanel.classList.add('hidden');
+      });
+
+      // 手動コピー
+      btnManualCopy.addEventListener('click', () => {
+        const text = resultOutput.value;
+        if (!text) {
+          showToast('コピーするテキストがありません。', 'error');
+          return;
+        }
+        copyToClipboard(text);
+      });
+
+      // 履歴全削除
+      btnClearHistory.addEventListener('click', () => {
+        historyData = [];
+        updateHistoryUI();
+        showToast('履歴を削除しました。');
+      });
+
+      // --- ドラッグ（テキスト選択）検知 ---
+
+      // 1. ドラッグエリア（プレビュー部）でのマウスアップ・タッチ終了
+      dragPreview.addEventListener('mouseup', handleTextSelection);
+      dragPreview.addEventListener('touchend', handleTextSelection);
+
+      // 2. 念のため、通常のテキストエリアでの選択にも部分対応
+      sourceInput.addEventListener('select', () => {
+        const start = sourceInput.selectionStart;
+        const end = sourceInput.selectionEnd;
+        if (start !== end) {
+          const selectedText = sourceInput.value.substring(start, end);
+          processAndCopy(selectedText);
+        }
+      });
+      sourceInput.addEventListener('mouseup', () => {
+        // selectイベントが発火しないブラウザ環境対応
+        const start = sourceInput.selectionStart;
+        const end = sourceInput.selectionEnd;
+        if (start !== end) {
+          const selectedText = sourceInput.value.substring(start, end);
+          processAndCopy(selectedText);
+        }
+      });
+
+      // プレビュー更新関数
+      function updatePreview() {
+        const text = sourceInput.value;
+        charCount.textContent = `文字数: ${text.length}文字`;
+
+        if (text.trim() === '') {
+          dragPreview.textContent = '上のエディタにテキストを入力すると、ここにドラッグしやすいサイズで表示されます。';
+          dragPreview.classList.add('text-slate-400');
+          dragGuide.classList.remove('opacity-0');
+          dragGuide.classList.add('opacity-100');
+        } else {
+          dragPreview.textContent = text;
+          dragPreview.classList.remove('text-slate-400');
+          dragGuide.classList.remove('opacity-100');
+          dragGuide.classList.add('opacity-0', 'pointer-events-none');
+        }
+      }
+
+      // 選択テキスト取得ハンドラ
+      function handleTextSelection() {
+        // 少し遅延を設けて選択範囲が確定してから取得
+        setTimeout(() => {
+          const selection = window.getSelection();
+          const selectedText = selection.toString();
+          
+          if (selectedText && selectedText.trim() !== '') {
+            // 親要素がdragPreview内であるか確認（他の場所のドラッグを拾わないように）
+            const range = selection.getRangeAt(0);
+            const container = range.commonAncestorContainer;
+            const parent = container.nodeType === 1 ? container : container.parentNode;
+
+            if (dragPreview.contains(parent)) {
+              processAndCopy(selectedText);
+            }
+          }
+        }, 50);
+      }
+
+      // 変換 ＆ コピーのコア処理
+      function processAndCopy(text) {
+        if (!text || text.trim() === '') return;
+
+        sourceLen.textContent = `${text.length} 文字`;
+
+        // オプションに応じた置換処理
+        let processed = text;
+        
+        // 1. 半角スペースの削除（常に実行）
+        processed = processed.replace(/ /g, '');
+
+        // 2. 全角スペースの削除（オプション）
+        if (optFullSpace.checked) {
+          processed = processed.replace(/　/g, '');
+        }
+
+        // 3. タブの削除（オプション）
+        if (optTab.checked) {
+          processed = processed.replace(/\t/g, '');
+        }
+
+        // 4. 改行の削除（オプション）
+        if (optNewline.checked) {
+          processed = processed.replace(/\r?\n/g, '');
+        }
+
+        resultLen.textContent = `${processed.length} 文字`;
+        resultOutput.value = processed;
+
+        // コピー処理
+        if (optAutoCopy.checked) {
+          const success = copyToClipboard(processed, false);
+          if (success) {
+            resultStatus.textContent = '自動コピー完了！';
+            resultStatus.className = 'text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold';
+            addHistory(text, processed);
+          } else {
+            resultStatus.textContent = 'コピー失敗（手動で行ってください）';
+            resultStatus.className = 'text-xs bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-semibold';
+          }
+        } else {
+          resultStatus.textContent = '変換完了（コピー未実行）';
+          resultStatus.className = 'text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-medium';
+        }
+      }
+
+      // クリップボードへの物理コピー
+      function copyToClipboard(text, notify = true) {
+        const tempTextArea = document.createElement('textarea');
+        tempTextArea.value = text;
+        // 画面外かつ見えない位置に配置
+        tempTextArea.style.position = 'fixed';
+        tempTextArea.style.left = '-9999px';
+        tempTextArea.style.top = '0px';
+        document.body.appendChild(tempTextArea);
+        
+        // 選択してコピー
+        tempTextArea.select();
+        tempTextArea.setSelectionRange(0, 99999); // モバイル対応
+        
+        let success = false;
+        try {
+          success = document.execCommand('copy');
+          if (success && notify) {
+            showToast('クリップボードにコピーしました！');
+          }
+        } catch (err) {
+          console.error('Copy failed:', err);
+        }
+        
+        document.body.removeChild(tempTextArea);
+        return success;
+      }
+
+      // トースト通知の表示
+      function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        
+        // トーストの装飾
+        const bgClass = type === 'success' ? 'bg-slate-900 text-white' : 'bg-rose-600 text-white';
+        const iconName = type === 'success' ? 'check-circle' : 'alert-circle';
+        
+        toast.className = `flex items-center space-x-3 px-4 py-3 rounded-xl shadow-xl ${bgClass} animate-slide-up text-sm font-medium pointer-events-auto`;
+        toast.innerHTML = `
+          <i data-lucide="${iconName}" class="w-5 h-5 shrink-0"></i>
+          <span>${message}</span>
+        `;
+        
+        container.appendChild(toast);
+        lucide.createIcons();
+
+        // 3秒後に消去
+        setTimeout(() => {
+          toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+          setTimeout(() => {
+            container.removeChild(toast);
+          }, 300);
+        }, 3000);
+      }
+
+      // コピー履歴管理
+      function addHistory(raw, processed) {
+        // 重複は省くか、最新を一番上に
+        const truncatedRaw = raw.length > 25 ? raw.substring(0, 25) + '...' : raw;
+        const truncatedProc = processed.length > 25 ? processed.substring(0, 25) + '...' : processed;
+        
+        // 履歴オブジェクト
+        const item = {
+          id: Date.now(),
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          raw: truncatedRaw,
+          processed: truncatedProc,
+          fullProcessed: processed
+        };
+
+        historyData.unshift(item);
+        if (historyData.length > 5) {
+          historyData.pop();
+        }
+
+        updateHistoryUI();
+      }
+
+      function updateHistoryUI() {
+        if (historyData.length === 0) {
+          historyEmpty.classList.remove('hidden');
+          // 既存のリストアイテムをクリア
+          const items = historyList.querySelectorAll('.history-item');
+          items.forEach(el => el.remove());
+          return;
+        }
+
+        historyEmpty.classList.add('hidden');
+        
+        // 既存のリストアイテムをクリア
+        const items = historyList.querySelectorAll('.history-item');
+        items.forEach(el => el.remove());
+
+        historyData.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'history-item bg-slate-50 hover:bg-slate-100 p-2.5 rounded-lg border border-slate-100 flex justify-between items-center transition-all group';
+          div.innerHTML = `
+            <div class="flex-grow min-w-0 pr-2">
+              <div class="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                <span>時刻: ${item.time}</span>
+                <span class="line-through">スペースあり</span>
+              </div>
+              <p class="font-medium text-slate-700 truncate">${item.processed}</p>
+            </div>
+            <button class="btn-copy-history shrink-0 p-1.5 bg-white text-slate-400 hover:text-indigo-600 rounded-md border border-slate-200 hover:border-indigo-200 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all shadow-sm" title="この履歴を再コピー">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            </button>
+          `;
+
+          // 再コピーボタンのイベント
+          div.querySelector('.btn-copy-history').addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyToClipboard(item.fullProcessed);
+            resultOutput.value = item.fullProcessed;
+            resultLen.textContent = `${item.fullProcessed.length} 文字`;
+            resultStatus.textContent = '履歴からコピー完了';
+            resultStatus.className = 'text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold';
+          });
+
+          historyList.appendChild(div);
+        });
+
+        lucide.createIcons();
+      }
+
+      // サンプルテキストを初期表示にロード
+      sourceInput.value = "こ の    テキスト    を    ドラッグ   し て   み て   く だ さ い ！";
+      updatePreview();
+    }
+  </script>
+</body>
+</html>
