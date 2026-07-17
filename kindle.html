@@ -131,20 +131,62 @@
 
         .clock-card {
             border: 4px solid var(--border-color);
-            padding: 15px;
+            padding: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
             background-color: var(--card-bg);
-            flex: 1.2;
-            min-height: 120px;
+            flex: 0.95;
+            min-height: 95px;
         }
 
         #time {
-            font-size: 5.5rem;
+            font-size: 5rem;
             font-weight: 900;
             letter-spacing: -2px;
             line-height: 1;
+        }
+
+        .timer-card {
+            border: 4px solid var(--border-color);
+            background-color: var(--card-bg);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 15px;
+        }
+
+        .timer-track {
+            flex: 1;
+            height: 24px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .timer-fill {
+            height: 100%;
+            width: 0%;
+            background-color: var(--text-color);
+        }
+
+        .timer-countdown {
+            font-size: 1.4rem;
+            font-weight: 900;
+            min-width: 78px;
+            text-align: right;
+        }
+
+        .timer-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .timer-btn {
+            flex: 1;
+            text-align: center;
         }
 
         .weather-card {
@@ -406,8 +448,20 @@
                 <div class="memo-title">ToDo / 今日のメモ</div>
                 <textarea id="memo-area" placeholder="ここにタスクやメモを入力（自動保存されます）..."></textarea>
             </div>
+            <div class="timer-buttons">
+                <button class="btn timer-btn" onclick="startPomodoro(25)">25分</button>
+                <button class="btn timer-btn" onclick="startPomodoro(5)">5分</button>
+                <button class="btn timer-btn" onclick="stopPomodoro()">停止</button>
+            </div>
         </div>
     </main>
+
+    <div class="timer-card">
+        <div class="timer-track">
+            <div class="timer-fill" id="timer-fill"></div>
+        </div>
+        <div class="timer-countdown" id="timer-countdown">--:--</div>
+    </div>
 
     <footer>
         <span id="status-text">画面タップで復帰します</span>
@@ -446,6 +500,16 @@
         };
 
         let isMemoFocused = false;
+
+        // --- ポモドーロタイマー（ビジュアルバー方式） ---
+        // setIntervalの発火回数ではなく実時刻の差分で残り時間を計算するので、
+        // スリープで一時JSが止まっても復帰時に正しい残り時間を再計算できる。
+        let pomodoro = {
+            running: false,
+            startTime: 0,
+            durationSec: 0,
+            intervalId: null
+        };
 
         // --- スリープ復帰検知まわり ---
         // この端末の体験版ブラウザは古いWebKitで、visibilitychange (Page Visibility API) が
@@ -496,6 +560,7 @@
             initClock();
             initMemo();
             maybeRefreshWeather(true);
+            renderPomodoro();
 
             // 古いWebKitでも動く範囲でのフォールバック。
             // 対応していれば効くし、対応していなくてもエラーにはならない。
@@ -605,12 +670,99 @@
             // 「今、目が覚めた」感を出すために軽く画面を反転させる
             renderClock();
             maybeRefreshWeather(false);
+            checkPomodoroOnWake();
             triggerAntiGhosting();
         }
 
         function manualRefresh() {
             maybeRefreshWeather(true);
             triggerAntiGhosting();
+        }
+
+        function startPomodoro(minutes) {
+            if (pomodoro.intervalId) {
+                clearInterval(pomodoro.intervalId);
+            }
+            pomodoro.durationSec = minutes * 60;
+            pomodoro.startTime = Date.now();
+            pomodoro.running = true;
+            triggerAntiGhosting(); // 開始時に一度画面をきれいにしてから始める
+            renderPomodoro();
+            pomodoro.intervalId = setInterval(tickPomodoro, 15000); // 15秒おき更新（E-ink負荷軽減のため）
+        }
+
+        function stopPomodoro() {
+            pomodoro.running = false;
+            pomodoro.durationSec = 0;
+            if (pomodoro.intervalId) {
+                clearInterval(pomodoro.intervalId);
+                pomodoro.intervalId = null;
+            }
+            renderPomodoro();
+        }
+
+        function tickPomodoro() {
+            if (!pomodoro.running) return;
+            const remaining = getPomodoroRemaining();
+            if (remaining <= 0) {
+                finishPomodoro();
+                return;
+            }
+            renderPomodoro();
+        }
+
+        function getPomodoroRemaining() {
+            if (!pomodoro.running) return 0;
+            const elapsed = Math.floor((Date.now() - pomodoro.startTime) / 1000);
+            return Math.max(0, pomodoro.durationSec - elapsed);
+        }
+
+        function finishPomodoro() {
+            pomodoro.running = false;
+            if (pomodoro.intervalId) {
+                clearInterval(pomodoro.intervalId);
+                pomodoro.intervalId = null;
+            }
+            renderPomodoro();
+            flashRepeatedly(4);
+        }
+
+        function checkPomodoroOnWake() {
+            // スリープ中にタイマーが0を通過していた場合、復帰した今このタイミングで
+            // まとめて点滅させる（アラームの代わりとして、ちょうど画面を見ている瞬間になる）
+            if (!pomodoro.running) return;
+            if (getPomodoroRemaining() <= 0) {
+                finishPomodoro();
+            } else {
+                renderPomodoro();
+            }
+        }
+
+        function renderPomodoro() {
+            const remaining = getPomodoroRemaining();
+            const pct = pomodoro.durationSec > 0 ? (remaining / pomodoro.durationSec) * 100 : 0;
+            document.getElementById('timer-fill').style.width = pct + '%';
+
+            const countdownEl = document.getElementById('timer-countdown');
+            if (pomodoro.durationSec > 0) {
+                const m = Math.floor(remaining / 60);
+                const s = remaining % 60;
+                countdownEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            } else {
+                countdownEl.textContent = '--:--';
+            }
+        }
+
+        function flashRepeatedly(times) {
+            let count = 0;
+            function doFlash() {
+                triggerAntiGhosting();
+                count++;
+                if (count < times) {
+                    setTimeout(doFlash, 1200); // 1回のフラッシュが0.8秒なので、間隔をそれより長く空ける
+                }
+            }
+            doFlash();
         }
 
         function initMemo() {
