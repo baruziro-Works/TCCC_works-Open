@@ -57,3 +57,11 @@ https://baruziro-works.github.io/TCCC_works-Open/worshipslide_aiV1.html
 worshipslide_ai_v4.html
 Ws スライド作成
 https://baruziro-works.github.io/TCCC_works-Open/worshipslide_ai_v4.html
+
+
+テキストから半角スペースを削除20260621.html
+https://baruziro-works.github.io/TCCC_works-Open/テキストから半角スペースを削除20260621.html
+
+
+見出＃増減0628.html
+https://baruziro-works.github.io/TCCC_works-Open/見出＃増減0628.html
