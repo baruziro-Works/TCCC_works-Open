@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信長の野望 - 戦国覇王録 (Vr_07311315)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js Synthesizer for Retro Chiptunes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Retro Pixel Font -->
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            font-family: 'DotGothic16', monospace, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: #120a05;
+            color: #f1f5f9;
+            overflow-x: hidden;
+            background-image: radial-gradient(#2a180b 1px, transparent 0);
+            background-size: 16px 16px;
+        }
+
+        .md-frame {
+            background: linear-gradient(145deg, #2c1a0e 0%, #170d06 100%);
+            border: 4px double #d4af37;
+            box-shadow: 0 0 14px rgba(212, 175, 55, 0.3), inset 0 0 25px rgba(0,0,0,0.9);
+            border-radius: 6px;
+        }
+
+        .md-panel {
+            background-color: rgba(18, 10, 5, 0.95);
+            border: 2px solid #8b6b23;
+        }
+
+        .md-btn {
+            background: linear-gradient(180deg, #53421f 0%, #251b0a 100%);
+            border: 1px solid #d4af37;
+            color: #fef08a;
+            transition: all 0.12s ease;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .md-btn:hover:not(:disabled) {
+            background: linear-gradient(180deg, #826327 0%, #443212 100%);
+            border-color: #fef08a;
+            box-shadow: 0 0 10px rgba(254, 240, 138, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .md-btn:active:not(:disabled) {
+            transform: translateY(1px);
+            background: #181105;
+        }
+
+        .md-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            border-color: #444;
+            color: #777;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #08060e; }
+        ::-webkit-scrollbar-thumb { background: #6b5118; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a37c27; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-1 md:p-3">
+
+    <!-- Top Header Navigation -->
+    <header class="md-frame p-2 mb-2 flex flex-wrap justify-between items-center text-amber-300">
+        <div class="flex items-center space-x-3">
+            <i class="fa-solid fa-torii-gate text-2xl text-amber-500"></i>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-base md:text-xl font-extrabold tracking-widest text-amber-400">信長の野望 <span class="text-xs text-amber-200 border border-amber-500 px-1.5 py-0.5 rounded bg-amber-950/60">戦国覇王録</span></h1>
+                    <span class="text-[10px] bg-amber-950/90 text-amber-300 px-1.5 py-0.5 border border-amber-600 rounded font-mono" id="version-badge">Vr_07311315</span>
+                </div>
+                <p class="text-[10px] md:text-xs text-amber-200/70">16-BIT MD SENGOKU ENGINE</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2 text-xs mt-1 sm:mt-0">
+            <div id="date-display" class="bg-black/80 px-2.5 py-1 border border-amber-600/70 rounded text-amber-300 font-bold">
+                1560年 春（第1期）
+            </div>
+            <button id="select-daimyo-btn" class="md-btn px-2.5 py-1 text-xs rounded flex items-center gap-1">
+                <i class="fa-solid fa-crown text-amber-400"></i>
+                <span>当主選択</span>
+            </button>
+            <button id="sound-btn" class="md-btn px-2.5 py-1 text-xs rounded flex items-center gap-1">
+                <i class="fa-solid fa-volume-xmark" id="sound-icon"></i>
+                <span id="sound-text">Sound: OFF</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Section -->
+    <main class="flex-grow grid grid-cols-1 lg:grid-cols-12 gap-2 mb-2">
+
+        <!-- Left: Japan Map View & Log Terminal -->
+        <div class="lg:col-span-8 flex flex-col space-y-2">
+            
+            <!-- Map Canvas Box -->
+            <div class="md-frame p-2 relative flex-grow flex items-center justify-center bg-black/95 min-h-[400px]">
+                <canvas id="map-canvas" width="720" height="440" class="w-full h-auto max-h-[520px] object-contain rounded border border-amber-900/60 cursor-pointer"></canvas>
+
+                <!-- Province Hover Tooltip -->
+                <div class="absolute top-3 left-3 bg-black/90 border border-amber-600/80 p-2.5 text-xs rounded max-w-[220px] pointer-events-none shadow-xl">
+                    <div class="text-amber-400 font-bold border-b border-amber-800 pb-1 mb-1" id="hover-prov-name">領地を選択</div>
+                    <div id="hover-prov-details" class="text-gray-300 space-y-0.5 text-[11px]">
+                        地図上の国をクリックして情報確認・政略を行います。
+                    </div>
+                </div>
+
+                <!-- Strategic Phase Status Badge -->
+                <div class="absolute bottom-3 left-3 bg-amber-950/90 border border-amber-500/80 px-3 py-1 text-xs rounded text-yellow-300 font-bold" id="phase-indicator">
+                    【評定フェイズ】 命令を選択してください
+                </div>
+            </div>
+
+            <!-- Game Activity & Intelligence Log (Megadrive style message bar) -->
+            <div class="md-panel p-2.5 h-28 overflow-y-auto text-xs font-mono space-y-1" id="game-log">
+                <div class="text-amber-300">【天の時】 1560年、群雄割拠の戦国大乱。担当大名を選び天下統一を目指せ！</div>
+            </div>
+        </div>
+
+        <!-- Right: Control Panel & Status Cards -->
+        <div class="lg:col-span-4 flex flex-col space-y-2">
+
+            <!-- Selected Province Card -->
+            <div class="md-frame p-2.5 text-xs space-y-2">
+                <div class="flex justify-between items-center border-b border-amber-800/80 pb-1">
+                    <span class="text-amber-400 font-bold text-sm flex items-center gap-1.5" id="cur-prov-title">
+                        <i class="fa-solid fa-flag text-red-500"></i> 【尾張】 織田家
+                    </span>
+                    <span class="px-2 py-0.5 rounded text-[10px] bg-amber-900/80 text-amber-200 border border-amber-600" id="cur-prov-owner">自軍本領</span>
+                </div>
+
+                <!-- Daimyo & Officer Info -->
+                <div class="grid grid-cols-2 gap-2 bg-black/60 p-2 rounded border border-amber-950">
+                    <div>
+                        <div class="text-gray-400 text-[10px]">当主 / 武将</div>
+                        <div class="font-bold text-yellow-300 text-sm flex items-center gap-1" id="daimyo-name">
+                            織田信長
+                        </div>
+                        <div class="text-[10px] text-gray-300 mt-0.5">統率: <span id="stat-lead" class="text-amber-400 font-bold">98</span> | 武勇: <span id="stat-val" class="text-amber-400 font-bold">88</span></div>
+                        <div class="text-[10px] text-gray-300">知略: <span id="stat-int" class="text-amber-400 font-bold">95</span> | 政治: <span id="stat-pol" class="text-amber-400 font-bold">92</span></div>
+                    </div>
+                    <div class="space-y-0.5 text-right text-[11px]">
+                        <div>大名体調: <span class="text-emerald-400 font-bold" id="stat-health">100 / 100</span></div>
+                        <div>石高 (兵糧): <span class="text-amber-300 font-bold" id="stat-yield">1400</span></div>
+                        <div>町値 (軍資金): <span class="text-amber-300 font-bold" id="stat-comm">1100</span></div>
+                        <div>治水・城防: <span class="text-blue-300 font-bold" id="stat-def">80</span></div>
+                        <div>民心 (治安): <span class="text-emerald-300 font-bold" id="stat-loyalty">85</span></div>
+                    </div>
+                </div>
+
+                <!-- Military & Special Assets -->
+                <div class="grid grid-cols-4 gap-1 text-center bg-black/70 p-1.5 rounded border border-amber-900/50 text-[10px]">
+                    <div>
+                        <div class="text-gray-400">軍資金</div>
+                        <div class="text-amber-300 font-bold" id="stat-gold">2500 金</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400">兵糧</div>
+                        <div class="text-emerald-400 font-bold" id="stat-food">3000 米</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400">兵力/熟練</div>
+                        <div class="text-red-400 font-bold"><span id="stat-troops">4000</span>名 (<span id="stat-train">80</span>%)</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400">軍馬 / 鉄砲</div>
+                        <div class="text-cyan-300 font-bold"><span id="stat-horses">400</span> 馬 / <span id="stat-guns">400</span> 鉄</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Command Hub -->
+            <div class="md-frame p-2.5 flex-grow flex flex-col justify-between">
+                <div class="text-xs font-bold text-amber-400 border-b border-amber-800 pb-1 mb-1.5 flex justify-between items-center">
+                    <span>＜ 大 名 評 定 コ マ ン ド ＞</span>
+                    <span id="action-point-text" class="text-yellow-300 bg-amber-950 px-2 py-0.5 rounded border border-amber-700">行動力: 2 / 2</span>
+                </div>
+
+                <!-- Strategic Commands Grid -->
+                <div class="grid grid-cols-2 gap-1.5 text-xs mb-2">
+                    <button class="md-btn p-1.5 rounded flex items-center justify-center gap-1 cmd-btn" data-cmd="farming">
+                        <i class="fa-solid fa-wheat-awn text-emerald-400"></i> 開墾 (石高増)
+                    </button>
+                    <button class="md-btn p-1.5 rounded flex items-center justify-center gap-1 cmd-btn" data-cmd="commerce">
+                        <i class="fa-solid fa-coins text-amber-400"></i> 商業 (町値増)
+                    </button>
+                    <button class="md-btn p-1.5 rounded flex items-center justify-center gap-1 cmd-btn" data-cmd="fortify">
+                        <i class="fa-solid fa-water text-blue-400"></i> 治水城補強
+                    </button>
+                    <button class="md-btn p-1.5 rounded flex items-center justify-center gap-1 cmd-btn" data-cmd="give">
+                        <i class="fa-solid fa-hand-holding-heart text-pink-400"></i> 施し (民忠増)
+                    </button>
+                    <button class="md-btn p-1.5 rounded flex items-center justify-center gap-1 cmd-btn" data-cmd="draft">
+                        <i class="fa-solid fa-user-plus text-indigo-400"></i> 徴兵 (兵力増)
+                    </button>
+                    <button class="md-btn p-1.5 rounded flex items-center justify-center gap-1 cmd-btn" data-cmd="train">
+                        <i class="fa-solid fa-person-military-pointing text-orange-400"></i> 訓練 (熟練増)
+                    </button>
+                    <button class="md-btn p-1.5 rounded flex items-center justify-center gap-1 cmd-btn" data-cmd="merchant">
+                        <i class="fa-solid fa-store text-amber-300"></i> 商人 (馬/鉄砲)
+                    </button>
+
+                    <button class="md-btn p-1.5 rounded flex items-center justify-center gap-1 cmd-btn" data-cmd="rest">
+                        <i class="fa-solid fa-bed text-teal-300"></i> 休養 (体調回復)
+                    </button>
+                    <button class="md-btn p-1.5 rounded flex items-center justify-center gap-1 cmd-btn" data-cmd="ninja">
+                        <i class="fa-solid fa-user-ninja text-purple-400"></i> 忍者 (探察調略)
+                    </button>
+                    <button class="md-btn p-1.5 rounded flex items-center justify-center gap-1 cmd-btn" data-cmd="transport">
+                        <i class="fa-solid fa-truck-ramp-box text-cyan-400"></i> 物資輸送
+                    </button>
+                </div>
+
+                <!-- Military Operations -->
+                <div class="space-y-1.5 border-t border-amber-900/80 pt-2">
+                    <button class="md-btn w-full py-2 text-xs font-bold bg-red-950 hover:bg-red-900 text-red-200 border-red-600 rounded flex items-center justify-center gap-2 cmd-btn" data-cmd="attack">
+                        <i class="fa-solid fa-skull text-red-400 text-sm"></i> 他国へ合戦出陣 (侵攻)
+                    </button>
+
+                    <button id="end-turn-btn" class="w-full py-2 text-xs font-bold bg-amber-800 hover:bg-amber-700 text-yellow-100 rounded border border-amber-400 shadow flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-hourglass-half"></i> 評定終了（全CPU大名が自動思考・行動）
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Daimyo Selection Modal -->
+    <div id="daimyo-select-modal" class="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-3">
+        <div class="md-frame w-full max-w-3xl p-4 space-y-3 max-h-[90vh] overflow-y-auto">
+            <div class="text-center border-b border-amber-700 pb-2">
+                <h2 class="text-lg md:text-2xl font-bold text-amber-400">【戦国覇王録】 当主大名選択</h2>
+                <p class="text-xs text-amber-200/80 mt-1">担当する大名家を選択してください。</p>
+            </div>
+
+            <div id="daimyo-grid" class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Hex/Grid Tactical Battle Modal (Styled like Megadrive Screenshot 2) -->
+    <div id="battle-modal" class="fixed inset-0 bg-black/95 z-50 hidden flex flex-col items-center justify-center p-2">
+        <div class="md-frame w-full max-w-5xl p-3 flex flex-col space-y-2 max-h-[98vh] overflow-y-auto">
+            
+            <div class="flex justify-between items-center border-b border-amber-700 pb-1.5">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-swords text-red-500 text-xl"></i>
+                    <h2 class="text-base md:text-lg font-bold text-amber-300" id="battle-title">天下分かれ目の決戦</h2>
+                </div>
+                <div class="flex items-center space-x-3 text-xs">
+                    <span id="battle-weather" class="text-cyan-300"><i class="fa-solid fa-sun"></i> 晴天</span>
+                    <span id="battle-turn-counter" class="text-amber-200 font-bold">日: 1 / 15</span>
+                </div>
+            </div>
+
+            <!-- Tactical Battle Canvas & Panel Layout (Megadrive style with side Commander Panels) -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-stretch">
+                
+                <!-- Left Commander Panel (Attacker / Player) -->
+                <div class="md:col-span-2 bg-black/80 border border-amber-900 rounded p-2 flex flex-col items-center justify-between text-xs font-mono space-y-2">
+                    <div class="text-center w-full">
+                        <div class="text-amber-400 font-bold border-b border-amber-800 pb-1 text-[11px]" id="b-att-title">攻撃軍</div>
+                        <div class="w-16 h-16 my-2 border-2 border-amber-500 rounded bg-amber-950 flex items-center justify-center mx-auto text-2xl" id="b-att-avatar">
+                            👤
+                        </div>
+                        <div class="font-bold text-yellow-300 text-xs" id="b-att-name">織田信長</div>
+                    </div>
+
+                    <div class="w-full space-y-1 text-left bg-amber-950/40 p-1.5 rounded border border-amber-900 text-[11px]">
+                        <div class="flex justify-between"><span>兵糧:</span><span class="text-emerald-400 font-bold" id="b-att-food">3000</span></div>
+                        <div class="flex justify-between"><span>金:</span><span class="text-amber-300 font-bold" id="b-att-gold">2500</span></div>
+                        <div class="flex justify-between"><span>総兵力:</span><span class="text-red-400 font-bold" id="b-att-total-troops">4000</span></div>
+                    </div>
+                </div>
+
+                <!-- Battle Canvas Center -->
+                <div class="md:col-span-8 bg-black border-2 border-amber-800 rounded p-1 flex flex-col items-center justify-center">
+                    <canvas id="battle-canvas" width="600" height="390" class="w-full h-auto cursor-pointer border border-amber-950"></canvas>
+                    
+                    <!-- Terrain Legend -->
+                    <div class="flex justify-around w-full text-[10px] text-gray-300 pt-1.5 px-2 bg-black/90">
+                        <span>🟩平地 (MP1 / 防0%)</span>
+                        <span>🌲森林 (MP2 / 防20%)</span>
+                        <span>⛰️山岳 (MP2 / 防30%)</span>
+                        <span>🌊河川 (MP3 / 防-10%)</span>
+                        <span>🏰城郭 (MP1 / 防40%)</span>
+                    </div>
+                </div>
+
+                <!-- Right Commander Panel & Commands -->
+                <div class="md:col-span-2 bg-black/80 border border-amber-900 rounded p-2 flex flex-col justify-between text-xs font-mono space-y-2">
+                    
+                    <div class="text-center w-full">
+                        <div class="text-red-400 font-bold border-b border-amber-800 pb-1 text-[11px]" id="b-def-title">防衛軍</div>
+                        <div class="w-16 h-16 my-2 border-2 border-red-500 rounded bg-red-950 flex items-center justify-center mx-auto text-2xl" id="b-def-avatar">
+                            👤
+                        </div>
+                        <div class="font-bold text-red-300 text-xs" id="b-def-name">今川義元</div>
+                    </div>
+
+                    <!-- Selected Unit Stats -->
+                    <div class="w-full bg-black/90 border border-amber-800 p-1.5 rounded text-[10px] space-y-0.5">
+                        <div class="text-amber-400 font-bold border-b border-amber-900 pb-0.5">選択部隊</div>
+                        <div id="battle-unit-details" class="text-gray-300">部隊選択</div>
+                    </div>
+
+                    <!-- Tactical Actions -->
+                    <div class="space-y-1 w-full">
+                        <button id="b-cmd-attack" class="md-btn w-full py-1 text-[11px] rounded" disabled>近接 攻撃</button>
+                        <button id="b-cmd-shoot" class="md-btn w-full py-1 text-[11px] rounded" disabled>鉄砲 斉射</button>
+                        <button id="b-cmd-tactic" class="md-btn w-full py-1 text-[11px] rounded" disabled>計略 火計</button>
+                        <button id="b-cmd-wait" class="md-btn w-full py-1 text-[11px] rounded" disabled>部隊 待機</button>
+                        <button id="b-cmd-end-turn" class="w-full py-1 text-[11px] bg-amber-800 hover:bg-amber-700 text-yellow-200 border border-amber-500 rounded font-bold">自軍ターン終了</button>
+                        <button id="battle-retreat-btn" class="w-full py-1 text-[10px] bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 rounded">全軍撤退</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Battle Action Log -->
+            <div id="battle-log" class="md-panel p-2 h-20 overflow-y-auto text-[11px] text-amber-200 font-mono">
+                布陣完了。地形効果を活かし、全軍を指揮してください！
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Modal -->
+    <div id="generic-modal" class="fixed inset-0 bg-black/85 z-40 hidden flex items-center justify-center p-3">
+        <div class="md-frame p-4 w-full max-w-md space-y-3">
+            <h3 id="modal-title" class="text-base font-bold text-amber-400 border-b border-amber-800 pb-1">コマンド確認</h3>
+            <p id="modal-desc" class="text-xs text-gray-200">コマンドの内容を選択してください。</p>
+            <div id="modal-body" class="space-y-2"></div>
+            <div class="flex justify-end space-x-2 pt-2 border-t border-amber-900">
+                <button id="modal-cancel-btn" class="px-3 py-1 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded border border-gray-600">キャンセル</button>
+                <button id="modal-confirm-btn" class="md-btn px-4 py-1 text-xs font-bold rounded">実行する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center text-[10px] text-amber-600/70 py-1 flex justify-between px-4">
+        <span>信長の野望 - 16-BIT RETRO CPU AI SIMULATION ENGINE</span>
+        <span class="font-mono">Vr_07311315</span>
+    </footer>
+
+    <script>
+        /* ... SoundEngine implementation ... */
+        const SoundEngine = {
+            enabled: false,
+            synth: null,
+            noiseSynth: null,
+            bgmPart: null,
+
+            init() {
+                if (this.synth) return;
+                this.synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: "square" },
+                    envelope: { attack: 0.01, decay: 0.1, sustain: 0.2, release: 0.2 }
+                }).toDestination();
+                this.synth.volume.value = -14;
+
+                this.noiseSynth = new Tone.NoiseSynth({
+                    noise: { type: "white" },
+                    envelope: { attack: 0.005, decay: 0.09, sustain: 0 }
+                }).toDestination();
+                this.noiseSynth.volume.value = -18;
+            },
+
+            toggleSound() {
+                if (!this.enabled) {
+                    Tone.start();
+                    this.init();
+                    this.enabled = true;
+                    this.startBGM();
+                    document.getElementById('sound-text').innerText = "Sound: ON";
+                    document.getElementById('sound-icon').className = "fa-solid fa-volume-high text-yellow-400";
+                } else {
+                    this.stopBGM();
+                    this.enabled = false;
+                    document.getElementById('sound-text').innerText = "Sound: OFF";
+                    document.getElementById('sound-icon').className = "fa-solid fa-volume-xmark";
+                }
+            },
+
+            playClick() { if (this.enabled) this.synth.triggerAttackRelease("E5", "16n"); },
+            playMarch() { if (this.enabled) this.noiseSynth.triggerAttackRelease("16n"); },
+            playAttack() { if (this.enabled) this.synth.triggerAttackRelease(["E2", "G2", "B2"], "8n"); },
+            playGun() { if (this.enabled) this.noiseSynth.triggerAttackRelease("8n"); },
+            playTactic() { if (this.enabled) this.synth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "16n"); },
+
+            startBGM() {
+                if (!this.enabled || this.bgmPart) return;
+                const notes = [
+                    { time: "0:0", note: "A3", duration: "8n" },
+                    { time: "0:1", note: "C4", duration: "8n" },
+                    { time: "0:2", note: "D4", duration: "8n" },
+                    { time: "0:3", note: "E4", duration: "8n" },
+                    { time: "1:0", note: "G4", duration: "8n" },
+                    { time: "1:1", note: "E4", duration: "8n" },
+                    { time: "1:2", note: "D4", duration: "4n" },
+                    { time: "2:0", note: "A3", duration: "8n" },
+                    { time: "2:1", note: "C4", duration: "8n" },
+                    { time: "2:2", note: "D4", duration: "8n" },
+                    { time: "2:3", note: "C4", duration: "8n" },
+                    { time: "3:0", note: "A3", duration: "2n" }
+                ];
+                this.bgmPart = new Tone.Part((time, val) => {
+                    this.synth.triggerAttackRelease(val.note, val.duration, time);
+                }, notes).start(0);
+                this.bgmPart.loop = true;
+                this.bgmPart.loopEnd = "4m";
+                Tone.Transport.bpm.value = 110;
+                Tone.Transport.start();
+            },
+
+            stopBGM() {
+                if (this.bgmPart) {
+                    this.bgmPart.stop();
+                    this.bgmPart.dispose();
+                    this.bgmPart = null;
+                }
+                Tone.Transport.stop();
+            }
+        };
+
+        // 16 Sengoku Provinces Map Data
+        const PROVINCES = {
+            satsuma:   { id: "satsuma", name: "薩摩", region: "九州", x: 75,  y: 340, owner: "shimazu", yield: 1250, comm: 850, def: 80, loyalty: 92, gold: 1500, food: 1900, troops: 4000, train: 90, horses: 300, guns: 300, adj: ["tosa", "aki"] },
+            tosa:      { id: "tosa",   name: "土佐", region: "四国", x: 160, y: 320, owner: "chosokabe",yield: 1100, comm: 700, def: 70, loyalty: 85, gold: 1200, food: 1500, troops: 3000, train: 80, horses: 200, guns: 100, adj: ["satsuma", "aki", "settsu"] },
+            aki:       { id: "aki",    name: "安芸", region: "中国", x: 170, y: 250, owner: "mori",    yield: 1350, comm: 950,  def: 85, loyalty: 88, gold: 1700, food: 2100, troops: 3600, train: 80, horses: 300, guns: 250, adj: ["satsuma", "tosa", "settsu"] },
+            settsu:    { id: "settsu", name: "摂津", region: "近畿", x: 250, y: 240, owner: "miyoshi", yield: 1600, comm: 1600, def: 70, loyalty: 70, gold: 2800, food: 2200, troops: 3300, train: 65, horses: 200, guns: 350, adj: ["tosa", "aki", "yamashiro"] },
+            yamashiro: { id: "yamashiro", name: "山城", region: "近畿", x: 300, y: 210, owner: "ashikaga", yield: 1800, comm: 1800, def: 70, loyalty: 65, gold: 3000, food: 2000, troops: 2500, train: 55, horses: 200, guns: 300, adj: ["settsu", "omi"] },
+            omi:       { id: "omi",    name: "近江", region: "近畿", x: 345, y: 190, owner: "azai",    yield: 1550, comm: 1200, def: 75, loyalty: 78, gold: 1800, food: 2200, troops: 3000, train: 70, horses: 250, guns: 200, adj: ["yamashiro", "owari", "kaga"] },
+            owari:     { id: "owari",   name: "尾張", region: "中部", x: 395, y: 215, owner: "oda",     yield: 1500, comm: 1300, def: 80, loyalty: 85, gold: 2500, food: 3000, troops: 4000, train: 80, horses: 400, guns: 400, adj: ["omi", "mikawa", "shinano"] },
+            mikawa:    { id: "mikawa",  name: "三河", region: "中部", x: 430, y: 240, owner: "tokugawa",yield: 1100, comm: 800,  def: 70, loyalty: 90, gold: 1300, food: 1600, troops: 3200, train: 85, horses: 350, guns: 150, adj: ["owari", "suruga"] },
+            suruga:    { id: "suruga", name: "駿河", region: "中部", x: 480, y: 245, owner: "imagawa", yield: 1300, comm: 1000, def: 65, loyalty: 72, gold: 1500, food: 1800, troops: 3000, train: 65, horses: 200, guns: 180, adj: ["mikawa", "kai", "sagami"] },
+            kai:       { id: "kai",    name: "甲斐", region: "中部", x: 485, y: 195, owner: "takeda",  yield: 1300, comm: 950,  def: 80, loyalty: 92, gold: 2200, food: 2100, troops: 4500, train: 92, horses: 800, guns: 150, adj: ["suruga", "shinano", "sagami"] },
+            shinano:   { id: "shinano", name: "信濃", region: "中部", x: 440, y: 155, owner: "sanada",  yield: 1150, comm: 700,  def: 85, loyalty: 78, gold: 1100, food: 1500, troops: 2500, train: 75, horses: 400, guns: 100, adj: ["owari", "kai", "echigo", "kaga"] },
+            kaga:      { id: "kaga",   name: "加賀", region: "近畿", x: 380, y: 125, owner: "ikko",    yield: 1200, comm: 750,  def: 60, loyalty: 95, gold: 1000, food: 2000, troops: 3500, train: 60, horses: 150, guns: 250, adj: ["omi", "shinano", "echigo"] },
+            sagami:    { id: "sagami", name: "相模", region: "関東", x: 540, y: 210, owner: "hojo",    yield: 1450, comm: 1100, def: 90, loyalty: 82, gold: 2000, food: 2200, troops: 3800, train: 80, horses: 300, guns: 200, adj: ["suruga", "kai", "mutsu"] },
+            echigo:    { id: "echigo", name: "越後", region: "中部", x: 490, y: 100, owner: "uesugi",  yield: 1500, comm: 900,  def: 75, loyalty: 88, gold: 1800, food: 2500, troops: 4200, train: 90, horses: 500, guns: 200, adj: ["shinano", "kaga", "dewa"] },
+            dewa:      { id: "dewa",  name: "出羽", region: "奥羽", x: 570, y: 75,  owner: "mogami",  yield: 1100, comm: 700,  def: 55, loyalty: 70, gold: 1200, food: 1600, troops: 2600, train: 60, horses: 250, guns: 80,  adj: ["echigo", "mutsu"] },
+            mutsu:     { id: "mutsu", name: "陸奥", region: "奥羽", x: 635, y: 95,  owner: "date",    yield: 1200, comm: 800,  def: 60, loyalty: 75, gold: 1400, food: 1800, troops: 3200, train: 65, horses: 300, guns: 100, adj: ["sagami", "dewa"] }
+        };
+
+        const DAIMYO = {
+            oda:       { name: "織田信長", lead: 98, val: 88, int: 95, pol: 92, health: 100, color: "#dc2626", flag: "織", avatar: " Oda ", home: "owari" },
+            takeda:    { name: "武田信玄", lead: 99, val: 86, int: 96, pol: 90, health: 100, color: "#b91c1c", flag: "武", avatar: " Takeda ", home: "kai" },
+            uesugi:    { name: "上杉謙信", lead: 100,val: 98, int: 84, pol: 72, health: 100, color: "#2563eb", flag: "上", avatar: " Uesugi ", home: "echigo" },
+            hojo:      { name: "北条氏康", lead: 92, val: 82, int: 90, pol: 98, health: 100, color: "#d97706", flag: "北", avatar: " Hojo ", home: "sagami" },
+            tokugawa:  { name: "徳川家康", lead: 93, val: 85, int: 92, pol: 96, health: 100, color: "#16a34a", flag: "徳", avatar: " Toku ", home: "mikawa" },
+            date:      { name: "伊達政宗", lead: 90, val: 91, int: 88, pol: 84, health: 100, color: "#9333ea", flag: "伊", avatar: " Date ", home: "mutsu" },
+            mori:      { name: "毛利元就", lead: 95, val: 80, int: 100,pol: 96, health: 100, color: "#0891b2", flag: "毛", avatar: " Mori ", home: "aki" },
+            shimazu:   { name: "島津義久", lead: 91, val: 93, int: 84, pol: 80, health: 100, color: "#7c3aed", flag: "島", avatar: " Shima ", home: "satsuma" },
+            chosokabe: { name: "長宗我部元親", lead: 88, val: 86, int: 83, pol: 80, health: 100, color: "#e11d48", flag: "長", avatar: " Choso ", home: "tosa" },
+            imagawa:   { name: "今川義元", lead: 65, val: 58, int: 70, pol: 82, health: 100, color: "#db2777", flag: "今", avatar: " Ima ", home: "suruga" },
+            azai:      { name: "浅井長政", lead: 83, val: 87, int: 74, pol: 70, health: 100, color: "#4f46e5", flag: "浅", avatar: " Azai ", home: "omi" },
+            sanada:    { name: "真田昌幸", lead: 86, val: 78, int: 98, pol: 80, health: 100, color: "#c026d3", flag: "真", avatar: " Sanada ", home: "shinano" },
+            mogami:    { name: "最上義光", lead: 82, val: 75, int: 90, pol: 85, health: 100, color: "#0284c7", flag: "最", avatar: " Moga ", home: "dewa" },
+            ashikaga:  { name: "足利義昭", lead: 42, val: 35, int: 62, pol: 76, health: 100, color: "#ca8a04", flag: "足", avatar: " Ashi ", home: "yamashiro" },
+            miyoshi:   { name: "三好長慶", lead: 80, val: 72, int: 82, pol: 85, health: 100, color: "#059669", flag: "三", avatar: " Miyo ", home: "settsu" },
+            ikko:      { name: "本願寺顕如", lead: 82, val: 62, int: 88, pol: 90, health: 100, color: "#ea580c", flag: "本", avatar: " Ikko ", home: "kaga" }
+        };
+
+        const Game = {
+            year: 1560,
+            month: 4, // 1560年 4月
+            seasonIndex: 0, // 0:春, 1:夏, 2:秋, 3:冬
+            seasons: ["春", "夏", "秋", "冬"],
+            playerDaimyo: "oda",
+            selectedProvId: "owari",
+            actionPoints: 2,
+            maxActionPoints: 2,
+
+            init() {
+                this.buildDaimyoSelectionGrid();
+                this.bindEvents();
+                this.renderUI();
+                this.drawMap();
+            },
+
+            buildDaimyoSelectionGrid() {
+                const grid = document.getElementById('daimyo-grid');
+                grid.innerHTML = "";
+                for (let key in DAIMYO) {
+                    const d = DAIMYO[key];
+                    const prov = PROVINCES[d.home];
+                    const card = document.createElement('div');
+                    card.className = "md-btn p-2.5 rounded cursor-pointer flex flex-col items-center justify-between text-center border hover:scale-105 transition-transform";
+                    card.style.borderColor = d.color;
+                    card.innerHTML = `
+                        <div class="w-8 h-8 rounded flex items-center justify-center font-bold text-white text-base shadow mb-1 border border-amber-300" style="background:${d.color}">
+                            ${d.flag}
+                        </div>
+                        <div class="font-bold text-amber-300 text-xs">${d.name}</div>
+                        <div class="text-[10px] text-gray-300 mt-1">本領: 【${prov.name}】</div>
+                        <div class="text-[9px] text-gray-400 mt-0.5">統:${d.lead} 武:${d.val} 知:${d.int} 政:${d.pol}</div>
+                    `;
+                    card.onclick = () => {
+                        this.playerDaimyo = key;
+                        this.selectedProvId = d.home;
+                        document.getElementById('daimyo-select-modal').classList.add('hidden');
+                        this.log(`【当主就任】 あなたは ${d.name} として【${prov.name}】より天下統一の旗揚げを行いました！`, "warning");
+                        this.renderUI();
+                        this.drawMap();
+                    };
+                    grid.appendChild(card);
+                }
+            },
+
+            log(msg, type = "normal") {
+                const logBox = document.getElementById('game-log');
+                const div = document.createElement('div');
+                if (type === "warning") div.className = "text-yellow-300 font-bold";
+                if (type === "danger") div.className = "text-red-400 font-bold";
+                if (type === "success") div.className = "text-emerald-300 font-bold";
+                if (type === "cpu") div.className = "text-cyan-300";
+                div.innerText = `[${this.year}年 ${this.month}月] ${msg}`;
+                logBox.appendChild(div);
+                logBox.scrollTop = logBox.scrollHeight;
+            },
+
+            // Drawing Japan Overview Map Styled after Megadrive Screenshot 1
+            drawMap() {
+                const canvas = document.getElementById('map-canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // 1. Megadrive Wood Texture Outer Border & Sea Background
+                ctx.fillStyle = "#1e1309";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Sea Water Pattern
+                ctx.fillStyle = "#163a5c";
+                ctx.fillRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+                // Inner Sea Blue Wave Lines
+                ctx.strokeStyle = "#215383";
+                ctx.lineWidth = 1.5;
+                for (let y = 20; y < canvas.height - 20; y += 20) {
+                    ctx.beginPath();
+                    ctx.moveTo(10, y);
+                    ctx.lineTo(canvas.width - 10, y);
+                    ctx.stroke();
+                }
+
+                // 2. Draw Realistic Japan Land Mass Polygons (Tan/Gold Land)
+                ctx.fillStyle = "#d8be68";
+                ctx.strokeStyle = "#4a3517";
+                ctx.lineWidth = 3;
+
+                // Honshu Silhouette
+                ctx.beginPath();
+                ctx.moveTo(210, 270);
+                ctx.lineTo(280, 250);
+                ctx.lineTo(350, 210);
+                ctx.lineTo(410, 230);
+                ctx.lineTo(470, 260);
+                ctx.lineTo(560, 220);
+                ctx.lineTo(650, 100);
+                ctx.lineTo(580, 70);
+                ctx.lineTo(480, 80);
+                ctx.lineTo(380, 110);
+                ctx.lineTo(320, 170);
+                ctx.lineTo(230, 220);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Kyushu & Shikoku Silhouette
+                ctx.beginPath();
+                ctx.ellipse(85, 340, 55, 35, -0.2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.ellipse(170, 320, 45, 25, 0.1, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // 3. Draw Inter-Province Highways (Connections)
+                ctx.strokeStyle = "#281b0a";
+                ctx.lineWidth = 3;
+                for (let pid in PROVINCES) {
+                    const p1 = PROVINCES[pid];
+                    p1.adj.forEach(adjId => {
+                        const p2 = PROVINCES[adjId];
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    });
+                }
+
+                // 4. Draw Megadrive Top Left Date Box & Fan Graphic (as in Image 1 screenshot)
+                ctx.fillStyle = "#2b0f0a";
+                ctx.fillRect(20, 20, 150, 45);
+                ctx.strokeStyle = "#eab308";
+                ctx.lineWidth = 2.5;
+                ctx.strokeRect(20, 20, 150, 45);
+
+                ctx.fillStyle = "#fef08a";
+                ctx.font = "bold 20px 'DotGothic16', monospace";
+                ctx.textAlign = "left";
+                ctx.fillText(`${this.year}年 ${this.month}月`, 32, 50);
+
+                // Fan Graphic (🪭 扇)
+                ctx.beginPath();
+                ctx.arc(195, 35, 18, Math.PI, 0, false);
+                ctx.fillStyle = "#dc2626";
+                ctx.fill();
+                ctx.strokeStyle = "#fef08a";
+                ctx.stroke();
+
+                // 5. Draw Province Square Crest Badges (Image 1 style)
+                for (let pid in PROVINCES) {
+                    const p = PROVINCES[pid];
+                    const daimyo = DAIMYO[p.owner];
+                    const isSelected = (pid === this.selectedProvId);
+                    const isPlayerOwned = (p.owner === this.playerDaimyo);
+
+                    // Crest Badge Background Box (26x26)
+                    const bx = p.x - 13;
+                    const by = p.y - 13;
+
+                    ctx.fillStyle = daimyo.color;
+                    ctx.fillRect(bx, by, 26, 26);
+
+                    ctx.lineWidth = isSelected ? 3.5 : (isPlayerOwned ? 2 : 1);
+                    ctx.strokeStyle = isSelected ? "#ffff00" : (isPlayerOwned ? "#38bdf8" : "#222222");
+                    ctx.strokeRect(bx, by, 26, 26);
+
+                    // Kanji Flag Mon
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "bold 13px 'DotGothic16', monospace";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(daimyo.flag, p.x, p.y);
+
+                    // Province Name Label below
+                    ctx.fillStyle = isPlayerOwned ? "#00f0ff" : "#ffffff";
+                    ctx.font = "bold 11px 'DotGothic16', monospace";
+                    ctx.fillText(p.name, p.x, p.y + 22);
+                }
+            },
+
+            selectProvince(pid) {
+                this.selectedProvId = pid;
+                SoundEngine.playClick();
+                this.drawMap();
+                this.renderUI();
+            },
+
+            renderUI() {
+                const prov = PROVINCES[this.selectedProvId];
+                const daimyo = DAIMYO[prov.owner];
+                const isPlayer = (prov.owner === this.playerDaimyo);
+
+                document.getElementById('date-display').innerText = `${this.year}年 ${this.month}月（${this.seasons[this.seasonIndex]}）`;
+                document.getElementById('cur-prov-title').innerText = `【${prov.name}】 ${daimyo.name} 領`;
+                document.getElementById('cur-prov-owner').innerText = isPlayer ? "自軍本領" : "他家領国";
+                document.getElementById('cur-prov-owner').className = isPlayer ? 
+                    "px-2 py-0.5 rounded text-[10px] bg-amber-900/80 text-amber-200 border border-amber-600" :
+                    "px-2 py-0.5 rounded text-[10px] bg-red-900/80 text-red-200 border border-red-600";
+
+                document.getElementById('daimyo-name').innerText = daimyo.name;
+                document.getElementById('stat-lead').innerText = daimyo.lead;
+                document.getElementById('stat-val').innerText = daimyo.val;
+                document.getElementById('stat-int').innerText = daimyo.int;
+                document.getElementById('stat-pol').innerText = daimyo.pol;
+                document.getElementById('stat-health').innerText = `${daimyo.health} / 100`;
+
+                document.getElementById('stat-yield').innerText = prov.yield;
+                document.getElementById('stat-comm').innerText = prov.comm;
+                document.getElementById('stat-def').innerText = prov.def;
+                document.getElementById('stat-loyalty').innerText = prov.loyalty;
+
+                document.getElementById('stat-gold').innerText = `${prov.gold} 金`;
+                document.getElementById('stat-food').innerText = `${prov.food} 米`;
+                document.getElementById('stat-troops').innerText = prov.troops;
+                document.getElementById('stat-train').innerText = prov.train;
+                document.getElementById('stat-horses').innerText = prov.horses;
+                document.getElementById('stat-guns').innerText = prov.guns;
+
+                document.getElementById('action-point-text').innerText = `行動力: ${this.actionPoints} / ${this.maxActionPoints}`;
+
+                const cmdBtns = document.querySelectorAll('.cmd-btn');
+                cmdBtns.forEach(btn => {
+                    btn.disabled = (!isPlayer || this.actionPoints <= 0);
+                });
+            },
+
+            executeDomesticCommand(type) {
+                const prov = PROVINCES[this.selectedProvId];
+                const daimyo = DAIMYO[prov.owner];
+
+                if (this.actionPoints <= 0 || daimyo.health <= 15) {
+                    if (daimyo.health <= 15) this.log("当主の体調が悪化しています。「休養」が必要です！", "warning");
+                    return;
+                }
+
+                if (type === 'farming') {
+                    if (prov.gold < 200) { this.log("軍資金不足（200金必要）", "warning"); return; }
+                    prov.gold -= 200;
+                    const gain = Math.floor(70 + daimyo.pol * 0.85);
+                    prov.yield += gain;
+                    daimyo.health = Math.max(10, daimyo.health - 5);
+                    this.actionPoints--;
+                    this.log(`${prov.name}で開墾を実施。石高 +${gain}（現:${prov.yield}）`, "success");
+                } 
+                else if (type === 'commerce') {
+                    if (prov.gold < 200) { this.log("軍資金不足（200金必要）", "warning"); return; }
+                    prov.gold -= 200;
+                    const gain = Math.floor(65 + daimyo.pol * 0.95);
+                    prov.comm += gain;
+                    daimyo.health = Math.max(10, daimyo.health - 5);
+                    this.actionPoints--;
+                    this.log(`${prov.name}で商業を奨励。町値 +${gain}（現:${prov.comm}）`, "success");
+                }
+                else if (type === 'fortify') {
+                    if (prov.gold < 300) { this.log("軍資金不足（300金必要）", "warning"); return; }
+                    prov.gold -= 300;
+                    prov.def = Math.min(100, prov.def + 15);
+                    daimyo.health = Math.max(10, daimyo.health - 5);
+                    this.actionPoints--;
+                    this.log(`${prov.name}の治水・城郭を強化。城防御 +15（現:${prov.def}）`, "success");
+                }
+                else if (type === 'give') {
+                    if (prov.food < 300) { this.log("施す兵糧不足（300米必要）", "warning"); return; }
+                    prov.food -= 300;
+                    prov.loyalty = Math.min(100, prov.loyalty + 12);
+                    this.actionPoints--;
+                    this.log(`${prov.name}の民に米を給付。民忠 +12（現:${prov.loyalty}）`, "success");
+                }
+                else if (type === 'draft') {
+                    if (prov.gold < 300) { this.log("徴兵費用不足（300金必要）", "warning"); return; }
+                    prov.gold -= 300;
+                    prov.troops += 1000;
+                    prov.loyalty = Math.max(10, prov.loyalty - 8);
+                    prov.train = Math.max(10, Math.floor(prov.train * 0.85));
+                    daimyo.health = Math.max(10, daimyo.health - 8);
+                    this.actionPoints--;
+                    this.log(`${prov.name}で1000人を徴兵（民忠・熟練度低下）`, "success");
+                }
+                else if (type === 'train') {
+                    if (prov.gold < 150) { this.log("訓練資金不足（150金必要）", "warning"); return; }
+                    prov.gold -= 150;
+                    const gain = Math.floor(12 + daimyo.lead * 0.15);
+                    prov.train = Math.min(100, prov.train + gain);
+                    daimyo.health = Math.max(10, daimyo.health - 6);
+                    this.actionPoints--;
+                    this.log(`${prov.name}の部隊を訓練。熟練度 +${gain}%（現:${prov.train}%）`, "success");
+                }
+                else if (type === 'rest') {
+                    daimyo.health = Math.min(100, daimyo.health + 35);
+                    this.actionPoints--;
+                    this.log(`${daimyo.name} は湯治・休養を取り体調が回復（現:${daimyo.health}）`, "success");
+                }
+
+                SoundEngine.playClick();
+                this.renderUI();
+            },
+
+            openNinjaModal() {
+                const prov = PROVINCES[this.selectedProvId];
+                const enemyAdjs = prov.adj.map(id => PROVINCES[id]).filter(p => p.owner !== this.playerDaimyo);
+
+                if (enemyAdjs.length === 0) {
+                    this.log("隣接する敵国が存在しません。", "warning");
+                    return;
+                }
+
+                const body = document.getElementById('modal-body');
+                body.innerHTML = `
+                    <div class="text-xs space-y-2">
+                        <div>
+                            <label class="block text-gray-300">対象の他国:</label>
+                            <select id="ninja-target" class="w-full bg-black border border-amber-700 p-1 rounded text-yellow-300">
+                                ${enemyAdjs.map(p => `<option value="${p.id}">${p.name}（${DAIMYO[p.owner].name}領）</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-300">忍びの任務 (要200金):</label>
+                            <select id="ninja-task" class="w-full bg-black border border-amber-700 p-1 rounded text-yellow-300">
+                                <option value="spy">探察 (詳細な兵力・物資の調査)</option>
+                                <option value="sabotage">流言 (敵民忠・兵の乱れを誘発)</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+
+                showModal("忍者の派遣", "隠密を潜入させ調査・流言飛語を工作します。", () => {
+                    if (prov.gold < 200) { Game.log("資金不足（200金必要）", "warning"); return; }
+                    const targetId = document.getElementById('ninja-target').value;
+                    const task = document.getElementById('ninja-task').value;
+                    const targetP = PROVINCES[targetId];
+
+                    prov.gold -= 200;
+                    Game.actionPoints--;
+
+                    if (task === 'spy') {
+                        Game.log(`🥷 探察完了！ ${targetP.name}（${DAIMYO[targetP.owner].name}）: 兵士${targetP.troops}名 / 金${targetP.gold} / 米${targetP.food} / 鉄砲${targetP.guns}`, "success");
+                    } else {
+                        targetP.loyalty = Math.max(10, targetP.loyalty - 15);
+                        Game.log(`🥷 流言工作成功！ ${targetP.name}の民忠が低下（現:${targetP.loyalty}）`, "success");
+                    }
+                    Game.renderUI();
+                });
+            },
+
+            openMerchantModal() {
+                const prov = PROVINCES[this.selectedProvId];
+                const body = document.getElementById('modal-body');
+                body.innerHTML = `
+                    <div class="text-xs space-y-2">
+                        <div>
+                            <label class="block text-gray-300">軍馬購入 (100頭 = 300金):</label>
+                            <input type="number" id="buy-horses" value="100" step="100" min="0" class="w-full bg-black border border-amber-700 p-1 rounded text-yellow-300">
+                        </div>
+                        <div>
+                            <label class="block text-gray-300">鉄砲購入 (100丁 = 500金):</label>
+                            <input type="number" id="buy-guns" value="100" step="100" min="0" class="w-full bg-black border border-amber-700 p-1 rounded text-yellow-300">
+                        </div>
+                    </div>
+                `;
+
+                showModal("商人との取引", "軍馬や鉄砲を購入し合戦での打撃力を高めます。", () => {
+                    const horses = parseInt(document.getElementById('buy-horses').value) || 0;
+                    const guns = parseInt(document.getElementById('buy-guns').value) || 0;
+                    const totalCost = (horses / 100) * 300 + (guns / 100) * 500;
+
+                    if (totalCost > prov.gold) {
+                        Game.log("軍資金が足らず取引できません。", "warning");
+                        return;
+                    }
+
+                    prov.gold -= totalCost;
+                    prov.horses += horses;
+                    prov.guns += guns;
+                    Game.actionPoints--;
+                    Game.log(`${prov.name}で軍馬 ${horses}頭, 鉄砲 ${guns}丁を調達（支出:${totalCost}金）`, "success");
+                    Game.renderUI();
+                });
+            },
+
+            openTransportModal() {
+                const srcProv = PROVINCES[this.selectedProvId];
+                const adjPlayerProvs = srcProv.adj.map(id => PROVINCES[id]).filter(p => p.owner === this.playerDaimyo);
+
+                if (adjPlayerProvs.length === 0) {
+                    this.log("隣接する自領が存在しません。", "warning");
+                    return;
+                }
+
+                const body = document.getElementById('modal-body');
+                body.innerHTML = `
+                    <div class="text-xs space-y-2">
+                        <div>
+                            <label class="block text-gray-300">輸送先自領:</label>
+                            <select id="trans-target" class="w-full bg-black border border-amber-700 p-1 rounded text-yellow-300">
+                                ${adjPlayerProvs.map(p => `<option value="${p.id}">${p.name} (自領)</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-300">輸送する金 (所持:${srcProv.gold}):</label>
+                            <input type="number" id="trans-gold" value="500" max="${srcProv.gold}" min="0" class="w-full bg-black border border-amber-700 p-1 rounded text-yellow-300">
+                        </div>
+                        <div>
+                            <label class="block text-gray-300">輸送する米 (所持:${srcProv.food}):</label>
+                            <input type="number" id="trans-food" value="1000" max="${srcProv.food}" min="0" class="w-full bg-black border border-amber-700 p-1 rounded text-yellow-300">
+                        </div>
+                    </div>
+                `;
+
+                showModal("物資輸送", "前線や後方の自領へ金米を輸送します。", () => {
+                    const targetId = document.getElementById('trans-target').value;
+                    const gold = parseInt(document.getElementById('trans-gold').value) || 0;
+                    const food = parseInt(document.getElementById('trans-food').value) || 0;
+                    const dstProv = PROVINCES[targetId];
+
+                    if (gold > srcProv.gold || food > srcProv.food) {
+                        Game.log("輸送量が所持量を超えています。", "warning");
+                        return;
+                    }
+
+                    srcProv.gold -= gold;
+                    srcProv.food -= food;
+                    dstProv.gold += gold;
+                    dstProv.food += food;
+                    Game.actionPoints--;
+                    Game.log(`${srcProv.name}から${dstProv.name}へ (金:${gold}, 米:${food}) を輸送。`, "success");
+                    Game.renderUI();
+                });
+            },
+
+            openAttackModal() {
+                const attacker = PROVINCES[this.selectedProvId];
+                const enemyAdjs = attacker.adj.map(id => PROVINCES[id]).filter(p => p.owner !== this.playerDaimyo);
+
+                if (enemyAdjs.length === 0) {
+                    this.log("侵攻可能な隣接敵国がありません！", "warning");
+                    return;
+                }
+
+                if (attacker.troops < 800) {
+                    this.log("出陣には最低800人以上の兵力が必要です。", "warning");
+                    return;
+                }
+
+                const body = document.getElementById('modal-body');
+                body.innerHTML = `
+                    <div class="text-xs space-y-2">
+                        <div>
+                            <label class="block text-gray-300">侵攻対象の敵国:</label>
+                            <select id="attack-target" class="w-full bg-black border border-amber-700 p-1 rounded text-red-300">
+                                ${enemyAdjs.map(p => `<option value="${p.id}">${p.name}（${DAIMYO[p.owner].name}領 / 兵${p.troops}）</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-300">出撃兵力 (所持:${attacker.troops}):</label>
+                            <input type="number" id="attack-troops" value="${Math.floor(attacker.troops * 0.8)}" max="${attacker.troops}" min="800" class="w-full bg-black border border-amber-700 p-1 rounded text-amber-300">
+                        </div>
+                    </div>
+                `;
+
+                showModal("天下布武・出陣", "軍勢を率いて敵領へ侵攻し、合戦を開始します！", () => {
+                    const targetId = document.getElementById('attack-target').value;
+                    const sendTroops = parseInt(document.getElementById('attack-troops').value) || 800;
+
+                    if (sendTroops > attacker.troops) {
+                        Game.log("出撃兵力が足りません。", "warning");
+                        return;
+                    }
+
+                    const defender = PROVINCES[targetId];
+                    TacticalBattle.initBattle(attacker, defender, sendTroops);
+                });
+            },
+
+            runCpuTurnEngine() {
+                document.getElementById('phase-indicator').innerText = "【CPU自動思考中】 各国の大名が行動中...";
+                
+                for (let pid in PROVINCES) {
+                    const p = PROVINCES[pid];
+                    if (p.owner === this.playerDaimyo) continue; // Skip Player
+
+                    const d = DAIMYO[p.owner];
+
+                    // CPU Domestic Growth
+                    if (p.gold > 500) {
+                        if (p.troops < 3500) {
+                            p.troops += 800;
+                            p.gold -= 250;
+                        } else if (p.comm < 1200) {
+                            p.comm += 60;
+                            p.gold -= 180;
+                        } else {
+                            p.yield += 60;
+                            p.gold -= 180;
+                        }
+                    }
+
+                    // CPU Weapon Procurement
+                    if (p.gold > 1000 && p.guns < 300) {
+                        p.guns += 150;
+                        p.gold -= 400;
+                    }
+
+                    // CPU Invasion Decision & AI vs AI Wars
+                    const enemyNeighbors = p.adj.map(id => PROVINCES[id]).filter(adjP => adjP.owner !== p.owner);
+                    if (p.troops >= 3500 && enemyNeighbors.length > 0 && Math.random() < 0.40) {
+                        enemyNeighbors.sort((a, b) => a.troops - b.troops);
+                        const target = enemyNeighbors[0];
+
+                        if (p.troops > target.troops * 1.2) {
+                            const attTroops = Math.floor(p.troops * 0.75);
+                            
+                            if (target.owner === this.playerDaimyo) {
+                                this.log(`⚠️ 【緊急急報！】 ${d.name}（${p.name}）が我が領国【${target.name}】へ侵攻を開始！`, "danger");
+                                TacticalBattle.initBattle(p, target, attTroops, true);
+                                return;
+                            } else {
+                                const winner = (attTroops * (d.lead / 80) > target.troops * (DAIMYO[target.owner].lead / 80));
+                                if (winner) {
+                                    this.log(`⚔️ 【合戦勃発】 ${d.name}軍が ${DAIMYO[target.owner].name}領【${target.name}】を攻略・奪取！`, "cpu");
+                                    target.owner = p.owner;
+                                    target.troops = Math.floor(attTroops * 0.6);
+                                    p.troops -= attTroops;
+                                } else {
+                                    this.log(`⚔️ 【合戦勃発】 ${d.name}軍の【${target.name}】侵攻は防衛軍により撃退された。`, "cpu");
+                                    p.troops -= Math.floor(attTroops * 0.4);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                document.getElementById('phase-indicator').innerText = "【評定フェイズ】 命令を選択してください";
+            },
+
+            nextTurn() {
+                this.month += 3;
+                if (this.month > 12) {
+                    this.month = 1;
+                    this.year++;
+                }
+
+                this.seasonIndex = Math.floor((this.month - 1) / 3);
+
+                this.log(`===== 【${this.year}年 ${this.month}月】 季節がめぐった =====`, "warning");
+
+                // Autumn Harvest
+                if (this.seasonIndex === 2) {
+                    for (let pid in PROVINCES) {
+                        const p = PROVINCES[pid];
+                        const goldGain = Math.floor(p.comm * 1.2);
+                        const foodGain = Math.floor(p.yield * 1.5);
+                        p.gold += goldGain;
+                        p.food += foodGain;
+                        if (p.owner === this.playerDaimyo) {
+                            this.log(`🌾 秋の収穫！ ${p.name}にて年貢（金+${goldGain}, 兵糧+${foodGain}）を納入。`, "success");
+                        }
+                    }
+                }
+
+                // Random Events
+                if (Math.random() < 0.25) {
+                    const pList = Object.values(PROVINCES);
+                    const randP = pList[Math.floor(Math.random() * pList.length)];
+                    const events = [
+                        { name: "金山発見！", run: () => { randP.gold += 800; Game.log(`✨ ${randP.name}にて新たな金山が採掘され、金+800を獲得！`, "success"); } },
+                        { name: "豊作", run: () => { randP.food += 1000; Game.log(`🌾 ${randP.name}で大豊作が発生し、兵糧+1000！`, "success"); } },
+                        { name: "台風被害", run: () => { randP.yield = Math.max(500, randP.yield - 150); Game.log(`🌀 ${randP.name}を大台風が直撃し、石高が減少。`, "danger"); } }
+                    ];
+                    events[Math.floor(Math.random() * events.length)].run();
+                }
+
+                this.runCpuTurnEngine();
+
+                this.actionPoints = this.maxActionPoints;
+                this.renderUI();
+                this.drawMap();
+                this.checkVictory();
+            },
+
+            checkVictory() {
+                const owners = new Set(Object.values(PROVINCES).map(p => p.owner));
+                if (owners.size === 1 && owners.has(this.playerDaimyo)) {
+                    alert("【天下統一達成！】\n日ノ本全十六箇国を平定し、太平の世を築き上げました！");
+                }
+            },
+
+            bindEvents() {
+                const canvas = document.getElementById('map-canvas');
+                canvas.addEventListener('click', (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = canvas.width / rect.width;
+                    const scaleY = canvas.height / rect.height;
+                    const mx = (e.clientX - rect.left) * scaleX;
+                    const my = (e.clientY - rect.top) * scaleY;
+
+                    for (let pid in PROVINCES) {
+                        const p = PROVINCES[pid];
+                        if (Math.hypot(p.x - mx, p.y - my) <= 22) {
+                            this.selectProvince(pid);
+                            break;
+                        }
+                    }
+                });
+
+                canvas.addEventListener('mousemove', (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = canvas.width / rect.width;
+                    const scaleY = canvas.height / rect.height;
+                    const mx = (e.clientX - rect.left) * scaleX;
+                    const my = (e.clientY - rect.top) * scaleY;
+
+                    let hovered = false;
+                    for (let pid in PROVINCES) {
+                        const p = PROVINCES[pid];
+                        if (Math.hypot(p.x - mx, p.y - my) <= 22) {
+                            document.getElementById('hover-prov-name').innerText = `${p.name} （${DAIMYO[p.owner].name}領）`;
+                            document.getElementById('hover-prov-details').innerHTML = `
+                                地方:${p.region}<br>
+                                石高:${p.yield} / 町値:${p.comm}<br>
+                                兵力:${p.troops}名 (熟兵:${p.train}%)<br>
+                                馬:${p.horses} / 鉄砲:${p.guns}
+                            `;
+                            hovered = true;
+                            break;
+                        }
+                    }
+                    if (!hovered) {
+                        document.getElementById('hover-prov-name').innerText = "領地を選択";
+                        document.getElementById('hover-prov-details').innerText = "地図上の国をクリックして情報確認・政略を行います。";
+                    }
+                });
+
+                document.querySelectorAll('.cmd-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const cmd = btn.getAttribute('data-cmd');
+                        if (['farming', 'commerce', 'fortify', 'give', 'draft', 'train', 'rest'].includes(cmd)) {
+                            this.executeDomesticCommand(cmd);
+                        } else if (cmd === 'merchant') {
+                            this.openMerchantModal();
+                        } else if (cmd === 'ninja') {
+                            this.openNinjaModal();
+                        } else if (cmd === 'transport') {
+                            this.openTransportModal();
+                        } else if (cmd === 'attack') {
+                            this.openAttackModal();
+                        }
+                    });
+                });
+
+                document.getElementById('end-turn-btn').onclick = () => {
+                    SoundEngine.playClick();
+                    this.nextTurn();
+                };
+
+                document.getElementById('sound-btn').onclick = () => {
+                    SoundEngine.toggleSound();
+                };
+
+                document.getElementById('select-daimyo-btn').onclick = () => {
+                    document.getElementById('daimyo-select-modal').classList.remove('hidden');
+                };
+            }
+        };
+
+        const TacticalBattle = {
+            canvas: null,
+            ctx: null,
+            turn: 1,
+            maxTurns: 15,
+            weather: "clear", // clear, rain
+            attackerProv: null,
+            defenderProv: null,
+            isDefenseMode: false,
+            units: [],
+            selectedUnit: null,
+            gridCols: 9,
+            gridRows: 6,
+            tileSize: 64,
+
+            // Terrain Types: 0: Plain, 1: Forest, 2: Mountain, 3: River (Lake Biwa water style), 4: Castle
+            terrainGrid: [
+                [0, 0, 1, 1, 0, 0, 0, 0, 0],
+                [0, 1, 1, 3, 3, 0, 0, 2, 0],
+                [0, 0, 3, 3, 3, 3, 2, 4, 4],
+                [0, 0, 3, 3, 3, 0, 2, 4, 4],
+                [0, 2, 0, 3, 3, 0, 0, 2, 0],
+                [0, 2, 2, 0, 0, 0, 0, 0, 0]
+            ],
+
+            terrainStats: {
+                0: { name: "平地", mpCost: 1, defBonus: 0, color: "#2e5223" },
+                1: { name: "森林", mpCost: 2, defBonus: 0.20, color: "#143810" },
+                2: { name: "山岳", mpCost: 2, defBonus: 0.30, color: "#54462e" },
+                3: { name: "河川", mpCost: 3, defBonus: -0.10, color: "#1b4d82" }, // Lake Biwa blue
+                4: { name: "城郭", mpCost: 1, defBonus: 0.40, color: "#475569" }
+            },
+
+            initBattle(attacker, defender, attackingTroops, defenseMode = false) {
+                this.attackerProv = attacker;
+                this.defenderProv = defender;
+                this.isDefenseMode = defenseMode;
+                this.turn = 1;
+                this.weather = Math.random() < 0.25 ? "rain" : "clear";
+
+                this.canvas = document.getElementById('battle-canvas');
+                this.ctx = this.canvas.getContext('2d');
+
+                const attDaimyo = DAIMYO[attacker.owner];
+                const defDaimyo = DAIMYO[defender.owner];
+
+                // Setup Left & Right Commander Side Panels
+                document.getElementById('b-att-name').innerText = attDaimyo.name;
+                document.getElementById('b-att-avatar').innerText = attDaimyo.flag;
+                document.getElementById('b-att-food').innerText = attacker.food;
+                document.getElementById('b-att-gold').innerText = attacker.gold;
+                document.getElementById('b-att-total-troops').innerText = attackingTroops;
+
+                document.getElementById('b-def-name').innerText = defDaimyo.name;
+                document.getElementById('b-def-avatar').innerText = defDaimyo.flag;
+
+                // Units setup with proper max MP and initial moved=false state
+                this.units = [
+                    // Player Units
+                    { id: "p1", name: `${attDaimyo.name} (本陣)`, team: "player", x: 0, y: 2, troops: Math.floor(attackingTroops * 0.5), type: "infantry", mp: 2, maxMp: 2, lead: attDaimyo.lead, moved: false },
+                    { id: "p2", name: "精鋭 騎兵隊", team: "player", x: 1, y: 0, troops: Math.floor(attackingTroops * 0.3), type: "cavalry", mp: 3, maxMp: 3, lead: attDaimyo.val, moved: false },
+                    { id: "p3", name: "鉄砲隊", team: "player", x: 0, y: 4, troops: Math.floor(attackingTroops * 0.2), type: "gunner", mp: 2, maxMp: 2, lead: attDaimyo.int, moved: false },
+
+                    // Enemy Units
+                    { id: "e1", name: `${defDaimyo.name} (敵本陣)`, team: "enemy", x: 7, y: 3, troops: Math.floor(defender.troops * 0.5), type: "infantry", mp: 2, maxMp: 2, lead: defDaimyo.lead, moved: false },
+                    { id: "e2", name: "敵 騎兵隊", team: "enemy", x: 7, y: 1, troops: Math.floor(defender.troops * 0.3), type: "cavalry", mp: 3, maxMp: 3, lead: defDaimyo.val, moved: false },
+                    { id: "e3", name: "敵 鉄砲隊", team: "enemy", x: 8, y: 4, troops: Math.floor(defender.troops * 0.2), type: "gunner", mp: 2, maxMp: 2, lead: defDaimyo.int, moved: false }
+                ];
+
+                this.selectedUnit = this.units[0];
+
+                document.getElementById('battle-modal').classList.remove('hidden');
+                document.getElementById('battle-title').innerText = defenseMode ? `【防衛戦】 ${attDaimyo.name}軍 の侵攻を迎撃！` : `【侵攻戦】 ${defender.name}・${defDaimyo.name}領 攻略戦`;
+                document.getElementById('battle-weather').innerHTML = this.weather === "rain" ? `<i class="fa-solid fa-cloud-showers-heavy text-blue-400"></i> 大雨 (鉄砲不可)` : `<i class="fa-solid fa-sun text-yellow-400"></i> 快晴`;
+
+                this.log(`合戦開戦！ ${attDaimyo.name}軍 (${attackingTroops}名) VS ${defDaimyo.name}軍 (${defender.troops}名)`);
+                this.bindBattleEvents();
+                this.renderBattle();
+            },
+
+            log(msg) {
+                const logBox = document.getElementById('battle-log');
+                const div = document.createElement('div');
+                div.innerText = msg;
+                logBox.appendChild(div);
+                logBox.scrollTop = logBox.scrollHeight;
+            },
+
+            // Drawing Tactical Grid Canvas Styled after Megadrive Screenshot 2
+            renderBattle() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw 3D Grid Terrain Tiles
+                for (let r = 0; r < this.gridRows; r++) {
+                    for (let c = 0; c < this.gridCols; c++) {
+                        const tType = this.terrainGrid[r][c];
+                        const tStat = this.terrainStats[tType];
+
+                        const x = c * this.tileSize;
+                        const y = r * this.tileSize;
+
+                        // Tile Base
+                        this.ctx.fillStyle = tStat.color;
+                        this.ctx.fillRect(x, y, this.tileSize, this.tileSize);
+
+                        // Grid Outline Shadow (Megadrive style)
+                        this.ctx.strokeStyle = "#1b2a16";
+                        this.ctx.lineWidth = 1.5;
+                        this.ctx.strokeRect(x, y, this.tileSize, this.tileSize);
+
+                        // Terrain Pixel Decorations
+                        this.ctx.font = "12px 'DotGothic16'";
+                        this.ctx.fillStyle = "rgba(255,255,255,0.4)";
+                        if (tType === 1) this.ctx.fillText("🌲", x + 6, y + 20);
+                        if (tType === 2) this.ctx.fillText("⛰️", x + 6, y + 20);
+                        if (tType === 3) this.ctx.fillText("🌊", x + 6, y + 20); // Lake Biwa water
+                        if (tType === 4) this.ctx.fillText("🏰", x + 6, y + 20);
+                    }
+                }
+
+                // Highlight Valid Movement Range for Selected Unit
+                if (this.selectedUnit && this.selectedUnit.team === "player" && !this.selectedUnit.moved) {
+                    this.ctx.fillStyle = "rgba(254, 240, 138, 0.35)";
+                    for (let r = 0; r < this.gridRows; r++) {
+                        for (let c = 0; c < this.gridCols; c++) {
+                            const dist = Math.abs(this.selectedUnit.x - c) + Math.abs(this.selectedUnit.y - r);
+                            const tCost = this.terrainStats[this.terrainGrid[r][c]].mpCost;
+                            if (dist > 0 && dist <= this.selectedUnit.mp && tCost <= this.selectedUnit.mp) {
+                                this.ctx.fillRect(c * this.tileSize + 2, r * this.tileSize + 2, this.tileSize - 4, this.tileSize - 4);
+                            }
+                        }
+                    }
+                }
+
+                // Render Units (Banners & Troop Count Display - Screenshot 2 style)
+                this.units.forEach(u => {
+                    const x = u.x * this.tileSize;
+                    const y = u.y * this.tileSize;
+                    const cx = x + this.tileSize / 2;
+                    const cy = y + this.tileSize / 2;
+
+                    // Unit Crest Circle / Icon
+                    this.ctx.beginPath();
+                    this.ctx.arc(cx, cy - 6, 18, 0, Math.PI * 2);
+                    this.ctx.fillStyle = u.team === "player" ? "#1e40af" : "#991b1b";
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = u.moved ? "#666666" : "#ffffff";
+                    this.ctx.lineWidth = 1.5;
+                    this.ctx.stroke();
+
+                    // Unit Type Icon (🐎, ⚔️, 🔫)
+                    this.ctx.fillStyle = "#ffffff";
+                    this.ctx.font = "bold 11px 'DotGothic16'";
+                    this.ctx.textAlign = "center";
+                    this.ctx.textBaseline = "middle";
+                    const symbol = u.type === "cavalry" ? "🐎" : (u.type === "gunner" ? "🔫" : "⚔️");
+                    this.ctx.fillText(symbol, cx, cy - 6);
+
+                    // Troop Number Label right underneath (e.g. 14, 27, 36) - Megadrive screenshot 2 style!
+                    this.ctx.font = "bold 12px 'DotGothic16', monospace";
+                    this.ctx.fillStyle = "#ffff00";
+                    this.ctx.strokeStyle = "#000000";
+                    this.ctx.lineWidth = 2.5;
+                    const countStr = `${Math.ceil(u.troops / 100)}`; // Display in hundreds
+                    this.ctx.strokeText(countStr, cx, cy + 18);
+                    this.ctx.fillText(countStr, cx, cy + 18);
+
+                    // Selected White Cursor Rectangle (Megadrive Screenshot 2 style!)
+                    if (this.selectedUnit && this.selectedUnit.id === u.id) {
+                        this.ctx.strokeStyle = "#ffffff";
+                        this.ctx.lineWidth = 3.5;
+                        this.ctx.strokeRect(x + 2, y + 2, this.tileSize - 4, this.tileSize - 4);
+                    }
+                });
+
+                this.updateBattleUI();
+            },
+
+            updateBattleUI() {
+                document.getElementById('battle-turn-counter').innerText = `日: ${this.turn} / ${this.maxTurns}`;
+
+                if (this.selectedUnit) {
+                    const u = this.selectedUnit;
+                    const tStat = this.terrainStats[this.terrainGrid[u.y][u.x]];
+                    document.getElementById('battle-unit-details').innerHTML = `
+                        <div class="font-bold text-yellow-300">${u.name}</div>
+                        <div>所属: ${u.team === "player" ? "自軍" : "敵軍"}</div>
+                        <div>兵力: <span class="text-emerald-400 font-bold">${u.troops}</span> 名</div>
+                        <div>状態: ${u.moved ? "行動済" : "未行動"}</div>
+                    `;
+
+                    const isPlayerTurn = (u.team === "player" && !u.moved);
+                    document.getElementById('b-cmd-attack').disabled = !isPlayerTurn;
+                    document.getElementById('b-cmd-shoot').disabled = !(isPlayerTurn && u.type === "gunner" && this.weather !== "rain");
+                    document.getElementById('b-cmd-tactic').disabled = !isPlayerTurn;
+                    document.getElementById('b-cmd-wait').disabled = !isPlayerTurn;
+                } else {
+                    document.getElementById('battle-unit-details').innerText = "部隊選択";
+                    document.getElementById('b-cmd-attack').disabled = true;
+                    document.getElementById('b-cmd-shoot').disabled = true;
+                    document.getElementById('b-cmd-tactic').disabled = true;
+                    document.getElementById('b-cmd-wait').disabled = true;
+                }
+            },
+
+            bindBattleEvents() {
+                this.canvas.onclick = (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const scaleX = this.canvas.width / rect.width;
+                    const scaleY = this.canvas.height / rect.height;
+                    const gx = Math.floor(((e.clientX - rect.left) * scaleX) / this.tileSize);
+                    const gy = Math.floor(((e.clientY - rect.top) * scaleY) / this.tileSize);
+
+                    const clickedUnit = this.units.find(u => u.x === gx && u.y === gy);
+                    
+                    if (clickedUnit) {
+                        this.selectedUnit = clickedUnit;
+                        SoundEngine.playClick();
+                    } 
+                    // Movement Execution (Strictly checks movement restriction & marks moved = true!)
+                    else if (this.selectedUnit && this.selectedUnit.team === "player" && !this.selectedUnit.moved) {
+                        const dist = Math.abs(this.selectedUnit.x - gx) + Math.abs(this.selectedUnit.y - gy);
+                        const targetTerrain = this.terrainStats[this.terrainGrid[gy][gx]];
+
+                        if (dist > 0 && dist <= this.selectedUnit.mp && targetTerrain.mpCost <= this.selectedUnit.mp) {
+                            this.selectedUnit.x = gx;
+                            this.selectedUnit.y = gy;
+                            this.selectedUnit.moved = true; // Fix infinite movement bug!
+                            SoundEngine.playMarch();
+                            this.log(`${this.selectedUnit.name} が ${targetTerrain.name} へ進軍（行動完了）。`);
+                            this.checkPhaseProgress();
+                        } else {
+                            this.log(`その地形へは移動力が不足しています。`);
+                        }
+                    }
+                    this.renderBattle();
+                };
+
+                document.getElementById('b-cmd-attack').onclick = () => {
+                    if (!this.selectedUnit || this.selectedUnit.moved) return;
+                    const enemy = this.units.find(u => u.team === "enemy" && (Math.abs(u.x - this.selectedUnit.x) + Math.abs(u.y - this.selectedUnit.y) === 1));
+                    if (enemy) this.executeAttack(this.selectedUnit, enemy, "melee");
+                    else this.log("隣接する敵部隊がいません！");
+                };
+
+                document.getElementById('b-cmd-shoot').onclick = () => {
+                    if (!this.selectedUnit || this.selectedUnit.moved) return;
+                    const enemy = this.units.find(u => u.team === "enemy" && Math.abs(u.x - this.selectedUnit.x) <= 2 && Math.abs(u.y - this.selectedUnit.y) <= 2);
+                    if (enemy) this.executeAttack(this.selectedUnit, enemy, "shoot");
+                    else this.log("射程内の敵部隊がいません！");
+                };
+
+                document.getElementById('b-cmd-tactic').onclick = () => {
+                    if (!this.selectedUnit || this.selectedUnit.moved) return;
+                    const enemy = this.units.find(u => u.team === "enemy" && (Math.abs(u.x - this.selectedUnit.x) + Math.abs(u.y - this.selectedUnit.y) <= 2));
+                    if (enemy) {
+                        SoundEngine.playTactic();
+                        const dmg = Math.floor(400 + Math.random() * 300);
+                        enemy.troops = Math.max(0, enemy.troops - dmg);
+                        this.log(`🔥 計略【火計】成功！ ${enemy.name} に ${dmg} 名の大打撃！`);
+                        this.selectedUnit.moved = true;
+                        this.renderBattle();
+                        this.checkPhaseProgress();
+                    } else {
+                        this.log("計略対象の敵がいません！");
+                    }
+                };
+
+                document.getElementById('b-cmd-wait').onclick = () => {
+                    if (this.selectedUnit && !this.selectedUnit.moved) {
+                        this.selectedUnit.moved = true;
+                        this.log(`${this.selectedUnit.name} は待機した。`);
+                        this.renderBattle();
+                        this.checkPhaseProgress();
+                    }
+                };
+
+                document.getElementById('b-cmd-end-turn').onclick = () => {
+                    this.log("🚩 自軍ターン終了を宣言。敵軍の行動へ移ります。");
+                    this.units.filter(u => u.team === "player").forEach(u => u.moved = true);
+                    this.renderBattle();
+                    this.executeAITurn();
+                };
+
+                document.getElementById('battle-retreat-btn').onclick = () => {
+                    if (confirm("全軍撤退しますか？")) this.endBattle("retreat");
+                };
+            },
+
+            executeAttack(attacker, defender, mode) {
+                if (mode === "shoot") SoundEngine.playGun();
+                else SoundEngine.playAttack();
+
+                const defTerrain = this.terrainStats[this.terrainGrid[defender.y][defender.x]];
+                const defMult = 1.0 - defTerrain.defBonus;
+                const factor = mode === "shoot" ? 0.35 : 0.28;
+                const dmg = Math.floor((attacker.troops * factor) * (attacker.lead / 75) * defMult);
+
+                defender.troops = Math.max(0, defender.troops - dmg);
+                this.log(`💥 ${attacker.name} の${mode === "shoot" ? "鉄砲斉射" : "攻撃"}！ ${defender.name} に ${dmg} 名の被害`);
+
+                if (defender.troops <= 0) {
+                    this.log(`☠️ ${defender.name} は壊滅・潰走した！`);
+                    this.units = this.units.filter(u => u.id !== defender.id);
+                }
+
+                attacker.moved = true;
+                this.renderBattle();
+                this.checkPhaseProgress();
+            },
+
+            checkPhaseProgress() {
+                const playerUnits = this.units.filter(u => u.team === "player");
+                const enemyUnits = this.units.filter(u => u.team === "enemy");
+
+                if (enemyUnits.length === 0) { this.endBattle("victory"); return; }
+                if (playerUnits.length === 0) { this.endBattle("defeat"); return; }
+
+                if (playerUnits.every(u => u.moved)) {
+                    setTimeout(() => this.executeAITurn(), 300);
+                }
+            },
+
+            // Fixed Enemy CPU Tactical AI Execution & Active Movement logic
+            executeAITurn() {
+                this.log("⚔️ 敵軍ターン：相手の将勢が進軍を開始...");
+                const enemyUnits = this.units.filter(u => u.team === "enemy");
+
+                enemyUnits.forEach(e => {
+                    const playerUnits = this.units.filter(u => u.team === "player");
+                    if (playerUnits.length === 0) return;
+
+                    // Target nearest player unit
+                    playerUnits.sort((a, b) => (Math.abs(e.x - a.x) + Math.abs(e.y - a.y)) - (Math.abs(e.x - b.x) + Math.abs(e.y - b.y)));
+                    const target = playerUnits[0];
+                    const dist = Math.abs(e.x - target.x) + Math.abs(e.y - target.y);
+
+                    // If already in range 1, attack directly
+                    if (dist === 1) {
+                        const defTerrain = this.terrainStats[this.terrainGrid[target.y][target.x]];
+                        const dmg = Math.floor((e.troops * 0.25) * (e.lead / 80) * (1.0 - defTerrain.defBonus));
+                        target.troops = Math.max(0, target.troops - dmg);
+                        this.log(`⚠️ 敵 ${e.name} の強襲！ ${target.name} に ${dmg} 名の損害！`);
+                        if (target.troops <= 0) this.units = this.units.filter(u => u.id !== target.id);
+                    } else {
+                        // AI Pathfinding towards player target cell
+                        let bestX = e.x;
+                        let bestY = e.y;
+                        let minDist = dist;
+
+                        for (let dx = -e.mp; dx <= e.mp; dx++) {
+                            for (let dy = -e.mp; dy <= e.mp; dy++) {
+                                if (Math.abs(dx) + Math.abs(dy) <= e.mp) {
+                                    const nx = e.x + dx;
+                                    const ny = e.y + dy;
+                                    if (nx >= 0 && nx < this.gridCols && ny >= 0 && ny < this.gridRows) {
+                                        const newDist = Math.abs(nx - target.x) + Math.abs(ny - target.y);
+                                        if (newDist < minDist) {
+                                            minDist = newDist;
+                                            bestX = nx;
+                                            bestY = ny;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        e.x = bestX;
+                        e.y = bestY;
+                        this.log(`敵 ${e.name} が ${target.name} へ間合いを詰めた。`);
+
+                        // Check attack after moving
+                        if (Math.abs(e.x - target.x) + Math.abs(e.y - target.y) === 1) {
+                            const dmg = Math.floor((e.troops * 0.22) * (e.lead / 80));
+                            target.troops = Math.max(0, target.troops - dmg);
+                            this.log(`⚠️ 敵 ${e.name} の突撃！ ${target.name} に ${dmg} 名の損害！`);
+                            if (target.troops <= 0) this.units = this.units.filter(u => u.id !== target.id);
+                        }
+                    }
+                });
+
+                this.turn++;
+                // Reset movement flags for new turn
+                this.units.forEach(u => u.moved = false);
+                this.renderBattle();
+
+                if (this.turn > this.maxTurns) this.endBattle("timeout");
+            },
+
+            endBattle(result) {
+                document.getElementById('battle-modal').classList.add('hidden');
+                if (result === "victory") {
+                    Game.log(`🎉 【大勝利！】 ${this.defenderProv.name} を完全制圧し、領地を拡大！`, "success");
+                    this.defenderProv.owner = Game.playerDaimyo;
+                    this.defenderProv.troops = 1200;
+                } else if (result === "defeat" || result === "retreat") {
+                    Game.log(`💀 【敗北...】 侵攻は阻まれ全軍撤退しました。`, "danger");
+                } else {
+                    Game.log(`⌛ 【引き分け】 規定日数内に本丸を落とせず防衛側の勝利となりました。`, "warning");
+                }
+
+                Game.actionPoints = 0;
+                Game.renderUI();
+                Game.drawMap();
+            }
+        };
+
+        function showModal(title, desc, onConfirm) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-desc').innerText = desc;
+            const modal = document.getElementById('generic-modal');
+            modal.classList.remove('hidden');
+
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            const cancelBtn = document.getElementById('modal-cancel-btn');
+
+            const cleanup = () => {
+                modal.classList.add('hidden');
+                confirmBtn.onclick = null;
+                cancelBtn.onclick = null;
+            };
+
+            confirmBtn.onclick = () => {
+                onConfirm();
+                cleanup();
+            };
+            cancelBtn.onclick = cleanup;
+        }
+
+        // Initialize Game
+        window.onload = () => {
+            Game.init();
+        };
+    </script>
+</body>
+</html>
