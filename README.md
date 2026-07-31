@@ -46,6 +46,10 @@ kindle.html
 Kindleでダッシュボード
 https://baruziro-works.github.io/TCCC_works-Open/kindle.html
 
+sengoku_grand_strategy.html
+信長の野望もどき
+https://baruziro-works.github.io/TCCC_works-Open/sengoku_grand_strategy.html
+
 tts_app.html
 テキスト読み上げ
 https://baruziro-works.github.io/TCCC_works-Open/tts_app.html
