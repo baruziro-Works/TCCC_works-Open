@@ -1074,15 +1074,12 @@
       /* ================= Image Generation ================= */
       async redrawCurrentImage() {
         const apiKey = this.getApiKey();
-        if (!apiKey) {
-          this.openApiKeyModal();
-          this.showToast("APIキーが必要です", "「API設定」から無料キーを入力してください");
-          return;
-        }
-
         const page = this.currentStory.pages[this.currentPageIndex];
         const overlay = document.getElementById('illustration-loading-overlay');
+        const loadingText = document.getElementById('illustration-loading-text');
+        
         overlay.classList.remove('hidden');
+        if (loadingText) loadingText.textContent = "高画質イラストを描いています…";
 
         try {
           const style = this.currentStory.style || 'storybook';
@@ -1092,18 +1089,27 @@
             this.renderPage();
             this.saveToBookshelf(this.currentStory, false);
             this.showToast("イラストが完成しました！", "新しい絵本イラストに更新しました");
+          } else {
+            this.showToast("イラストを取得できませんでした", "もう一度お試しください");
           }
         } catch (err) {
           console.error("Image generation failed:", err);
-          this.showToast("生成できませんでした", "時間をおいてもう一度お試しください");
+          const msg = err.message || "";
+          
+          if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("Quota")) {
+            this.showToast("無料枠の利用制限（混雑中）です", "1〜2分ほど時間をおいてから再度お試しください");
+          } else if (msg.includes("400") || msg.includes("403") || msg.includes("API_KEY")) {
+            this.showToast("APIキーが無効または未設定です", "右上の「API設定」からキーをご確認ください");
+            this.openApiKeyModal();
+          } else {
+            this.showToast("生成できませんでした", "通信環境をご確認の上、少し待ってお試しください");
+          }
         } finally {
           overlay.classList.add('hidden');
         }
       }
 
       async generateImageForPage(page, style, apiKey) {
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
-        
         let stylePrompt = "warm charming storybook watercolor illustration, pastel pencil touches, beloved children's book art, soft gentle lighting, expressive cute characters, absolutely no text, no captions, 16:9 ratio";
         if (style === 'ghibli') {
           stylePrompt = "Studio Ghibli aesthetic, lush hand-painted watercolor background, warm golden sunlight streaming through trees, gentle expressive faces, cinematic pastoral beauty, no text, 16:9 ratio";
@@ -1114,6 +1120,31 @@
         }
 
         const prompt = `A heartwarming and captivating bible story illustration for children:\nScene: ${page.imagePrompt || page.text}\nStyle details: ${stylePrompt}\nHigh aesthetic quality, welcoming, gentle gospel atmosphere.`;
+
+        // 優先モデルとフォールバックモデルの順に試行
+        const modelsToTry = [
+          'gemini-3.1-flash-image',
+          'gemini-3.1-flash-lite-image'
+        ];
+
+        let lastError = null;
+
+        for (const model of modelsToTry) {
+          try {
+            const dataUrl = await this.callImageApiWithRetry(model, prompt, apiKey);
+            if (dataUrl) return dataUrl;
+          } catch (err) {
+            console.warn(`Model ${model} failed, checking fallback:`, err.message);
+            lastError = err;
+          }
+        }
+
+        throw lastError || new Error("Failed to generate image with available models");
+      }
+
+      async callImageApiWithRetry(modelName, prompt, apiKey, maxRetries = 2) {
+        const keyParam = apiKey ? `?key=${apiKey}` : '';
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent${keyParam}`;
 
         const payload = {
           contents: [{
@@ -1126,17 +1157,39 @@
           }
         };
 
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          try {
+            const res = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
 
-        if (!res.ok) throw new Error(`Image API HTTP ${res.status}`);
-        const data = await res.json();
-        const part = data?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-        if (part && part.inlineData?.data) {
-          return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            if (!res.ok) {
+              const errBody = await res.json().catch(() => ({}));
+              const errMsg = errBody?.error?.message || `HTTP ${res.status}`;
+              
+              // レートリミット (429) または一時的サーバーエラー (503) の場合はバックオフしてリトライ
+              if ((res.status === 429 || res.status === 503) && attempt < maxRetries) {
+                const delay = Math.pow(2, attempt) * 1500; // 1.5s, 3s
+                await new Promise(r => setTimeout(r, delay));
+                continue;
+              }
+              throw new Error(`[${modelName}] ${errMsg}`);
+            }
+
+            const data = await res.json();
+            const part = data?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+            if (part && part.inlineData?.data) {
+              return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            }
+            return null;
+
+          } catch (err) {
+            if (attempt === maxRetries) throw err;
+            const delay = Math.pow(2, attempt) * 1500;
+            await new Promise(r => setTimeout(r, delay));
+          }
         }
         return null;
       }
