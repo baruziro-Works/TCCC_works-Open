@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CS聖書絵本シアター - こどもたちへ届ける福音の読み聞かせ</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Zen Maru Gothic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            maru: ['"Zen Maru Gothic"', 'sans-serif'],
+          },
+          colors: {
+            bookbg: '#fffbf7',
+            cardborder: '#fed7aa',
+            themeorange: '#ff9800',
+            themegold: '#f59e0b',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      background: radial-gradient(circle at 50% 10%, #fff7ed 0%, #fff1f2 40%, #fdf2f8 75%, #fefcfb 100%);
+      min-height: 100vh;
+      color: #3b3633;
+      overflow-x: hidden;
+      touch-action: pan-y;
+    }
+    .soft-shadow {
+      box-shadow: 0 16px 40px -10px rgba(245, 158, 11, 0.18), 0 0 0 1px rgba(254, 215, 170, 0.6);
+    }
+    .glow-gold {
+      box-shadow: 0 10px 25px -4px rgba(245, 158, 11, 0.35);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #fed7aa;
+      border-radius: 9999px;
+    }
+    @keyframes floatLight {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-5px) rotate(1deg); }
+    }
+    .animate-float {
+      animation: floatLight 4.5s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="flex flex-col justify-between selection:bg-amber-200 min-h-screen">
+
+  <!-- Top Navigation Header -->
+  <header class="w-full max-w-4xl mx-auto px-4 pt-4 pb-2 flex items-center justify-between">
+    <div class="flex items-center gap-2.5 cursor-pointer" onclick="app.showHomeView()">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-400 to-rose-400 flex items-center justify-center text-white shadow-md text-xl animate-float">
+        📖
+      </div>
+      <div>
+        <h1 class="text-base sm:text-lg font-black text-stone-800 flex items-center gap-1.5 leading-tight">
+          CS聖書絵本シアター
+          <span class="text-[10px] bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-0.5 rounded-full">新改訳2017</span>
+        </h1>
+        <p class="text-[11px] text-stone-400">教会学校・家庭デボーション用 福音読み聞かせ</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5 sm:gap-2">
+      <button onclick="app.openShareModal()" class="text-xs px-3 py-1.5 rounded-full bg-white hover:bg-stone-50 text-stone-700 border border-stone-200 shadow-sm transition flex items-center gap-1 font-bold">
+        📤 <span class="hidden sm:inline">絵本の配布・保存</span>
+      </button>
+      <button onclick="app.openApiKeyModal()" id="btn-apikey-indicator" class="text-xs px-3 py-1.5 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 shadow-sm transition flex items-center gap-1 font-bold">
+        🔑 <span id="apikey-btn-label">API設定</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main App Container -->
+  <main class="w-full max-w-4xl mx-auto px-4 py-3 flex-1 flex flex-col justify-center items-center">
+
+    <!-- ==================== VIEW 1: HOME PORTAL (添付画像風) ==================== -->
+    <div id="view-home" class="w-full flex flex-col items-center justify-center py-4">
+      
+      <!-- Top Glowing Icon (添付画像の上部アイコン) -->
+      <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-amber-200 via-amber-300 to-yellow-400 p-1 glow-gold flex items-center justify-center mb-4 relative animate-float">
+        <div class="w-full h-full rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 flex items-center justify-center shadow-inner text-white text-3xl sm:text-4xl">
+          🪄
+        </div>
+        <span class="absolute -top-1 -right-1 text-pink-400 text-xl">🌸</span>
+      </div>
+
+      <h2 class="text-2xl sm:text-3xl font-black text-stone-800 text-center tracking-wide mb-1">
+        きょうはどんな おはなしをよむ？
+      </h2>
+      <p class="text-xs sm:text-sm text-stone-500 text-center max-w-md mb-8">
+        ボタンを１つおすだけで、AIがやさしい絵本をつくって<br class="hidden sm:inline">プロの声でよみきかせをしてくれるよ！
+      </p>
+
+      <!-- 4 Big Selection Cards Grid (添付画像の4ボタン) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 w-full max-w-xl mb-8">
+        
+        <!-- Card 1: ランダム絵本 (オレンジ/イエロー) -->
+        <button onclick="app.generateRandomStory()" class="flex items-center gap-3.5 p-4 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all text-left group">
+          <div class="w-12 h-12 rounded-xl bg-white/25 flex items-center justify-center text-2xl shrink-0 group-hover:rotate-12 transition">
+            🎲
+          </div>
+          <div>
+            <div class="text-base sm:text-lg font-black leading-tight">ランダム絵本</div>
+            <div class="text-[11px] text-amber-100 font-medium mt-0.5">どんなお話が出るかおたのしみ！</div>
+          </div>
+        </button>
+
+        <!-- Card 2: オーダー絵本 (ピンク/ローズ) -->
+        <button onclick="app.openOrderModal()" class="flex items-center gap-3.5 p-4 rounded-2xl bg-gradient-to-r from-rose-400 to-pink-500 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all text-left group">
+          <div class="w-12 h-12 rounded-xl bg-white/25 flex items-center justify-center text-2xl shrink-0 group-hover:rotate-12 transition">
+            ✨
+          </div>
+          <div>
+            <div class="text-base sm:text-lg font-black leading-tight">オーダー絵本</div>
+            <div class="text-[11px] text-pink-100 font-medium mt-0.5">聖書箇所やテーマをきめてつくる</div>
+          </div>
+        </button>
+
+        <!-- Card 3: 続きから (ミント/エメラルド) -->
+        <button onclick="app.resumeLastStory()" class="flex items-center gap-3.5 p-4 rounded-2xl bg-gradient-to-r from-teal-400 to-emerald-500 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all text-left group">
+          <div class="w-12 h-12 rounded-xl bg-white/25 flex items-center justify-center text-2xl shrink-0 group-hover:rotate-12 transition">
+            🔖
+          </div>
+          <div>
+            <div class="text-base sm:text-lg font-black leading-tight">続きから</div>
+            <div class="text-[11px] text-teal-100 font-medium mt-0.5">この前読んだページから読む</div>
+          </div>
+        </button>
+
+        <!-- Card 4: お気に入り絵本 (スカイブルー) -->
+        <button onclick="app.openBookshelfModal()" class="flex items-center gap-3.5 p-4 rounded-2xl bg-gradient-to-r from-sky-400 to-blue-500 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all text-left group">
+          <div class="w-12 h-12 rounded-xl bg-white/25 flex items-center justify-center text-2xl shrink-0 group-hover:rotate-12 transition">
+            ⭐
+          </div>
+          <div>
+            <div class="text-base sm:text-lg font-black leading-tight">お気に入り絵本</div>
+            <div class="text-[11px] text-sky-100 font-medium mt-0.5">保存した絵本をなんども読む</div>
+          </div>
+        </button>
+
+      </div>
+
+      <!-- Parent/Teacher Advice Box (添付画像の下部吹き出し) -->
+      <div class="w-full max-w-xl bg-white/80 backdrop-blur-sm border border-stone-200 rounded-2xl p-4 shadow-sm flex items-start gap-3">
+        <span class="text-pink-500 text-lg shrink-0 mt-0.5">💖</span>
+        <div class="text-xs text-stone-600 leading-relaxed">
+          <strong class="text-stone-800 font-bold block mb-0.5">先生・お父さん・お母さんへ</strong>
+          聖書新改訳2017に基づく福音メッセージを、温かい絵本イラストと自然なプロの読み聞かせ音声（TTS）でお届けします。「自動めくり」をオンにしておけば、礼拝の説教前や寝かしつけのデボーションに手ぶらでそのまま使えます。
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== VIEW 2: STORYBOOK THEATER (添付画像リーダー風) ==================== -->
+    <div id="view-theater" class="w-full max-w-3xl hidden flex flex-col items-center">
+      
+      <!-- Top Action Bar inside Reader -->
+      <div class="w-full flex items-center justify-between mb-2 px-1 text-xs">
+        <button onclick="app.showHomeView()" class="px-3 py-1 rounded-full bg-white/90 text-stone-600 hover:text-stone-900 border border-stone-200 shadow-sm font-bold flex items-center gap-1 transition">
+          ◀ トップへ
+        </button>
+        <div class="flex items-center gap-2">
+          <!-- Text Size Toggle -->
+          <div class="bg-white/90 rounded-full border border-stone-200 px-2 py-0.5 flex items-center gap-1 text-[11px] font-bold text-stone-600">
+            <span>文字:</span>
+            <button onclick="app.setFontSize('sm')" class="px-1.5 py-0.5 rounded hover:bg-stone-100" id="btn-font-sm">小</button>
+            <button onclick="app.setFontSize('md')" class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900" id="btn-font-md">中</button>
+            <button onclick="app.setFontSize('lg')" class="px-1.5 py-0.5 rounded hover:bg-stone-100" id="btn-font-lg">大</button>
+          </div>
+          <!-- Redraw image button -->
+          <button onclick="app.redrawCurrentImage()" id="btn-redraw" class="px-2.5 py-1 rounded-full bg-white/90 text-amber-800 hover:bg-amber-50 border border-amber-200 shadow-sm font-bold flex items-center gap-1 text-[11px] transition">
+            🎨 <span class="hidden sm:inline">この絵を描き直す</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Reader Card (添付画像のゴールド枠付き角丸カード) -->
+      <div id="book-card-container" class="w-full bg-[#fffbf7] rounded-3xl p-4 sm:p-6 border-2 border-amber-300 soft-shadow transition-all relative overflow-hidden">
+        
+        <!-- Top Metadata Row inside Card -->
+        <div class="flex items-center justify-between mb-3 border-b border-amber-100/80 pb-2">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-0.5 rounded-full" id="theater-title-badge">
+              おはなしタイトル
+            </span>
+            <span class="text-[11px] text-stone-400 font-medium hidden sm:inline" id="theater-scripture-badge">
+              聖書箇所
+            </span>
+          </div>
+          <span class="text-xs font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full" id="theater-page-indicator">
+            1 / 5 ページ
+          </span>
+        </div>
+
+        <!-- 2 Columns Layout: Image on Left, Story on Right (PC) / Stacked on Mobile -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-center">
+          
+          <!-- Left: High Quality Illustration Frame -->
+          <div class="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 shadow-inner flex items-center justify-center group" id="illustration-container">
+            <div id="illustration-loading-overlay" class="absolute inset-0 bg-stone-900/40 backdrop-blur-sm hidden flex flex-col items-center justify-center text-white p-4 text-center z-10">
+              <div class="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin mb-2"></div>
+              <p class="text-xs font-bold" id="illustration-loading-text">高画質イラストを描いています…</p>
+            </div>
+            <!-- Rendered Image or SVG Artwork -->
+            <img id="page-image" src="" alt="絵本イラスト" class="w-full h-full object-cover rounded-2xl hidden transition-opacity duration-300">
+            <div id="page-svg-fallback" class="w-full h-full flex flex-col items-center justify-center p-4"></div>
+          </div>
+
+          <!-- Right: Story Text & Narration Controls -->
+          <div class="flex flex-col justify-between min-h-[220px] sm:min-h-[260px]">
+            <!-- Story Message Text -->
+            <div class="custom-scroll max-h-[190px] sm:max-h-[220px] overflow-y-auto pr-1">
+              <p id="page-text" class="text-stone-800 font-bold leading-relaxed tracking-wider text-base sm:text-lg whitespace-pre-line">
+                おはなしを読みこんでいます…
+              </p>
+              <!-- Scripture Verse Quotation if available -->
+              <div id="page-verse-box" class="mt-3 p-2.5 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-stone-600 hidden">
+                <span class="font-bold text-amber-900 block mb-0.5">📖 今日の聖句（新改訳2017）:</span>
+                <span id="page-verse-text"></span>
+              </div>
+            </div>
+
+            <!-- Playback Button & Auto Page Flip Row (添付画像の黄色ボタン＆右下チェック) -->
+            <div class="pt-4 border-t border-amber-100 flex items-center justify-between flex-wrap gap-2">
+              <!-- Yellow Action Button (添付画像の ⏸ 一時停止 / ▶ さいかい) -->
+              <button onclick="app.togglePlayPause()" id="btn-play-pause" class="px-5 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-500 text-white font-black text-sm shadow-md hover:shadow-lg active:scale-95 transition flex items-center gap-2">
+                <span id="btn-play-icon">▶</span>
+                <span id="btn-play-text">よみきかせ</span>
+              </button>
+
+              <div class="flex items-center gap-3">
+                <span id="tts-audio-indicator" class="text-xs text-stone-400 font-bold hidden flex items-center gap-1">
+                  <span class="animate-pulse text-amber-500">🎵</span> よみきかせ中
+                </span>
+                <!-- Auto Flip Checkbox (添付画像右下のチェックボックス) -->
+                <label class="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-stone-600 select-none bg-stone-50 hover:bg-stone-100 px-2.5 py-1.5 rounded-xl border border-stone-200 transition">
+                  <input type="checkbox" id="check-auto-flip" class="w-4 h-4 text-amber-500 rounded focus:ring-0 cursor-pointer" onchange="app.handleAutoFlipChange()">
+                  <span>自動でページをめくる <span class="text-[10px] text-stone-400 font-normal">(お気楽機能)</span></span>
+                </label>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Bottom Navigation Row (添付画像の [← まえへ] [🔖 しおり] [つぎへ →]) -->
+      <div class="w-full flex items-center justify-between mt-4 px-2">
+        <button onclick="app.prevPage()" id="btn-prev-page" class="px-5 py-2.5 rounded-2xl bg-white hover:bg-stone-50 active:scale-95 text-stone-700 font-black text-sm border border-stone-200 shadow-sm transition flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed">
+          ← まえへ
+        </button>
+
+        <button onclick="app.saveBookmark()" class="text-xs font-black text-rose-500 hover:text-rose-600 active:scale-95 px-3 py-1.5 rounded-full hover:bg-rose-50 transition flex items-center gap-1">
+          🔖 しおり
+        </button>
+
+        <button onclick="app.nextPage()" id="btn-next-page" class="px-6 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-500 active:scale-95 text-white font-black text-sm shadow-md hover:shadow-lg transition flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed">
+          つぎへ →
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ==================== MODAL 1: ORDER MODAL (聖書箇所・テーマ設定) ==================== -->
+  <div id="modal-order" class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-lg p-5 sm:p-6 shadow-2xl border border-stone-200 relative max-h-[90vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between pb-3 border-b border-stone-100 mb-4">
+        <h3 class="text-lg font-black text-stone-800 flex items-center gap-2">
+          ✨ オーダー絵本をつくる
+        </h3>
+        <button onclick="app.closeOrderModal()" class="w-7 h-7 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <div class="space-y-4 text-xs sm:text-sm">
+        <div>
+          <label class="block font-bold text-stone-700 mb-1">
+            📖 聖書箇所（空欄でもおまかせ作成できます）
+          </label>
+          <input type="text" id="order-scripture" placeholder="例: ルカの福音書 15章, 詩篇 23編, 創世記 1章" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-400 text-stone-800">
+        </div>
+
+        <div>
+          <label class="block font-bold text-stone-700 mb-1">
+            💖 メッセージテーマ（空欄でもOK）
+          </label>
+          <input type="text" id="order-theme" placeholder="例: 神様の大きな愛, お友だちをゆるす心, 勇気をもって祈る" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-400 text-stone-800">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">👶 対象年齢</label>
+            <select id="order-age" class="w-full px-3 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-amber-400">
+              <option value="3-5">幼児（3〜5歳）：やさしい言葉と愛</option>
+              <option value="6-8" selected>低学年（6〜8歳）：わかりやすい物語</option>
+              <option value="9-12">高学年（9〜12歳）：信仰の深みと適用</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">🎨 イラストの画風</label>
+            <select id="order-style" class="w-full px-3 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-amber-400">
+              <option value="storybook" selected>温かい手描き絵本タッチ（推奨）</option>
+              <option value="ghibli">ジブリ風の優しい水彩・光</option>
+              <option value="anime">親しみやすい名作アニメ調</option>
+              <option value="papercraft">温もりの立体ペーパークラフト調</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-stone-600 text-xs">
+          ✝ <strong>福音派の信仰理解に基づく構成</strong><br>
+          『聖書 新改訳2017』を用い、単なる道徳ではなく、イエス様の十字架の恵み、罪の赦し、神様の変わらない真実な愛をこどもたちに届けます。
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button onclick="app.closeOrderModal()" class="w-1/3 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-600 transition">
+            キャンセル
+          </button>
+          <button onclick="app.startCustomStoryGeneration()" class="w-2/3 py-2.5 rounded-xl bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 text-white font-black shadow-md transition">
+            絵本をつくる 🪄
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 2: BOOKSHELF MODAL (お気に入り本棚) ==================== -->
+  <div id="modal-bookshelf" class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-lg p-5 sm:p-6 shadow-2xl border border-stone-200 relative max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-stone-100 mb-3">
+        <h3 class="text-lg font-black text-stone-800 flex items-center gap-2">
+          ⭐ お気に入り絵本の本棚
+        </h3>
+        <button onclick="app.closeBookshelfModal()" class="w-7 h-7 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center font-bold">✕</button>
+      </div>
+      
+      <div class="flex-1 overflow-y-auto custom-scroll space-y-2.5 pr-1" id="bookshelf-list">
+        <!-- Story items rendered dynamically -->
+      </div>
+
+      <div class="pt-3 border-t border-stone-100 mt-2 flex justify-between items-center text-xs">
+        <label class="cursor-pointer px-3 py-2 bg-stone-100 hover:bg-stone-200 rounded-xl text-stone-700 font-bold flex items-center gap-1 transition">
+          📥 先生からもらった絵本を開く
+          <input type="file" id="input-import-json" accept=".json" class="hidden" onchange="app.importStoryJson(event)">
+        </label>
+        <button onclick="app.closeBookshelfModal()" class="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white rounded-xl font-bold transition">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 3: API KEY SETTINGS MODAL ==================== -->
+  <div id="modal-apikey" class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-md p-5 sm:p-6 shadow-2xl border border-stone-200 relative">
+      <div class="flex items-center justify-between pb-3 border-b border-stone-100 mb-3">
+        <h3 class="text-base font-black text-stone-800 flex items-center gap-2">
+          🔑 Gemini APIキー設定
+        </h3>
+        <button onclick="app.closeApiKeyModal()" class="w-7 h-7 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <p class="text-stone-600">
+          高画質イラストの自由生成や高音質TTS読み聞かせを利用するためのキーです。ブラウザ内に安全に記憶されます。
+        </p>
+
+        <!-- おうちの方向けガイドへの案内バナー -->
+        <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 flex items-center justify-between gap-2">
+          <div>
+            <div class="font-bold text-amber-900 text-xs flex items-center gap-1">
+              <span>🔰</span> おうちのかたへ
+            </div>
+            <div class="text-[11px] text-amber-700">Googleアカウントがあれば約3分・完全無料</div>
+          </div>
+          <button onclick="app.openGuideModal()" class="shrink-0 px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-white rounded-xl font-bold text-xs shadow-sm transition active:scale-95">
+            ガイドを読む 📖
+          </button>
+        </div>
+
+        <input type="password" id="input-api-key" placeholder="AIzaSy..." class="w-full px-3 py-2.5 rounded-xl border border-stone-300 font-mono text-sm focus:ring-2 focus:ring-amber-400">
+        
+        <div class="flex justify-between items-center text-[11px] text-stone-400">
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-amber-600 hover:underline flex items-center gap-0.5 font-bold">
+            Google AI Studioで無料キーを取得 ↗
+          </a>
+          <button onclick="app.clearApiKey()" class="text-rose-500 hover:underline">クリア</button>
+        </div>
+
+        <div class="p-2.5 rounded-xl bg-stone-50 border border-stone-200 text-[11px] text-stone-500 leading-tight">
+          ※ HTMLファイル内に「教会の共通キー」があらかじめ設定されている場合は、ここに入力しなくてもそのまま使えます。
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button onclick="app.closeApiKeyModal()" class="w-1/2 py-2 rounded-xl bg-stone-100 font-bold text-stone-600">キャンセル</button>
+          <button onclick="app.saveApiKey()" class="w-1/2 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 font-black text-white shadow-sm">保存する</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 4: SHARE STORY MODAL ==================== -->
+  <div id="modal-share" class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-md p-5 sm:p-6 shadow-2xl border border-stone-200 relative">
+      <div class="flex items-center justify-between pb-3 border-b border-stone-100 mb-3">
+        <h3 class="text-base font-black text-stone-800 flex items-center gap-2">
+          📤 絵本の配布・共有
+        </h3>
+        <button onclick="app.closeShareModal()" class="w-7 h-7 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs text-stone-600">
+        <p>
+          作成した絵本を画像ごとファイル（<code>.json</code>）として書き出し、教会のLINEグループやメールで配ることができます。
+        </p>
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-stone-700 leading-relaxed">
+          ✨ <strong>受け取った先生やご家庭のメリット:</strong><br>
+          APIキーの設定や登録が一切不要で、ファイルを開くだけで高画質な絵本をすぐに再生できます。
+        </div>
+        
+        <button onclick="app.exportCurrentStoryJson()" class="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-white font-black text-sm shadow-md transition flex items-center justify-center gap-2">
+          💾 現在開いている絵本を書き出す
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 5: PARENT SETUP GUIDE MODAL ==================== -->
+  <div id="modal-parent-guide" class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-lg p-5 sm:p-6 shadow-2xl border border-stone-200 relative max-h-[88vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-stone-100 mb-3">
+        <h3 class="text-base font-black text-stone-800 flex items-center gap-2">
+          📖 【おうちの方向け】3分でできるAPIキー設定
+        </h3>
+        <button onclick="app.closeGuideModal()" class="w-7 h-7 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-1 text-xs text-stone-600 leading-relaxed">
+        <!-- 3つの安心ポイント -->
+        <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 space-y-1.5">
+          <div class="font-bold text-amber-900 flex items-center gap-1">🛡️ おうちの方へ「3つの安心」</div>
+          <ul class="text-[11px] text-amber-800 space-y-1">
+            <li>✓ <strong>完全無料・クレカ不要</strong>：Googleの無料枠を使うため、勝手に請求される心配はゼロです。</li>
+            <li>✓ <strong>設定は最初の1回だけ</strong>：端末が記憶するので次回から入力不要です。</li>
+            <li>✓ <strong>暗証番号ではありません</strong>：絵本を作る専用の合言葉（APIキー）なので安全です。</li>
+          </ul>
+        </div>
+
+        <!-- STEP 1 -->
+        <div class="border border-stone-200 rounded-2xl p-3.5 space-y-2">
+          <div class="flex items-center gap-2 font-bold text-stone-800 text-xs">
+            <span class="w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center text-[11px] font-black">1</span>
+            Google AI Studio を開く
+          </div>
+          <p class="text-[11px] text-stone-500">下のボタンからGoogleの公式ページを開き、お持ちのGoogleアカウントでログインします。</p>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-1 py-2 px-3 bg-amber-400 hover:bg-amber-500 text-white font-bold rounded-xl text-xs shadow-sm transition">
+            👉 Google AI Studio を開く ↗
+          </a>
+          <p class="text-[10px] text-stone-400">※ 初回のみ利用規約画面が出ます。「Agree（同意）」を押してください。</p>
+        </div>
+
+        <!-- STEP 2 -->
+        <div class="border border-stone-200 rounded-2xl p-3.5 space-y-2">
+          <div class="flex items-center gap-2 font-bold text-stone-800 text-xs">
+            <span class="w-5 h-5 rounded-full bg-rose-400 text-white flex items-center justify-center text-[11px] font-black">2</span>
+            青いボタンを押してキーをコピー
+          </div>
+          <div class="text-[11px] space-y-1.5">
+            <p>① 画面上部の青いボタン <strong>「Create API key」</strong> を押します。</p>
+            <p>② ポップアップが出たら「<strong>Create API key in new project</strong>」を選択します。</p>
+            <p>③ 表示された <code class="bg-stone-100 px-1 py-0.5 rounded text-rose-500 font-mono">AIzaSy...</code> の横にある <strong>「Copy」</strong> アイコンを押します。</p>
+          </div>
+        </div>
+
+        <!-- STEP 3 -->
+        <div class="border border-stone-200 rounded-2xl p-3.5 space-y-2">
+          <div class="flex items-center gap-2 font-bold text-stone-800 text-xs">
+            <span class="w-5 h-5 rounded-full bg-emerald-400 text-white flex items-center justify-center text-[11px] font-black">3</span>
+            このアプリの「API設定」に貼り付け
+          </div>
+          <div class="text-[11px] space-y-1.5">
+            <p>① このガイドを閉じて、入力欄を長押し（またはタップ）。</p>
+            <p>② <strong>「貼り付け（ペースト）」</strong> をして <strong>「保存する」</strong> を押します。</p>
+            <p>③ ボタンが緑色の <strong>「API設定済 ✓」</strong> に変われば完了です！</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-stone-100 mt-2 flex justify-between items-center text-xs">
+        <a href="gemini_api_guide_parents.html" target="_blank" class="text-amber-600 hover:underline font-bold text-[11px]">
+          📱 専用Webページ版を開く ↗
+        </a>
+        <button onclick="app.closeGuideModal()" class="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white rounded-xl font-bold transition">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Generation Progress Toast -->
+  <div id="toast-progress" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-stone-900/90 text-white px-5 py-3 rounded-2xl shadow-xl z-50 hidden flex items-center gap-3 border border-stone-700 text-xs sm:text-sm">
+    <div class="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0"></div>
+    <div>
+      <div class="font-bold text-amber-300" id="toast-title">絵本をつくっています…</div>
+      <div class="text-[11px] text-stone-300" id="toast-subtitle">みことばのメッセージを構成中</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="w-full text-center py-3 text-[11px] text-stone-400">
+    © 日本の教会学校・家庭デボーション支援プロジェクト | 聖書引用：新改訳2017
+  </footer>
+
+  <script>
+    /* ==========================================================================
+       教会共通APIキーの設定欄
+       ※ご家庭に配布する際、ここにキーを入れておくと受け取った全員が設定不要で使えます。
+       ========================================================================== */
+    const CHURCH_SHARED_API_KEY = "";
+
+    // 定番の聖書絵本プリセット（オフライン・初期表示用）
+    const PRESET_STORIES = [
+      {
+        id: "lost_sheep",
+        title: "みつかった！ちいさないっぴき",
+        scripture: "ルカの福音書 15章 3〜7節",
+        theme: "神様の大きな愛とよろこび",
+        style: "storybook",
+        pages: [
+          {
+            page: 1,
+            text: "あるところに、やさしい ひつじかいのおじさんが いました。\nひつじかいさんは、１００ぴきの ひつじたちを まいにち だいじに おせわしていました。",
+            verse: "見失った羊を見つけるまで捜し歩かないでしょうか。（ルカ 15:4）",
+            imagePrompt: "a sweet gentle middle-eastern shepherd in robe holding a wooden crook, smiling at a flock of cute fluffy white sheep on rolling green hills under sunny blue sky, charming storybook illustration, warm pastel watercolor, high detail",
+            imageData: null
+          },
+          {
+            page: 2,
+            text: "あるひ、ひつじの かずを かぞえてみると……\n「あれれ？ ９９ぴきしか いないぞ！ だいじな ちいさな ひつじが １ぴき いなくなっちゃった！」",
+            verse: "神は、あなたがたの髪の毛さえも、すべて数えられています。（マタイ 10:30）",
+            imagePrompt: "a worried kind shepherd counting his cute fluffy sheep in the twilight evening, one little baby lamb missing, cozy storybook watercolor art, gentle emotions",
+            imageData: null
+          },
+          {
+            page: 3,
+            text: "ひつじかいさんは、くらい やまのなかへ さがしにいきました。\n「メェ〜、どこにいるんだい？ いま たすけにいくからね！」あきらめずに さがしつづけます。",
+            verse: "主は私の羊飼い。私は、乏しいことがありません。（詩篇 23:1）",
+            imagePrompt: "loving shepherd searching through starry dark rocky hills holding a glowing warm lantern, determined gentle face, cute children book illustration",
+            imageData: null
+          },
+          {
+            page: 4,
+            text: "「あ、いた！」ちいさな ひつじが くさむらで ふるえていました。\nひつじかいさんは おこるどころか、おおよろこびで ひつじを かたに かつぎました。",
+            verse: "見つけたら、大喜びで羊を肩に担ぎ……（ルカ 15:5）",
+            imagePrompt: "joyful shepherd gently lifting and hugging a cute tiny lamb onto his shoulders with a warm loving smile, blooming spring flowers around, heartwarming storybook scene",
+            imageData: null
+          },
+          {
+            page: 5,
+            text: "「みんな、いっしょに よろこんでおくれ！」\nイエスさまは おっしゃいました。「かみさまは、わたしたちの ひとりひとりを こんなにも あいして おられるんだよ」。",
+            verse: "天には、悔い改める一人の罪人について、大きな喜びがあるのです。（ルカ 15:7）",
+            imagePrompt: "happy village celebration with cheerful children and friendly sheep around the loving shepherd, golden warm sunlight pouring down, heavenly blessing feeling, beautiful storybook",
+            imageData: null
+          }
+        ]
+      },
+      {
+        id: "calm_storm",
+        title: "あらしを しずめる イエスさま",
+        scripture: "マルコの福音書 4章 35〜41節",
+        theme: "どんなときも イエスさまが ともに おられる",
+        style: "storybook",
+        pages: [
+          {
+            page: 1,
+            text: "イエスさまと でしたちは、ふねに のって みずうみを わたっていました。\nイエスさまは とても おつかれになって、ふねの うしろで すやすやと ねむっておられました。",
+            verse: "イエスご自身は、艫のほうで、枕をして眠っておられた。（マルコ 4:38）",
+            imagePrompt: "Jesus peacefully sleeping on a pillow in the wooden fishing boat on a calm blue lake, disciples rowing gently, soft gentle storybook illustration",
+            imageData: null
+          },
+          {
+            page: 2,
+            text: "すると とつぜん、ごうごうと つめたい かぜが ふきあれました！\nおおきな なみが ざぶーんと ふねの なかに はいってきて、でしたちは おおあわて。",
+            verse: "激しい突風が起こり、舟は波をかぶって、すでに水浸しになりそうであった。（マルコ 4:37）",
+            imagePrompt: "a sudden dramatic sea storm with big blue waves splashing around the small wooden boat, worried expressive disciples, storybook style",
+            imageData: null
+          },
+          {
+            page: 3,
+            text: "「イエスさま、イエスさま！ わたしたちが おぼれそうなのに、へいきなんですか！？」\nでしたちは こわくて たまらなくなって、イエスさまを おこしました。",
+            verse: "「先生。私たちが溺れても、かまわないのですか。」（マルコ 4:38）",
+            imagePrompt: "disciples waking gentle Jesus up in the stormy wooden boat, Jesus opening eyes calmly with peace, expressive warm storybook art",
+            imageData: null
+          },
+          {
+            page: 4,
+            text: "イエスさまは おきあがり、かぜと なみに むかって おっしゃいました。\n「だまりなさい！ しずまりなさい！」",
+            verse: "イエスは起き上がって風を叱り、湖に「静まれ、黙れ」と言われた。（マルコ 4:39）",
+            imagePrompt: "Jesus standing courageously at the bow of the boat, raising hand gently toward the wind and sea with divine heavenly light, breathtaking beautiful children book illustration",
+            imageData: null
+          },
+          {
+            page: 5,
+            text: "すると ふしぎなことに、かぜも なみも ピタッとしずまり、すっかり なぎになりました。\n「イエスさまが いれば、どんな あらしの なかも だいじょうぶなんだ！」",
+            verse: "風はやみ、すっかり凪になった。（マルコ 4:39）",
+            imagePrompt: "the lake becomes completely calm and mirrors a warm golden sunrise, a vibrant rainbow in sky, disciples smiling in awe with Jesus, cute joyful storybook illustration",
+            imageData: null
+          }
+        ]
+      }
+    ];
+
+    // アプリケーション全体の状態管理
+    class StoryTheaterApp {
+      constructor() {
+        this.currentStory = PRESET_STORIES[0];
+        this.currentPageIndex = 0;
+        this.isPlaying = false;
+        this.isAutoFlip = false;
+        this.fontSize = 'md';
+        this.audioPlayer = null;
+        this.audioQueue = {}; // page -> audioBlob
+        this.isGeneratingAudio = false;
+
+        this.init();
+      }
+
+      async init() {
+        this.loadStoredSettings();
+        this.renderSvgFallback(this.currentStory.pages[0]);
+        this.renderPage();
+        this.updateApiKeyIndicator();
+      }
+
+      /* ================= Storage & API Key ================= */
+      getApiKey() {
+        const localKey = localStorage.getItem('cs_story_gemini_api_key');
+        if (localKey && localKey.trim() !== '') return localKey.trim();
+        if (CHURCH_SHARED_API_KEY && CHURCH_SHARED_API_KEY.trim() !== '') return CHURCH_SHARED_API_KEY.trim();
+        return '';
+      }
+
+      updateApiKeyIndicator() {
+        const btn = document.getElementById('btn-apikey-indicator');
+        const label = document.getElementById('apikey-btn-label');
+        if (this.getApiKey()) {
+          btn.classList.remove('bg-amber-100', 'text-amber-900', 'border-amber-300');
+          btn.classList.add('bg-emerald-100', 'text-emerald-900', 'border-emerald-300');
+          label.textContent = "API設定済 ✓";
+        } else {
+          btn.classList.remove('bg-emerald-100', 'text-emerald-900', 'border-emerald-300');
+          btn.classList.add('bg-amber-100', 'text-amber-900', 'border-amber-300');
+          label.textContent = "API設定";
+        }
+      }
+
+      /* ================= UI View Switching ================= */
+      showHomeView() {
+        this.stopAudio();
+        document.getElementById('view-home').classList.remove('hidden');
+        document.getElementById('view-theater').classList.add('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      showTheaterView() {
+        document.getElementById('view-home').classList.add('hidden');
+        document.getElementById('view-theater').classList.remove('hidden');
+        this.renderPage();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      /* ================= Page Rendering ================= */
+      renderPage() {
+        if (!this.currentStory || !this.currentStory.pages.length) return;
+        const page = this.currentStory.pages[this.currentPageIndex];
+
+        // Badges & Counters
+        document.getElementById('theater-title-badge').textContent = this.currentStory.title;
+        document.getElementById('theater-scripture-badge').textContent = this.currentStory.scripture || '';
+        document.getElementById('theater-page-indicator').textContent = `${this.currentPageIndex + 1} / ${this.currentStory.pages.length} ページ`;
+
+        // Text & Verse
+        const pageTextEl = document.getElementById('page-text');
+        pageTextEl.textContent = page.text;
+
+        const verseBox = document.getElementById('page-verse-box');
+        const verseText = document.getElementById('page-verse-text');
+        if (page.verse && page.verse.trim() !== '') {
+          verseText.textContent = page.verse;
+          verseBox.classList.remove('hidden');
+        } else {
+          verseBox.classList.add('hidden');
+        }
+
+        // Illustration
+        const imgEl = document.getElementById('page-image');
+        const svgFallback = document.getElementById('page-svg-fallback');
+        if (page.imageData) {
+          imgEl.src = page.imageData;
+          imgEl.classList.remove('hidden');
+          svgFallback.classList.add('hidden');
+        } else {
+          imgEl.classList.add('hidden');
+          svgFallback.classList.remove('hidden');
+          this.renderSvgFallback(page);
+        }
+
+        // Navigation button states
+        document.getElementById('btn-prev-page').disabled = (this.currentPageIndex === 0);
+        document.getElementById('btn-next-page').disabled = (this.currentPageIndex === this.currentStory.pages.length - 1);
+
+        // Prefetch next page audio if not yet cached
+        this.prefetchNextAudio();
+      }
+
+      renderSvgFallback(page) {
+        const svgContainer = document.getElementById('page-svg-fallback');
+        // こどもたちが喜ぶ温かい絵本フレームSVG
+        const pastelGradients = [
+          ['#fed7aa', '#fef08a'],
+          ['#bae6fd', '#e0e7ff'],
+          ['#fbcfe8', '#fed7aa'],
+          ['#bbf7d0', '#fef08a'],
+          ['#fed7aa', '#fed7aa']
+        ];
+        const [c1, c2] = pastelGradients[this.currentPageIndex % pastelGradients.length];
+
+        svgContainer.innerHTML = `
+          <svg viewBox="0 0 400 300" class="w-full h-full rounded-2xl drop-shadow-sm select-none">
+            <defs>
+              <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="${c1}" />
+                <stop offset="100%" stop-color="${c2}" />
+              </linearGradient>
+            </defs>
+            <rect width="400" height="300" fill="url(#bgGrad)" rx="16" />
+            <!-- Soft hills -->
+            <path d="M-20 230 Q 100 180, 240 230 T 420 220 L 420 300 L -20 300 Z" fill="#ffffff" fill-opacity="0.5" />
+            <path d="M-20 260 Q 150 220, 300 260 T 420 250 L 420 300 L -20 300 Z" fill="#ffffff" fill-opacity="0.8" />
+            <!-- Little Church / Cross Symbol -->
+            <g transform="translate(180, 70)">
+              <circle cx="20" cy="20" r="38" fill="#ffffff" fill-opacity="0.7"/>
+              <text x="20" y="32" font-size="34" text-anchor="middle">📖</text>
+            </g>
+            <text x="200" y="165" font-family="'Zen Maru Gothic', sans-serif" font-size="14" font-weight="bold" fill="#78350f" text-anchor="middle">
+              ${this.currentStory.title}
+            </text>
+            <text x="200" y="195" font-family="'Zen Maru Gothic', sans-serif" font-size="12" fill="#92400e" text-anchor="middle">
+              第 ${this.currentPageIndex + 1} 場面
+            </text>
+            <!-- Sparkles -->
+            <text x="70" y="90" font-size="20">✨</text>
+            <text x="320" y="110" font-size="18">🕊️</text>
+            <text x="90" y="220" font-size="16">🐑</text>
+            <text x="310" y="230" font-size="16">🌸</text>
+          </svg>
+        `;
+      }
+
+      setFontSize(size) {
+        this.fontSize = size;
+        const textEl = document.getElementById('page-text');
+        textEl.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl');
+
+        ['sm', 'md', 'lg'].forEach(s => {
+          const btn = document.getElementById(`btn-font-${s}`);
+          if (s === size) {
+            btn.className = "px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold";
+          } else {
+            btn.className = "px-1.5 py-0.5 rounded hover:bg-stone-100 text-stone-600";
+          }
+        });
+
+        if (size === 'sm') textEl.classList.add('text-sm');
+        else if (size === 'md') textEl.classList.add('text-base', 'sm:text-lg');
+        else if (size === 'lg') textEl.classList.add('text-lg', 'sm:text-xl');
+      }
+
+      prevPage() {
+        if (this.currentPageIndex > 0) {
+          this.currentPageIndex--;
+          this.renderPage();
+          if (this.isPlaying) {
+            this.playCurrentAudio();
+          }
+        }
+      }
+
+      nextPage() {
+        if (this.currentPageIndex < this.currentStory.pages.length - 1) {
+          this.currentPageIndex++;
+          this.renderPage();
+          if (this.isPlaying) {
+            this.playCurrentAudio();
+          }
+        } else {
+          // Finished story
+          this.stopAudio();
+          this.showToast("おしまい！", "さいごまで みことばを きいてくれて ありがとう！");
+        }
+      }
+
+      handleAutoFlipChange() {
+        this.isAutoFlip = document.getElementById('check-auto-flip').checked;
+      }
+
+      saveBookmark() {
+        if (!this.currentStory) return;
+        const bookmark = {
+          storyId: this.currentStory.id || 'current',
+          story: this.currentStory,
+          pageIndex: this.currentPageIndex,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('cs_story_bookmark', JSON.stringify(bookmark));
+        this.showToast("しおりをはさみました", `「${this.currentStory.title}」の ${this.currentPageIndex + 1} ページ目`);
+      }
+
+      resumeLastStory() {
+        const saved = localStorage.getItem('cs_story_bookmark');
+        if (saved) {
+          try {
+            const data = JSON.parse(saved);
+            this.currentStory = data.story;
+            this.currentPageIndex = data.pageIndex || 0;
+            this.showTheaterView();
+            return;
+          } catch (e) {}
+        }
+        // If no bookmark, open default
+        this.currentStory = PRESET_STORIES[0];
+        this.currentPageIndex = 0;
+        this.showTheaterView();
+      }
+
+      /* ================= Voice Reading (TTS) ================= */
+      async togglePlayPause() {
+        if (this.isPlaying) {
+          this.pauseAudio();
+        } else {
+          this.playCurrentAudio();
+        }
+      }
+
+      async playCurrentAudio() {
+        this.isPlaying = true;
+        this.updatePlayButtonUI(true);
+
+        const page = this.currentStory.pages[this.currentPageIndex];
+        const textToRead = `${page.text}\n${page.verse ? '今日の聖句。' + page.verse : ''}`;
+
+        // Check if pre-cached
+        if (this.audioQueue[this.currentPageIndex]) {
+          this.playAudioBlob(this.audioQueue[this.currentPageIndex]);
+          return;
+        }
+
+        const apiKey = this.getApiKey();
+        if (apiKey) {
+          try {
+            document.getElementById('tts-audio-indicator').classList.remove('hidden');
+            const audioBlob = await this.generateGeminiTTS(textToRead, apiKey);
+            if (audioBlob) {
+              this.audioQueue[this.currentPageIndex] = audioBlob;
+              this.playAudioBlob(audioBlob);
+              return;
+            }
+          } catch (err) {
+            console.warn("Gemini TTS failed, falling back to Web Speech:", err);
+          }
+        }
+
+        // Fallback: Web Speech API (ブラウザ標準の自然な読み上げ)
+        this.playWebSpeech(textToRead);
+      }
+
+      pauseAudio() {
+        this.isPlaying = false;
+        this.updatePlayButtonUI(false);
+        if (this.audioPlayer) {
+          this.audioPlayer.pause();
+        }
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
+        document.getElementById('tts-audio-indicator').classList.add('hidden');
+      }
+
+      stopAudio() {
+        this.pauseAudio();
+        if (this.audioPlayer) {
+          this.audioPlayer.currentTime = 0;
+          this.audioPlayer = null;
+        }
+      }
+
+      updatePlayButtonUI(playing) {
+        const btnText = document.getElementById('btn-play-text');
+        const btnIcon = document.getElementById('btn-play-icon');
+        const indicator = document.getElementById('tts-audio-indicator');
+        if (playing) {
+          btnIcon.textContent = "⏸";
+          btnText.textContent = "一時停止";
+          indicator.classList.remove('hidden');
+        } else {
+          btnIcon.textContent = "▶";
+          btnText.textContent = "よみきかせ";
+          indicator.classList.add('hidden');
+        }
+      }
+
+      playAudioBlob(blob) {
+        if (this.audioPlayer) {
+          this.audioPlayer.pause();
+        }
+        const url = URL.createObjectURL(blob);
+        this.audioPlayer = new Audio(url);
+        this.audioPlayer.onended = () => {
+          this.onAudioEnded();
+        };
+        this.audioPlayer.play().catch(e => {
+          console.warn("Audio play prevented:", e);
+          this.playWebSpeech(this.currentStory.pages[this.currentPageIndex].text);
+        });
+      }
+
+      playWebSpeech(text) {
+        if (!window.speechSynthesis) return;
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'ja-JP';
+        utter.rate = 0.92; // こども向けに少しゆっくり優しく
+        utter.pitch = 1.05;
+        utter.onend = () => {
+          this.onAudioEnded();
+        };
+        window.speechSynthesis.speak(utter);
+      }
+
+      onAudioEnded() {
+        this.isAutoFlip = document.getElementById('check-auto-flip').checked;
+        if (this.isAutoFlip && this.currentPageIndex < this.currentStory.pages.length - 1) {
+          setTimeout(() => {
+            if (this.isPlaying) {
+              this.nextPage();
+            }
+          }, 800);
+        } else {
+          this.pauseAudio();
+        }
+      }
+
+      async generateGeminiTTS(text, apiKey) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+        const prompt = `教会学校の先生として、小さな子どもたちに優しく語りかけるように、温かい声で穏やかに読み聞かせてください：\n${text}`;
+        
+        const payload = {
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: "Aoede" } // 明るく優しいトーン
+              }
+            }
+          }
+        };
+
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error(`TTS HTTP ${res.status}`);
+        const data = await res.json();
+        const part = data?.candidates?.[0]?.content?.parts?.[0];
+        const audioBase64 = part?.inlineData?.data;
+        const mimeType = part?.inlineData?.mimeType || 'audio/pcm;rate=24000';
+
+        if (!audioBase64) return null;
+
+        // Parse rate
+        const match = mimeType.match(/rate=(\d+)/);
+        const sampleRate = match ? parseInt(match[1], 10) : 24000;
+
+        // Decode base64 to PCM16
+        const binaryStr = atob(audioBase64);
+        const len = binaryStr.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+        const pcm16 = new Int16Array(bytes.buffer);
+        return this.pcmToWav(pcm16, sampleRate);
+      }
+
+      pcmToWav(pcm16, sampleRate) {
+        const numChannels = 1;
+        const bitsPerSample = 16;
+        const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+        const blockAlign = numChannels * (bitsPerSample / 8);
+        const dataSize = pcm16.length * 2;
+        const buffer = new ArrayBuffer(44 + dataSize);
+        const view = new DataView(buffer);
+
+        // RIFF chunk
+        this.writeString(view, 0, 'RIFF');
+        view.setUint32(4, 36 + dataSize, true);
+        this.writeString(view, 8, 'WAVE');
+        // fmt chunk
+        this.writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true); // PCM
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, byteRate, true);
+        view.setUint16(32, blockAlign, true);
+        view.setUint16(34, bitsPerSample, true);
+        // data chunk
+        this.writeString(view, 36, 'data');
+        view.setUint32(40, dataSize, true);
+
+        // write PCM samples
+        let offset = 44;
+        for (let i = 0; i < pcm16.length; i++, offset += 2) {
+          view.setInt16(offset, pcm16[i], true);
+        }
+
+        return new Blob([buffer], { type: 'audio/wav' });
+      }
+
+      writeString(view, offset, string) {
+        for (let i = 0; i < string.length; i++) {
+          view.setUint8(offset + i, string.charCodeAt(i));
+        }
+      }
+
+      async prefetchNextAudio() {
+        const nextIndex = this.currentPageIndex + 1;
+        if (this.currentStory && nextIndex < this.currentStory.pages.length && !this.audioQueue[nextIndex]) {
+          const apiKey = this.getApiKey();
+          if (!apiKey) return;
+          try {
+            const page = this.currentStory.pages[nextIndex];
+            const textToRead = `${page.text}\n${page.verse ? '今日の聖句。' + page.verse : ''}`;
+            const blob = await this.generateGeminiTTS(textToRead, apiKey);
+            if (blob) {
+              this.audioQueue[nextIndex] = blob;
+            }
+          } catch (e) {}
+        }
+      }
+
+      /* ================= Image Generation ================= */
+      async redrawCurrentImage() {
+        const apiKey = this.getApiKey();
+        if (!apiKey) {
+          this.openApiKeyModal();
+          this.showToast("APIキーが必要です", "「API設定」から無料キーを入力してください");
+          return;
+        }
+
+        const page = this.currentStory.pages[this.currentPageIndex];
+        const overlay = document.getElementById('illustration-loading-overlay');
+        overlay.classList.remove('hidden');
+
+        try {
+          const style = this.currentStory.style || 'storybook';
+          const imageUrl = await this.generateImageForPage(page, style, apiKey);
+          if (imageUrl) {
+            page.imageData = imageUrl;
+            this.renderPage();
+            this.saveToBookshelf(this.currentStory, false);
+            this.showToast("イラストが完成しました！", "新しい絵本イラストに更新しました");
+          }
+        } catch (err) {
+          console.error("Image generation failed:", err);
+          this.showToast("生成できませんでした", "時間をおいてもう一度お試しください");
+        } finally {
+          overlay.classList.add('hidden');
+        }
+      }
+
+      async generateImageForPage(page, style, apiKey) {
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+        
+        let stylePrompt = "warm charming storybook watercolor illustration, pastel pencil touches, beloved children's book art, soft gentle lighting, expressive cute characters, absolutely no text, no captions, 16:9 ratio";
+        if (style === 'ghibli') {
+          stylePrompt = "Studio Ghibli aesthetic, lush hand-painted watercolor background, warm golden sunlight streaming through trees, gentle expressive faces, cinematic pastoral beauty, no text, 16:9 ratio";
+        } else if (style === 'anime') {
+          stylePrompt = "cheerful classic children anime film art, vibrant colors, clear sparkling eyes, heartwarming smiles, beautiful scenic sky, no text, 16:9 ratio";
+        } else if (style === 'papercraft') {
+          stylePrompt = "3D textured paper craft diorama, layered folded paper art, soft studio lighting, cute felt and cardboard textures, warm comforting depth, no text, 16:9 ratio";
+        }
+
+        const prompt = `A heartwarming and captivating bible story illustration for children:\nScene: ${page.imagePrompt || page.text}\nStyle details: ${stylePrompt}\nHigh aesthetic quality, welcoming, gentle gospel atmosphere.`;
+
+        const payload = {
+          contents: [{
+            role: 'user',
+            parts: [{ text: prompt }]
+          }],
+          generationConfig: {
+            responseModalities: ['IMAGE'],
+            imageConfig: { aspectRatio: "16:9" }
+          }
+        };
+
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error(`Image API HTTP ${res.status}`);
+        const data = await res.json();
+        const part = data?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+        if (part && part.inlineData?.data) {
+          return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        }
+        return null;
+      }
+
+      /* ================= Story Generation (Gemini 3 Flash) ================= */
+      async generateRandomStory() {
+        const candidates = [
+          { scripture: "ルカの福音書 15章", theme: "神様の大きな愛（放蕩息子と父の愛）", age: "6-8" },
+          { scripture: "詩篇 23篇", theme: "良い羊飼いイエス様（どんなときも一緒）", age: "3-5" },
+          { scripture: "マルコの福音書 4章", theme: "嵐を静めるイエス様（恐れなくて大丈夫）", age: "6-8" },
+          { scripture: "出エジプト記 14章", theme: "紅海を分ける神様の救いのみわざ", age: "6-8" },
+          { scripture: "ルカの福音書 10章", theme: "善いサマリア人（となりの人を愛する心）", age: "6-8" },
+          { scripture: "ヨハネの福音書 6章", theme: "５つのパンと２匹の魚（分け合う喜びとイエス様の奇跡）", age: "3-5" }
+        ];
+        const pick = candidates[Math.floor(Math.random() * candidates.length)];
+        await this.generateNewStory(pick.scripture, pick.theme, pick.age, 'storybook');
+      }
+
+      async startCustomStoryGeneration() {
+        const scripture = document.getElementById('order-scripture').value.trim();
+        const theme = document.getElementById('order-theme').value.trim();
+        const age = document.getElementById('order-age').value;
+        const style = document.getElementById('order-style').value;
+        
+        this.closeOrderModal();
+        await this.generateNewStory(scripture, theme, age, style);
+      }
+
+      async generateNewStory(scripture, theme, age, style) {
+        const apiKey = this.getApiKey();
+        if (!apiKey) {
+          this.openApiKeyModal();
+          this.showToast("APIキーが必要です", "「API設定」から無料キーを入力してください");
+          return;
+        }
+
+        this.showToastProgress("みことばの絵本を作成中…", "福音派の聖書理解に基づいて構成しています");
+
+        try {
+          const storyData = await this.requestStoryFromGemini(scripture, theme, age, apiKey);
+          storyData.style = style;
+          storyData.id = 'story_' + Date.now();
+
+          // 自動で全ページのイラストを描く
+          this.showToastProgress("挿絵を描いています…", "1 / 5 ページ目を描画中");
+          for (let i = 0; i < storyData.pages.length; i++) {
+            this.showToastProgress("挿絵を描いています…", `${i + 1} / ${storyData.pages.length} ページ目を描画中`);
+            try {
+              const imgUrl = await this.generateImageForPage(storyData.pages[i], style, apiKey);
+              if (imgUrl) storyData.pages[i].imageData = imgUrl;
+            } catch (imgErr) {
+              console.warn(`Page ${i + 1} image generation skipped:`, imgErr);
+            }
+          }
+
+          this.currentStory = storyData;
+          this.currentPageIndex = 0;
+          this.audioQueue = {};
+          this.saveToBookshelf(storyData, true);
+          this.hideToastProgress();
+          this.showTheaterView();
+          this.showToast("絵本が完成しました！", `「${storyData.title}」をお楽しみください`);
+
+        } catch (err) {
+          console.error("Story creation failed:", err);
+          this.hideToastProgress();
+          this.showToast("作成に失敗しました", "少し時間をおいてから再度お試しください");
+        }
+      }
+
+      async requestStoryFromGemini(scripture, theme, age, apiKey) {
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+        
+        const systemInstruction = `あなたは日本の正統的な福音派キリスト教会（聖書の十全霊感、キリストの十字架と復活、罪の赦し、神の恵みによる救いを告白する立場）の教会学校専任教師・絵本作家です。
+子どもたちへのメッセージは単なる「良い子になりましょう」「努力しましょう」という道徳論に留まらず、イエス・キリストの十字架の愛、神様の変わらない恵み、祈りを聞いてくださる真実さを中心に据えてください。
+聖書の引用および用語は必ず『聖書 新改訳2017』の表現に準拠してください。`;
+
+        const userPrompt = `以下の条件で、子ども向け絵本（全5ページ構成）を作成し、JSON形式で返してください。
+【入力条件】
+- 聖書箇所: ${scripture || '（空欄：テーマに最もふさわしい重要な聖書箇所をあなたが選定してください）'}
+- メッセージテーマ: ${theme || '（空欄：聖書箇所から神様の愛と恵みが伝わる福音テーマをあなたが設定してください）'}
+- 対象年齢: ${age}歳向け
+
+【必須のJSON構造】
+{
+  "title": "子どもがワクワクする温かいひらがな混じりのタイトル",
+  "scripture": "選定した聖書箇所（例：ルカの福音書 15章 11〜24節）",
+  "theme": "福音メッセージテーマ",
+  "pages": [
+    {
+      "page": 1,
+      "text": "その場面の読み聞かせ本文（ひらがな中心でリズム良く）",
+      "verse": "新改訳2017の短い聖句引用（該当箇所）",
+      "imagePrompt": "Detailed visual description of the heartwarming scene for image generation prompt, cute storybook characters, peaceful setting"
+    },
+    ... (全5ページ)
+  ]
+}`;
+
+        const payload = {
+          contents: [{ parts: [{ text: userPrompt }] }],
+          systemInstruction: { parts: [{ text: systemInstruction }] },
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
+        };
+
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error(`Gemini Text API HTTP ${res.status}`);
+        const result = await res.json();
+        const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+        return JSON.parse(jsonText);
+      }
+
+      /* ================= Bookshelf & Storage (IndexedDB/LocalStorage) ================= */
+      saveToBookshelf(story, isNew = false) {
+        try {
+          const list = this.getBookshelfList();
+          const existingIdx = list.findIndex(s => s.id === story.id);
+          if (existingIdx >= 0) {
+            list[existingIdx] = story;
+          } else {
+            list.unshift(story);
+          }
+          // Max 20 books in cache
+          if (list.length > 20) list.pop();
+          localStorage.setItem('cs_story_bookshelf', JSON.stringify(list));
+        } catch (e) {
+          console.warn("Storage quota exceeded or error:", e);
+        }
+      }
+
+      getBookshelfList() {
+        try {
+          const raw = localStorage.getItem('cs_story_bookshelf');
+          if (raw) return JSON.parse(raw);
+        } catch (e) {}
+        return [...PRESET_STORIES];
+      }
+
+      openBookshelfModal() {
+        const listContainer = document.getElementById('bookshelf-list');
+        listContainer.innerHTML = '';
+        const stories = this.getBookshelfList();
+
+        stories.forEach((st, idx) => {
+          const div = document.createElement('div');
+          div.className = "flex items-center justify-between p-3 rounded-2xl bg-stone-50 hover:bg-amber-50/60 border border-stone-200 transition cursor-pointer group";
+          div.innerHTML = `
+            <div class="flex items-center gap-3 overflow-hidden" onclick="app.selectStoryFromBookshelf(${idx})">
+              <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition">
+                📖
+              </div>
+              <div class="truncate">
+                <div class="font-bold text-stone-800 text-sm truncate">${st.title}</div>
+                <div class="text-[11px] text-stone-400 truncate">${st.scripture || ''} | ${st.theme || ''}</div>
+              </div>
+            </div>
+            <button onclick="event.stopPropagation(); app.deleteFromBookshelf(${idx})" class="w-8 h-8 rounded-full hover:bg-rose-100 text-stone-400 hover:text-rose-600 flex items-center justify-center text-xs transition" title="本棚から削除">
+              ✕
+            </button>
+          `;
+          listContainer.appendChild(div);
+        });
+
+        document.getElementById('modal-bookshelf').classList.remove('hidden');
+      }
+
+      closeBookshelfModal() {
+        document.getElementById('modal-bookshelf').classList.add('hidden');
+      }
+
+      selectStoryFromBookshelf(index) {
+        const stories = this.getBookshelfList();
+        if (stories[index]) {
+          this.currentStory = stories[index];
+          this.currentPageIndex = 0;
+          this.audioQueue = {};
+          this.closeBookshelfModal();
+          this.showTheaterView();
+        }
+      }
+
+      deleteFromBookshelf(index) {
+        const stories = this.getBookshelfList();
+        stories.splice(index, 1);
+        localStorage.setItem('cs_story_bookshelf', JSON.stringify(stories));
+        this.openBookshelfModal();
+      }
+
+      /* ================= Export / Import ================= */
+      openShareModal() {
+        document.getElementById('modal-share').classList.remove('hidden');
+      }
+
+      closeShareModal() {
+        document.getElementById('modal-share').classList.add('hidden');
+      }
+
+      exportCurrentStoryJson() {
+        if (!this.currentStory) return;
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.currentStory, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        const fileName = (this.currentStory.title || "bible_story").replace(/\s+/g, '_') + ".json";
+        downloadAnchor.setAttribute("download", fileName);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        this.closeShareModal();
+        this.showToast("ダウンロードしました", "LINEやメールでご家庭に共有できます");
+      }
+
+      importStoryJson(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const imported = JSON.parse(e.target.result);
+            if (imported.title && Array.isArray(imported.pages)) {
+              imported.id = 'imported_' + Date.now();
+              this.currentStory = imported;
+              this.currentPageIndex = 0;
+              this.audioQueue = {};
+              this.saveToBookshelf(imported, true);
+              this.closeBookshelfModal();
+              this.showTheaterView();
+              this.showToast("絵本を開きました！", `「${imported.title}」を読み込みました`);
+            } else {
+              this.showToast("エラー", "絵本ファイルの形式が正しくありません");
+            }
+          } catch (err) {
+            this.showToast("エラー", "ファイルの読み込みに失敗しました");
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      /* ================= Modal Helpers ================= */
+      openOrderModal() {
+        document.getElementById('modal-order').classList.remove('hidden');
+      }
+
+      closeOrderModal() {
+        document.getElementById('modal-order').classList.add('hidden');
+      }
+
+      openApiKeyModal() {
+        document.getElementById('input-api-key').value = localStorage.getItem('cs_story_gemini_api_key') || '';
+        document.getElementById('modal-apikey').classList.remove('hidden');
+      }
+
+      closeApiKeyModal() {
+        document.getElementById('modal-apikey').classList.add('hidden');
+      }
+
+      openGuideModal() {
+        document.getElementById('modal-parent-guide').classList.remove('hidden');
+      }
+
+      closeGuideModal() {
+        document.getElementById('modal-parent-guide').classList.add('hidden');
+      }
+
+      saveApiKey() {
+        const val = document.getElementById('input-api-key').value.trim();
+        if (val) {
+          localStorage.setItem('cs_story_gemini_api_key', val);
+        } else {
+          localStorage.removeItem('cs_story_gemini_api_key');
+        }
+        this.updateApiKeyIndicator();
+        this.closeApiKeyModal();
+        this.showToast("設定を保存しました", "Gemini APIが利用可能になりました");
+      }
+
+      clearApiKey() {
+        document.getElementById('input-api-key').value = '';
+        localStorage.removeItem('cs_story_gemini_api_key');
+        this.updateApiKeyIndicator();
+        this.showToast("APIキーを消去しました", "");
+      }
+
+      /* ================= Feedback Toasts ================= */
+      showToast(title, subtitle = '') {
+        const t = document.getElementById('toast-progress');
+        document.getElementById('toast-title').textContent = title;
+        document.getElementById('toast-subtitle').textContent = subtitle;
+        t.classList.remove('hidden');
+        setTimeout(() => {
+          t.classList.add('hidden');
+        }, 3200);
+      }
+
+      showToastProgress(title, subtitle) {
+        const t = document.getElementById('toast-progress');
+        document.getElementById('toast-title').textContent = title;
+        document.getElementById('toast-subtitle').textContent = subtitle;
+        t.classList.remove('hidden');
+      }
+
+      hideToastProgress() {
+        document.getElementById('toast-progress').classList.add('hidden');
+      }
+
+      loadStoredSettings() {
+        // Keyboard arrow navigation
+        window.addEventListener('keydown', (e) => {
+          if (document.getElementById('view-theater').classList.contains('hidden')) return;
+          if (e.key === 'ArrowRight') this.nextPage();
+          if (e.key === 'ArrowLeft') this.prevPage();
+          if (e.key === ' ') {
+            e.preventDefault();
+            this.togglePlayPause();
+          }
+        });
+
+        // Touch Swipe on theater card
+        const card = document.getElementById('book-card-container');
+        let touchStartX = 0;
+        card.addEventListener('touchstart', (e) => {
+          touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        card.addEventListener('touchend', (e) => {
+          const touchEndX = e.changedTouches[0].screenX;
+          const diff = touchEndX - touchStartX;
+          if (diff < -50) this.nextPage();
+          if (diff > 50) this.prevPage();
+        }, { passive: true });
+      }
+    }
+
+    // App Singleton
+    let app;
+    window.onload = function () {
+      app = new StoryTheaterApp();
+    };
+  </script>
+</body>
+</html>
