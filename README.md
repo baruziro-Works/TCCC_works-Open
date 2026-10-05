@@ -1,6 +1,9 @@
 ここにメモを残せる
 このリポジトリに入っているアプリは
 
+cs読み聞かせ.html
+https://baruziro-works.github.io/TCCC_works-Open/cs読み聞かせ.html
+
 kaigi_memo_final.html
 会議文字おこし
 https://baruziro-works.github.io/TCCC_works-Open/kaigi_memo_final.html
